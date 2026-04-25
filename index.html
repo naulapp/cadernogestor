@@ -2766,7 +2766,7 @@ function openModal(id) {
   // populate selects when opening
   if (id === 'modal-emprestimo' || id === 'modal-vale') populateSelects();
   if (id === 'modal-lancamento') populateLancPar();
-  if (id === 'modal-funcionario') populateGrupoSelect();
+  if (id === 'modal-funcionario') { populateGrupoSelect(); loadCargos(); }
 }
 
 function closeModal(id) { document.getElementById(id).classList.remove('active'); }
@@ -5006,12 +5006,7 @@ async function cadastrarNovoCargo() {
   toast('Cargo cadastrado!', 'success');
 }
 
-// Carregar cargos ao abrir modal funcionário
-const _openModal = openModal;
-function openModal(id) {
-  _openModal(id);
-  if (id === 'modal-funcionario') loadCargos();
-}
+// loadCargos já integrado ao openModal principal
 
 // =====================================================
 // PARCELAMENTO — última parcela diferente
