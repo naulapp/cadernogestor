@@ -33,7 +33,34 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 
 <style>
+/* LIGHT MODE (padrão) */
 :root {
+  --bg: #f0f4f8;
+  --bg2: #e8edf5;
+  --bg3: #dce4ef;
+  --card: #ffffff;
+  --card2: #f8fafc;
+  --border: #c8d5e8;
+  --accent: #2E9E4F;
+  --accent2: #27883f;
+  --accent3: #d97706;
+  --green: #2E9E4F;
+  --red: #dc2626;
+  --yellow: #d97706;
+  --navy: #1B2D6B;
+  --text: #0f172a;
+  --text2: #1e3a5f;
+  --text3: #4a6a99;
+  --font: 'Sora', sans-serif;
+  --mono: 'JetBrains Mono', monospace;
+  --radius: 12px;
+  --radius2: 20px;
+  --shadow: 0 4px 24px rgba(46,158,79,0.1);
+  --shadow2: 0 8px 40px rgba(0,0,0,0.1);
+  --transition: 0.2s cubic-bezier(0.4,0,0.2,1);
+}
+/* DARK MODE */
+[data-theme="dark"] {
   --bg: #0a1229;
   --bg2: #0f1e3d;
   --bg3: #162550;
@@ -43,20 +70,15 @@
   --accent: #2E9E4F;
   --accent2: #3dbb66;
   --accent3: #F5A623;
-  --green: #2E9E4F;
+  --green: #3dbb66;
   --red: #ef4444;
   --yellow: #F5A623;
   --navy: #1B2D6B;
   --text: #e8eef8;
   --text2: #8aaccf;
   --text3: #4a6a99;
-  --font: 'Sora', sans-serif;
-  --mono: 'JetBrains Mono', monospace;
-  --radius: 12px;
-  --radius2: 20px;
   --shadow: 0 4px 24px rgba(46,158,79,0.15);
   --shadow2: 0 8px 40px rgba(0,0,0,0.5);
-  --transition: 0.2s cubic-bezier(0.4,0,0.2,1);
 }
 
 * { margin:0; padding:0; box-sizing:border-box; }
@@ -83,7 +105,7 @@ body {
   align-items: center;
   justify-content: center;
   flex-direction: column;
-  background: radial-gradient(ellipse at 30% 40%, #1B2D6B 0%, var(--bg) 70%);
+  background: radial-gradient(ellipse at 30% 40%, #c8e6d4 0%, var(--bg) 70%);
 }
 
 .splash-logo {
@@ -133,7 +155,7 @@ body {
   align-items: center;
   justify-content: center;
   flex-direction: column;
-  background: radial-gradient(ellipse at 70% 60%, #1B2D6B 0%, var(--bg) 70%);
+  background: radial-gradient(ellipse at 70% 60%, #c8e6d4 0%, var(--bg) 70%);
   padding: 24px;
 }
 
@@ -261,7 +283,7 @@ select.form-input { cursor: pointer; }
   justify-content: center;
   flex-direction: column;
   padding: 24px;
-  background: radial-gradient(ellipse at 50% 20%, #1B2D6B 0%, var(--bg) 60%);
+  background: radial-gradient(ellipse at 50% 20%, #c8e6d4 0%, var(--bg) 60%);
 }
 
 .setup-card {
@@ -309,7 +331,7 @@ select.form-input { cursor: pointer; }
   position: fixed;
   top: 0; left: 0; right: 0;
   height: 60px;
-  background: rgba(15,15,26,0.95);
+  background: var(--card);
   backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--border);
   display: flex;
@@ -372,7 +394,7 @@ select.form-input { cursor: pointer; }
 .sidebar {
   width: 220px;
   min-height: calc(100vh - 60px);
-  background: var(--bg2);
+  background: var(--card);
   border-right: 1px solid var(--border);
   padding: 20px 12px;
   position: fixed;
@@ -425,10 +447,12 @@ select.form-input { cursor: pointer; }
 
 .page-header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   margin-bottom: 28px;
+  gap: 16px;
 }
+.page-header .btn { width: auto !important; white-space: nowrap; }
 
 .page-title { font-size: 1.5rem; font-weight: 700; }
 .page-sub { color: var(--text3); font-size: 0.85rem; margin-top: 2px; }
@@ -1111,6 +1135,7 @@ tr:hover td { background: rgba(108,99,255,0.04); }
       <span class="org-badge" id="currentOrgBadge" onclick="openOrgSelector()">Carregando...</span>
     </div>
     <div class="topbar-actions">
+      <button class="btn-icon" onclick="toggleTheme()" id="themeBtn" title="Alternar tema" style="font-size:16px">☀️</button>
       <div class="dropdown">
         <div class="avatar" id="userAvatar" onclick="toggleDropdown('userMenu')">?</div>
         <div class="dropdown-menu" id="userMenu">
@@ -1532,43 +1557,87 @@ tr:hover td { background: rgba(108,99,255,0.04); }
 
 <!-- MODAL GRUPO SALARIAL -->
 <div class="modal-overlay" id="modal-grupo">
-  <div class="modal">
+  <div class="modal" style="max-width:620px">
     <div class="modal-header">
       <div class="modal-title">Grupo Salarial</div>
       <div class="modal-close" onclick="closeModal('modal-grupo')">✕</div>
     </div>
     <div class="modal-body">
       <input type="hidden" id="grupoId">
-      <div class="form-grid form-grid-2">
-        <div class="form-group" style="grid-column:1/-1">
+      <div class="form-grid">
+
+        <div class="form-group">
           <label class="form-label">Nome do grupo *</label>
           <input type="text" class="form-input" id="grupoNome" placeholder="Ex: Ajudante Padrão">
         </div>
-        <div class="form-group">
-          <label class="form-label">Salário base (R$)</label>
-          <input type="number" class="form-input" id="grupoSalario" placeholder="1621.00" step="0.01">
+
+        <div class="section-card-title" style="margin-top:8px">SALÁRIO E CARGA HORÁRIA</div>
+        <div class="form-grid form-grid-3">
+          <div class="form-group">
+            <label class="form-label">Salário base (R$)</label>
+            <input type="number" class="form-input" id="grupoSalario" placeholder="1621.00" step="0.01" oninput="calcGrupoHoraExtra()">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Carga semanal (h)</label>
+            <input type="number" class="form-input" id="grupoCargaSemanal" value="44" step="1" oninput="calcGrupoCargaMensal()">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Carga mensal (h)</label>
+            <input type="number" class="form-input" id="grupoCargaMensal" value="220" step="1" oninput="calcGrupoHoraExtra()">
+          </div>
         </div>
-        <div class="form-group">
-          <label class="form-label">Valor hora extra (R$)</label>
-          <input type="number" class="form-input" id="grupoHoraExtra" placeholder="13.26" step="0.01">
+
+        <div class="section-card-title" style="margin-top:8px">HORA EXTRA</div>
+        <div class="form-grid form-grid-3">
+          <div class="form-group">
+            <label class="form-label">Adicional hora extra (%)</label>
+            <input type="number" class="form-input" id="grupoHoraExtraPct" value="50" step="1" oninput="calcGrupoHoraExtra()">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Valor hora extra (R$)</label>
+            <input type="number" class="form-input" id="grupoHoraExtra" placeholder="13.26" step="0.01">
+          </div>
+          <div class="form-group" style="display:flex;align-items:flex-end">
+            <button class="btn btn-outline btn-sm" style="width:100%;height:42px" onclick="calcGrupoHoraExtra()">🔄 Calcular</button>
+          </div>
         </div>
-        <div class="form-group">
-          <label class="form-label">% Insalubridade</label>
-          <input type="number" class="form-input" id="grupoInsalubridade" placeholder="20" step="1">
+        <p style="color:var(--text3);font-size:0.75rem;margin-top:-8px">Fórmula: (Salário ÷ Carga mensal) × (1 + adicional%)</p>
+
+        <div class="section-card-title" style="margin-top:8px">ADICIONAIS / BENEFÍCIOS</div>
+        <div id="grupoAdicionais"></div>
+        <button class="btn btn-outline btn-sm" onclick="addAdicionalGrupo()" style="width:fit-content">➕ Adicionar</button>
+
+        <div class="section-card-title" style="margin-top:8px">INSS</div>
+        <div class="form-grid form-grid-2">
+          <div class="form-group">
+            <label class="form-label">Tipo de cálculo</label>
+            <select class="form-input" id="grupoInssType" onchange="toggleInssType()">
+              <option value="valor">Valor fixo (R$)</option>
+              <option value="pct">Percentual sobre proventos (%)</option>
+            </select>
+          </div>
+          <div class="form-group" id="grupoInssValorGroup">
+            <label class="form-label">INSS (R$)</label>
+            <input type="number" class="form-input" id="grupoInss" placeholder="207.00" step="0.01">
+          </div>
+          <div class="form-group" id="grupoInssPctGroup" style="display:none">
+            <label class="form-label">Alíquota INSS (%)</label>
+            <input type="number" class="form-input" id="grupoInssPct" placeholder="7.5" step="0.01">
+          </div>
         </div>
-        <div class="form-group">
-          <label class="form-label">INSS padrão (R$)</label>
-          <input type="number" class="form-input" id="grupoInss" placeholder="207.00" step="0.01">
-        </div>
+        <p style="color:var(--text3);font-size:0.75rem;margin-top:-8px">⚠️ O INSS incide sobre: salário + horas extras + adicionais habituais (exceto DSR). Tabela 2024: 7,5% a 14%.</p>
+
+        <div class="section-card-title" style="margin-top:8px">DESCONTOS PADRÃO</div>
         <div class="form-group">
           <label class="form-label">Vale quinzena padrão (R$)</label>
           <input type="number" class="form-input" id="grupoValeQuinzena" placeholder="700.00" step="0.01">
         </div>
+
       </div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-outline btn-sm" onclick="closeModal('modal-grupo')">Cancelar</button>
-      <button class="btn btn-primary btn-sm" onclick="salvarGrupo()">Salvar</button>
+      <button class="btn btn-primary btn-sm" onclick="salvarGrupo()">Salvar grupo</button>
     </div>
   </div>
 </div>
@@ -2253,6 +2322,17 @@ async function salvarFuncionario() {
     ativo: true
   };
 
+  // Se tem grupo, herdar valores do grupo
+  if (data.grupoId) {
+    const grupo = grupos.find(g => g.id === data.grupoId);
+    if (grupo) {
+      if (!data.salario) data.salario = grupo.salario;
+      if (!data.horaExtra) data.horaExtra = grupo.horaExtra;
+      if (!data.inss) data.inss = grupo.inss;
+      if (!data.cargaMensal) data.cargaMensal = grupo.cargaMensal || 220;
+    }
+  }
+
   if (id) {
     await fsUpdate('funcionarios', id, data);
     const idx = funcionarios.findIndex(f => f.id === id);
@@ -2311,16 +2391,18 @@ function renderGrupos() {
   }
   container.innerHTML = grupos.map(g => {
     const count = funcionarios.filter(f => f.grupoId === g.id).length;
-    return `<div class="section-card" style="display:flex;align-items:center;gap:16px">
-      <div style="flex:1">
-        <div style="font-weight:600">${g.nome}</div>
-        <div style="color:var(--text3);font-size:0.78rem;margin-top:2px">${count} funcionário(s) vinculado(s)</div>
+    const adics = (g.adicionais||[]).map(a => a.nome).join(', ') || '—';
+    const inssLabel = g.inssType === 'pct' ? `${g.inssPct||0}%` : `R$ ${fmtMoney(g.inss)}`;
+    return `<div class="section-card" style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+      <div style="flex:1;min-width:160px">
+        <div style="font-weight:600;font-size:0.95rem">${g.nome}</div>
+        <div style="color:var(--text3);font-size:0.78rem;margin-top:2px">${count} funcionário(s) • ${g.cargaSemanal||44}h/sem • ${g.cargaMensal||220}h/mês</div>
       </div>
-      <div style="display:flex;gap:16px;font-size:0.82rem">
+      <div style="display:flex;gap:14px;font-size:0.82rem;flex-wrap:wrap">
         <div><div style="color:var(--text3)">Salário</div><div style="font-family:var(--mono)">R$ ${fmtMoney(g.salario)}</div></div>
-        <div><div style="color:var(--text3)">H. Extra</div><div style="font-family:var(--mono)">R$ ${fmtMoney(g.horaExtra)}</div></div>
-        <div><div style="color:var(--text3)">Insal.</div><div style="font-family:var(--mono)">${g.insalubridade||0}%</div></div>
-        <div><div style="color:var(--text3)">INSS</div><div style="font-family:var(--mono)">R$ ${fmtMoney(g.inss)}</div></div>
+        <div><div style="color:var(--text3)">H. Extra</div><div style="font-family:var(--mono)">R$ ${fmtMoney(g.horaExtra)} (+${g.horaExtraPct||50}%)</div></div>
+        <div><div style="color:var(--text3)">Adicionais</div><div style="font-size:0.75rem;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${adics}</div></div>
+        <div><div style="color:var(--text3)">INSS</div><div style="font-family:var(--mono)">${inssLabel}</div></div>
       </div>
       <div style="display:flex;gap:6px">
         <button class="btn-icon" onclick="editarGrupo('${g.id}')">✏️</button>
@@ -2334,12 +2416,18 @@ async function salvarGrupo() {
   const id = document.getElementById('grupoId').value;
   const nome = document.getElementById('grupoNome').value.trim();
   if (!nome) { toast('Nome obrigatório', 'error'); return; }
+  const inssType = document.getElementById('grupoInssType').value;
   const data = {
     nome,
     salario: parseFloat(document.getElementById('grupoSalario').value) || 0,
+    cargaSemanal: parseFloat(document.getElementById('grupoCargaSemanal').value) || 44,
+    cargaMensal: parseFloat(document.getElementById('grupoCargaMensal').value) || 220,
+    horaExtraPct: parseFloat(document.getElementById('grupoHoraExtraPct').value) || 50,
     horaExtra: parseFloat(document.getElementById('grupoHoraExtra').value) || 0,
-    insalubridade: parseFloat(document.getElementById('grupoInsalubridade').value) || 0,
-    inss: parseFloat(document.getElementById('grupoInss').value) || 0,
+    adicionais: JSON.parse(JSON.stringify(adicionaisGrupo)),
+    inssType,
+    inss: inssType === 'valor' ? (parseFloat(document.getElementById('grupoInss').value) || 0) : 0,
+    inssPct: inssType === 'pct' ? (parseFloat(document.getElementById('grupoInssPct').value) || 0) : 0,
     valeQuinzena: parseFloat(document.getElementById('grupoValeQuinzena').value) || 0
   };
   if (id) {
@@ -2350,23 +2438,44 @@ async function salvarGrupo() {
     const novo = await fsAdd('grupos', data);
     grupos.push(novo);
   }
+  // Atualizar funcionários vinculados
+  const vinculados = funcionarios.filter(f => f.grupoId === (id || 'novo'));
+  for (const f of vinculados) {
+    await fsUpdate('funcionarios', f.id, {
+      salario: data.salario,
+      horaExtra: data.horaExtra,
+      inss: data.inss,
+      cargaMensal: data.cargaMensal
+    });
+    const fi = funcionarios.findIndex(fn => fn.id === f.id);
+    if (fi >= 0) Object.assign(funcionarios[fi], { salario: data.salario, horaExtra: data.horaExtra, inss: data.inss });
+  }
   closeModal('modal-grupo');
   renderGrupos();
+  renderFuncionarios();
   populateGrupoSelect();
   toast('Grupo salvo!', 'success');
+  adicionaisGrupo = [];
   document.getElementById('grupoId').value = '';
 }
 
 function editarGrupo(id) {
   const g = grupos.find(g => g.id === id);
   if (!g) return;
+  adicionaisGrupo = g.adicionais ? JSON.parse(JSON.stringify(g.adicionais)) : [];
   document.getElementById('grupoId').value = g.id;
   document.getElementById('grupoNome').value = g.nome;
   document.getElementById('grupoSalario').value = g.salario || '';
+  document.getElementById('grupoCargaSemanal').value = g.cargaSemanal || 44;
+  document.getElementById('grupoCargaMensal').value = g.cargaMensal || 220;
+  document.getElementById('grupoHoraExtraPct').value = g.horaExtraPct || 50;
   document.getElementById('grupoHoraExtra').value = g.horaExtra || '';
-  document.getElementById('grupoInsalubridade').value = g.insalubridade || '';
+  document.getElementById('grupoInssType').value = g.inssType || 'valor';
   document.getElementById('grupoInss').value = g.inss || '';
+  document.getElementById('grupoInssPct').value = g.inssPct || '';
   document.getElementById('grupoValeQuinzena').value = g.valeQuinzena || '';
+  toggleInssType();
+  renderAdicionaisGrupo();
   openModal('modal-grupo');
 }
 
@@ -3302,6 +3411,102 @@ function numberToWords(num) {
   let text = convert(reais) + (reais === 1 ? ' real' : ' reais');
   if (centavos > 0) text += ' e ' + convert(centavos) + (centavos === 1 ? ' centavo' : ' centavos');
   return text;
+}
+
+// =====================================================
+// TEMA CLARO / ESCURO
+// =====================================================
+function toggleTheme() {
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  document.documentElement.setAttribute('data-theme', isDark ? 'light' : 'dark');
+  document.getElementById('themeBtn').textContent = isDark ? '☀️' : '🌙';
+  localStorage.setItem('cgTheme', isDark ? 'light' : 'dark');
+}
+
+// Aplicar tema salvo (padrão: light)
+(function() {
+  const saved = localStorage.getItem('cgTheme') || 'light';
+  document.documentElement.setAttribute('data-theme', saved);
+  window.addEventListener('load', () => {
+    const btn = document.getElementById('themeBtn');
+    if (btn) btn.textContent = saved === 'dark' ? '🌙' : '☀️';
+  });
+})();
+
+// =====================================================
+// GRUPO SALARIAL — HELPERS
+// =====================================================
+let adicionaisGrupo = [];
+
+function calcGrupoCargaMensal() {
+  const semanal = parseFloat(document.getElementById('grupoCargaSemanal').value) || 44;
+  // Carga mensal padrão CLT = (semanal / 6) * 30
+  const mensal = Math.round((semanal / 6) * 30);
+  document.getElementById('grupoCargaMensal').value = mensal;
+  calcGrupoHoraExtra();
+}
+
+function calcGrupoHoraExtra() {
+  const salario = parseFloat(document.getElementById('grupoSalario').value) || 0;
+  const mensal = parseFloat(document.getElementById('grupoCargaMensal').value) || 220;
+  const adicPct = parseFloat(document.getElementById('grupoHoraExtraPct').value) || 50;
+  if (salario && mensal) {
+    const horaBase = salario / mensal;
+    const horaExtra = horaBase * (1 + adicPct / 100);
+    document.getElementById('grupoHoraExtra').value = horaExtra.toFixed(2);
+  }
+}
+
+function toggleInssType() {
+  const tipo = document.getElementById('grupoInssType').value;
+  document.getElementById('grupoInssValorGroup').style.display = tipo === 'valor' ? '' : 'none';
+  document.getElementById('grupoInssPctGroup').style.display = tipo === 'pct' ? '' : 'none';
+}
+
+function addAdicionalGrupo(nome='', tipo='insalubridade', valor='', pct='') {
+  const idx = adicionaisGrupo.length;
+  adicionaisGrupo.push({ nome, tipo, valor, pct });
+  renderAdicionaisGrupo();
+}
+
+function removeAdicionalGrupo(idx) {
+  adicionaisGrupo.splice(idx, 1);
+  renderAdicionaisGrupo();
+}
+
+function renderAdicionaisGrupo() {
+  const c = document.getElementById('grupoAdicionais');
+  if (!c) return;
+  c.innerHTML = adicionaisGrupo.map((a, i) => `
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:8px;align-items:flex-end;margin-bottom:8px">
+      <div class="form-group" style="margin:0">
+        <label class="form-label">Nome</label>
+        <input type="text" class="form-input" value="${a.nome}" placeholder="Ex: Insalubridade"
+          oninput="adicionaisGrupo[${i}].nome=this.value">
+      </div>
+      <div class="form-group" style="margin:0">
+        <label class="form-label">Tipo</label>
+        <select class="form-input" onchange="adicionaisGrupo[${i}].tipo=this.value;renderAdicionaisGrupo()">
+          <option value="insalubridade" ${a.tipo==='insalubridade'?'selected':''}>Insalubridade %</option>
+          <option value="periculosidade" ${a.tipo==='periculosidade'?'selected':''}>Periculosidade %</option>
+          <option value="noturno" ${a.tipo==='noturno'?'selected':''}>Adicional Noturno %</option>
+          <option value="valor" ${a.tipo==='valor'?'selected':''}>Valor fixo (R$)</option>
+          <option value="outro_pct" ${a.tipo==='outro_pct'?'selected':''}>Outro %</option>
+        </select>
+      </div>
+      <div class="form-group" style="margin:0">
+        <label class="form-label">${a.tipo==='valor'?'Valor (R$)':'Percentual (%)'}</label>
+        <input type="number" class="form-input" value="${a.tipo==='valor'?a.valor:a.pct}"
+          placeholder="${a.tipo==='valor'?'200.00':'20'}" step="${a.tipo==='valor'?'0.01':'1'}"
+          oninput="adicionaisGrupo[${i}].${a.tipo==='valor'?'valor':'pct'}=parseFloat(this.value)||0">
+      </div>
+      <button class="btn-icon" onclick="removeAdicionalGrupo(${i})" style="margin-bottom:0;height:42px">🗑️</button>
+    </div>`).join('');
+}
+
+function preencherAdicionaisGrupo(lista) {
+  adicionaisGrupo = lista || [];
+  renderAdicionaisGrupo();
 }
 
 // Service worker for PWA
