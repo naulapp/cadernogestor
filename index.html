@@ -1801,10 +1801,7 @@ tr:hover td { background: rgba(108,99,255,0.04); }
             <div class="page-title">Configurações</div>
             <div class="page-sub">Empresa e preferências</div>
           </div>
-          <div style="display:flex;gap:8px">
-            <button class="btn btn-outline btn-sm" onclick="mostrarRegrasFirestore()">🔒 Regras Firestore</button>
-            <button class="btn btn-primary btn-sm" onclick="salvarConfig()">💾 Salvar</button>
-          </div>
+          <button class="btn btn-primary btn-sm" onclick="salvarConfig()">💾 Salvar</button>
         </div>
 
         <div class="section-card">
@@ -2480,8 +2477,10 @@ async function createOrg() {
   const cidade = document.getElementById('orgCidade').value;
   const invite = Math.random().toString(36).substring(2,8).toUpperCase();
 
-  const org = { nome, cnpj, cidade, invite, dono: currentUser?.uid || 'demo',
-    membros: [{ uid: currentUser?.uid || 'demo', nome: currentUser?.displayName || 'Você', role: 'gestor', email: currentUser?.email || '' }],
+  const uid = currentUser?.uid || 'demo';
+  const org = { nome, cnpj, cidade, invite, dono: uid,
+    membroIds: [uid],
+    membros: [{ uid, nome: currentUser?.displayName || 'Você', role: 'gestor', email: currentUser?.email || '' }],
     criadoEm: new Date().toISOString() };
 
   if (db) {
