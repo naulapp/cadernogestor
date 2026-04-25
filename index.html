@@ -1,0 +1,3303 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#1a1a2e">
+<meta name="description" content="CadernoGestor - Gestão de folha de pagamento, empréstimos e acertos">
+<title>CadernoGestor</title>
+<link rel="manifest" href="manifest.json">
+
+<!-- Google Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
+<!-- jsPDF for PDF generation -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+
+<style>
+:root {
+  --bg: #0f0f1a;
+  --bg2: #16162a;
+  --bg3: #1e1e35;
+  --card: #1a1a30;
+  --card2: #22223a;
+  --border: #2e2e50;
+  --accent: #6c63ff;
+  --accent2: #a78bfa;
+  --accent3: #22d3ee;
+  --green: #10b981;
+  --red: #ef4444;
+  --yellow: #f59e0b;
+  --text: #e8e8f0;
+  --text2: #9999bb;
+  --text3: #6666aa;
+  --font: 'Sora', sans-serif;
+  --mono: 'JetBrains Mono', monospace;
+  --radius: 12px;
+  --radius2: 20px;
+  --shadow: 0 4px 24px rgba(108,99,255,0.15);
+  --shadow2: 0 8px 40px rgba(0,0,0,0.4);
+  --transition: 0.2s cubic-bezier(0.4,0,0.2,1);
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ---- SCROLLBAR ---- */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg2); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* ---- SCREENS ---- */
+.screen { display:none; min-height:100vh; }
+.screen.active { display:flex; }
+
+/* ======== SPLASH ======== */
+#screen-splash {
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  background: radial-gradient(ellipse at 30% 40%, #1a1540 0%, var(--bg) 70%);
+}
+
+.splash-logo {
+  font-size: 56px;
+  margin-bottom: 16px;
+  animation: float 3s ease-in-out infinite;
+}
+
+.splash-title {
+  font-size: 2.4rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--accent2), var(--accent3));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: -1px;
+}
+
+.splash-sub {
+  color: var(--text3);
+  margin-top: 8px;
+  font-size: 0.9rem;
+}
+
+.splash-loader {
+  margin-top: 48px;
+  width: 48px;
+  height: 3px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.splash-loader::after {
+  content: '';
+  display: block;
+  width: 40%;
+  height: 100%;
+  background: var(--accent);
+  animation: loading 1.2s ease-in-out infinite alternate;
+}
+
+@keyframes loading { from { transform: translateX(-100%); } to { transform: translateX(250%); } }
+@keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+
+/* ======== AUTH ======== */
+#screen-auth {
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  background: radial-gradient(ellipse at 70% 60%, #1a1540 0%, var(--bg) 70%);
+  padding: 24px;
+}
+
+.auth-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius2);
+  padding: 40px;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: var(--shadow2);
+}
+
+.auth-logo { text-align: center; margin-bottom: 32px; }
+.auth-logo .emoji { font-size: 40px; }
+.auth-logo h1 { font-size: 1.6rem; font-weight: 700; color: var(--accent2); margin-top: 8px; }
+.auth-logo p { color: var(--text3); font-size: 0.85rem; margin-top: 4px; }
+
+.auth-tabs {
+  display: flex;
+  background: var(--bg2);
+  border-radius: var(--radius);
+  padding: 4px;
+  margin-bottom: 28px;
+}
+
+.auth-tab {
+  flex: 1;
+  padding: 10px;
+  text-align: center;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text3);
+  transition: var(--transition);
+}
+
+.auth-tab.active {
+  background: var(--accent);
+  color: white;
+}
+
+.form-group { margin-bottom: 16px; }
+.form-label {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--text2);
+  margin-bottom: 6px;
+  font-weight: 500;
+}
+
+.form-input {
+  width: 100%;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 0.9rem;
+  transition: var(--transition);
+  outline: none;
+}
+
+.form-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(108,99,255,0.15);
+}
+
+.form-input::placeholder { color: var(--text3); }
+
+select.form-input { cursor: pointer; }
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border-radius: var(--radius);
+  border: none;
+  cursor: pointer;
+  font-family: var(--font);
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: var(--transition);
+  text-decoration: none;
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: white;
+  width: 100%;
+}
+.btn-primary:hover { background: #7c75ff; transform: translateY(-1px); box-shadow: var(--shadow); }
+
+.btn-google {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  width: 100%;
+  margin-top: 12px;
+}
+.btn-google:hover { border-color: var(--accent); }
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--text3);
+  font-size: 0.8rem;
+  margin: 16px 0;
+}
+.auth-divider::before, .auth-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* ======== SETUP ORG ======== */
+#screen-setup {
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  padding: 24px;
+  background: radial-gradient(ellipse at 50% 20%, #1a1540 0%, var(--bg) 60%);
+}
+
+.setup-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius2);
+  padding: 40px;
+  width: 100%;
+  max-width: 480px;
+  box-shadow: var(--shadow2);
+}
+
+.setup-card h2 { font-size: 1.4rem; margin-bottom: 6px; }
+.setup-card p { color: var(--text3); font-size: 0.85rem; margin-bottom: 28px; }
+
+.org-options { display: flex; gap: 12px; margin-bottom: 24px; }
+
+.org-option {
+  flex: 1;
+  padding: 20px 16px;
+  background: var(--bg2);
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  text-align: center;
+  transition: var(--transition);
+}
+
+.org-option:hover, .org-option.active {
+  border-color: var(--accent);
+  background: rgba(108,99,255,0.1);
+}
+
+.org-option .icon { font-size: 28px; margin-bottom: 8px; }
+.org-option h3 { font-size: 0.9rem; font-weight: 600; }
+.org-option p { font-size: 0.78rem; color: var(--text3); margin: 0; }
+
+/* ======== MAIN APP ======== */
+#screen-app {
+  flex-direction: column;
+}
+
+/* TOP BAR */
+.topbar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 60px;
+  background: rgba(15,15,26,0.95);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  gap: 16px;
+  z-index: 100;
+}
+
+.topbar-logo {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--accent2);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.topbar-org {
+  flex: 1;
+  font-size: 0.8rem;
+  color: var(--text3);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.org-badge {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 4px 12px;
+  font-size: 0.75rem;
+  color: var(--text2);
+  cursor: pointer;
+  transition: var(--transition);
+}
+.org-badge:hover { border-color: var(--accent); }
+
+.topbar-actions { display: flex; gap: 8px; align-items: center; }
+
+.avatar {
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  background: var(--accent);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.8rem; font-weight: 700;
+  cursor: pointer;
+  border: 2px solid var(--border);
+}
+
+/* CONTENT AREA */
+.app-content {
+  margin-top: 60px;
+  display: flex;
+  flex: 1;
+}
+
+/* SIDEBAR */
+.sidebar {
+  width: 220px;
+  min-height: calc(100vh - 60px);
+  background: var(--bg2);
+  border-right: 1px solid var(--border);
+  padding: 20px 12px;
+  position: fixed;
+  top: 60px;
+  left: 0;
+  bottom: 0;
+  overflow-y: auto;
+  z-index: 50;
+}
+
+.nav-section-title {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 0 8px;
+  margin-bottom: 6px;
+  margin-top: 16px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  color: var(--text2);
+  transition: var(--transition);
+  margin-bottom: 2px;
+}
+
+.nav-item:hover { background: var(--bg3); color: var(--text); }
+.nav-item.active { background: rgba(108,99,255,0.15); color: var(--accent2); }
+.nav-item .icon { font-size: 16px; width: 20px; text-align: center; }
+
+/* MAIN PANEL */
+.main-panel {
+  margin-left: 220px;
+  flex: 1;
+  padding: 28px;
+  min-height: calc(100vh - 60px);
+}
+
+/* PAGE */
+.page { display:none; }
+.page.active { display:block; }
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 28px;
+}
+
+.page-title { font-size: 1.5rem; font-weight: 700; }
+.page-sub { color: var(--text3); font-size: 0.85rem; margin-top: 2px; }
+
+/* CARDS GRID */
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.stat-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  transition: var(--transition);
+}
+.stat-card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: var(--shadow); }
+
+.stat-label { font-size: 0.75rem; color: var(--text3); font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+.stat-value { font-size: 1.8rem; font-weight: 700; font-family: var(--mono); margin-top: 6px; }
+.stat-value.green { color: var(--green); }
+.stat-value.red { color: var(--red); }
+.stat-value.accent { color: var(--accent2); }
+
+/* TABLE */
+.table-wrap {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius2);
+  overflow: hidden;
+}
+
+.table-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.table-title { font-weight: 600; font-size: 0.95rem; }
+
+.search-input {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 14px;
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 0.8rem;
+  outline: none;
+  width: 200px;
+  transition: var(--transition);
+}
+.search-input:focus { border-color: var(--accent); }
+
+table { width: 100%; border-collapse: collapse; }
+th {
+  padding: 12px 16px;
+  text-align: left;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+}
+td {
+  padding: 14px 16px;
+  font-size: 0.85rem;
+  border-bottom: 1px solid rgba(46,46,80,0.5);
+  vertical-align: middle;
+}
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: rgba(108,99,255,0.04); }
+
+/* BADGES */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+.badge-green { background: rgba(16,185,129,0.15); color: var(--green); }
+.badge-red { background: rgba(239,68,68,0.15); color: var(--red); }
+.badge-yellow { background: rgba(245,158,11,0.15); color: var(--yellow); }
+.badge-accent { background: rgba(108,99,255,0.15); color: var(--accent2); }
+.badge-gray { background: var(--bg3); color: var(--text3); }
+
+/* BUTTONS */
+.btn-sm {
+  padding: 6px 14px;
+  font-size: 0.78rem;
+  border-radius: 8px;
+}
+
+.btn-outline {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text2);
+}
+.btn-outline:hover { border-color: var(--accent); color: var(--accent2); }
+
+.btn-danger {
+  background: rgba(239,68,68,0.1);
+  border: 1px solid rgba(239,68,68,0.3);
+  color: var(--red);
+}
+.btn-danger:hover { background: rgba(239,68,68,0.2); }
+
+.btn-success {
+  background: rgba(16,185,129,0.1);
+  border: 1px solid rgba(16,185,129,0.3);
+  color: var(--green);
+}
+.btn-success:hover { background: rgba(16,185,129,0.2); }
+
+.btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px; height: 32px;
+  border-radius: 8px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  font-size: 14px;
+  transition: var(--transition);
+  color: var(--text2);
+}
+.btn-icon:hover { border-color: var(--accent); color: var(--accent2); }
+
+/* MODAL */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(4px);
+  z-index: 200;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.modal-overlay.active { display: flex; }
+
+.modal {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius2);
+  width: 100%;
+  max-width: 560px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow2);
+  animation: slideUp 0.25s ease;
+}
+
+@keyframes slideUp { from { transform: translateY(20px); opacity:0; } to { transform: translateY(0); opacity:1; } }
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border);
+}
+.modal-title { font-size: 1.05rem; font-weight: 600; }
+.modal-close {
+  cursor: pointer;
+  color: var(--text3);
+  font-size: 1.2rem;
+  transition: var(--transition);
+}
+.modal-close:hover { color: var(--text); }
+
+.modal-body { padding: 24px; }
+.modal-footer {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+/* FORM GRID */
+.form-grid { display: grid; gap: 16px; }
+.form-grid-2 { grid-template-columns: 1fr 1fr; }
+.form-grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+
+/* FOLHA */
+.folha-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius2);
+  padding: 24px;
+  margin-bottom: 16px;
+  transition: var(--transition);
+}
+.folha-card:hover { border-color: var(--accent); }
+
+.folha-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.folha-employee-name { font-size: 1rem; font-weight: 600; }
+.folha-employee-role { color: var(--text3); font-size: 0.8rem; }
+
+.folha-values {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.folha-value-item { }
+.folha-value-label { font-size: 0.72rem; color: var(--text3); }
+.folha-value-num {
+  font-family: var(--mono);
+  font-size: 1rem;
+  font-weight: 600;
+  margin-top: 2px;
+}
+.folha-value-num.pos { color: var(--green); }
+.folha-value-num.neg { color: var(--red); }
+.folha-value-num.total { color: var(--accent2); font-size: 1.1rem; }
+
+/* ACERTO MÚTUO */
+.acerto-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius2);
+  padding: 24px;
+}
+
+.acerto-pair {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--border);
+}
+.acerto-pair:last-child { border-bottom: none; }
+
+.acerto-person { text-align: center; }
+.acerto-person-name { font-weight: 600; font-size: 0.9rem; }
+.acerto-person-debt { font-size: 0.78rem; color: var(--text3); margin-top: 2px; }
+
+.acerto-saldo {
+  text-align: center;
+  flex: 1;
+}
+.acerto-saldo-label { font-size: 0.7rem; color: var(--text3); }
+.acerto-saldo-value {
+  font-family: var(--mono);
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin-top: 4px;
+}
+
+/* INVITE */
+.invite-code {
+  background: var(--bg2);
+  border: 2px dashed var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  text-align: center;
+  font-family: var(--mono);
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: 4px;
+  color: var(--accent2);
+  cursor: pointer;
+  transition: var(--transition);
+}
+.invite-code:hover { border-color: var(--accent); }
+
+/* TOAST */
+.toast-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.toast {
+  background: var(--card2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 18px;
+  font-size: 0.85rem;
+  box-shadow: var(--shadow2);
+  animation: toastIn 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 260px;
+}
+.toast.success { border-left: 3px solid var(--green); }
+.toast.error { border-left: 3px solid var(--red); }
+.toast.info { border-left: 3px solid var(--accent); }
+
+@keyframes toastIn { from { transform: translateX(20px); opacity:0; } to { transform: translateX(0); opacity:1; } }
+
+/* EMPTY STATE */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text3);
+}
+.empty-state .icon { font-size: 48px; margin-bottom: 16px; }
+.empty-state h3 { font-size: 1rem; color: var(--text2); margin-bottom: 8px; }
+.empty-state p { font-size: 0.85rem; }
+
+/* DROPDOWN MENU */
+.dropdown {
+  position: relative;
+  display: inline-block;
+}
+.dropdown-menu {
+  display: none;
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 6px;
+  min-width: 180px;
+  box-shadow: var(--shadow2);
+  z-index: 300;
+}
+.dropdown-menu.open { display: block; }
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.83rem;
+  color: var(--text2);
+  transition: var(--transition);
+}
+.dropdown-item:hover { background: var(--bg2); color: var(--text); }
+.dropdown-item.danger { color: var(--red); }
+.dropdown-item.danger:hover { background: rgba(239,68,68,0.1); }
+
+/* SECTION CARD */
+.section-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius2);
+  padding: 20px;
+  margin-bottom: 16px;
+}
+.section-card-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text2);
+  margin-bottom: 16px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* PROGRESS BAR */
+.progress-bar {
+  height: 6px;
+  background: var(--bg3);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+.progress-fill {
+  height: 100%;
+  border-radius: 3px;
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  transition: width 0.5s ease;
+}
+
+/* NOTIFICATION DOT */
+.notif-dot {
+  width: 8px; height: 8px;
+  background: var(--red);
+  border-radius: 50%;
+  position: absolute;
+  top: -2px; right: -2px;
+}
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+  .sidebar { transform: translateX(-100%); transition: var(--transition); }
+  .sidebar.open { transform: translateX(0); }
+  .main-panel { margin-left: 0; padding: 16px; }
+  .form-grid-2, .form-grid-3 { grid-template-columns: 1fr; }
+  .cards-grid { grid-template-columns: 1fr 1fr; }
+  .topbar-org { display: none; }
+}
+
+/* TAG INPUT */
+.tag-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.tag-remove {
+  cursor: pointer;
+  color: var(--text3);
+  font-size: 12px;
+  transition: var(--transition);
+}
+.tag-remove:hover { color: var(--red); }
+
+/* LINE ITEMS */
+.line-items { }
+.line-item {
+  display: grid;
+  grid-template-columns: 1fr auto 120px auto;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.line-item-num {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 12px;
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 0.85rem;
+  text-align: right;
+  outline: none;
+  width: 100%;
+  transition: var(--transition);
+}
+.line-item-num:focus { border-color: var(--accent); }
+
+/* ROLE SELECTOR */
+.role-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+}
+.role-option {
+  padding: 12px;
+  background: var(--bg2);
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  text-align: center;
+  transition: var(--transition);
+}
+.role-option:hover, .role-option.active {
+  border-color: var(--accent);
+  background: rgba(108,99,255,0.1);
+}
+.role-option .ri { font-size: 22px; margin-bottom: 6px; }
+.role-option p { font-size: 0.75rem; color: var(--text2); }
+
+/* MONEY INPUT */
+.money-input-wrap {
+  position: relative;
+}
+.money-prefix {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text3);
+  font-size: 0.85rem;
+  font-family: var(--mono);
+}
+.money-input-wrap .form-input { padding-left: 36px; }
+
+/* FLOATING FAB */
+.fab {
+  position: fixed;
+  bottom: 28px;
+  right: 28px;
+  width: 52px; height: 52px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: white;
+  font-size: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(108,99,255,0.4);
+  transition: var(--transition);
+  z-index: 90;
+  border: none;
+}
+.fab:hover { background: #7c75ff; transform: scale(1.1); }
+
+/* MOBILE NAV */
+.mobile-nav {
+  display: none;
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  background: var(--bg2);
+  border-top: 1px solid var(--border);
+  padding: 8px 0;
+  z-index: 100;
+}
+.mobile-nav-items {
+  display: flex;
+  justify-content: space-around;
+}
+.mobile-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 6px 16px;
+  cursor: pointer;
+  color: var(--text3);
+  font-size: 0.65rem;
+  transition: var(--transition);
+  gap: 4px;
+}
+.mobile-nav-item .icon { font-size: 20px; }
+.mobile-nav-item.active { color: var(--accent2); }
+
+@media (max-width: 768px) {
+  .mobile-nav { display: block; }
+  .sidebar { display: none; }
+  .main-panel { margin-left: 0; padding-bottom: 80px; }
+}
+
+/* FOLHA PREVIEW (like the PDF) */
+.folha-preview {
+  background: white;
+  color: #111;
+  border-radius: var(--radius);
+  padding: 32px;
+  font-family: 'Times New Roman', serif;
+  font-size: 13px;
+  max-width: 640px;
+  margin: 0 auto;
+}
+.folha-preview-title {
+  text-align: center;
+  font-size: 15px;
+  font-weight: bold;
+  border: 2px solid #111;
+  padding: 8px;
+  margin-bottom: 12px;
+}
+.folha-preview table { width: 100%; border-collapse: collapse; }
+.folha-preview td { padding: 4px 8px; border: 1px solid #aaa; }
+.folha-preview .total-row { background: #f0f0f0; font-weight: bold; }
+</style>
+</head>
+<body>
+
+<!-- TOAST CONTAINER -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- ======== SPLASH ======== -->
+<div class="screen active" id="screen-splash">
+  <div class="splash-logo">📒</div>
+  <div class="splash-title">CadernoGestor</div>
+  <div class="splash-sub">Gestão simplificada. Resultado real.</div>
+  <div class="splash-loader"></div>
+</div>
+
+<!-- ======== AUTH ======== -->
+<div class="screen" id="screen-auth">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div class="emoji">📒</div>
+      <h1>CadernoGestor</h1>
+      <p>Folha de pagamento, empréstimos e acertos</p>
+    </div>
+
+    <div class="auth-tabs">
+      <div class="auth-tab active" onclick="switchAuthTab('login')">Entrar</div>
+      <div class="auth-tab" onclick="switchAuthTab('register')">Criar conta</div>
+    </div>
+
+    <div id="auth-login">
+      <div class="form-group">
+        <label class="form-label">E-mail</label>
+        <input type="email" class="form-input" id="loginEmail" placeholder="seu@email.com">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Senha</label>
+        <input type="password" class="form-input" id="loginPassword" placeholder="••••••••">
+      </div>
+      <button class="btn btn-primary" onclick="doLogin()">Entrar</button>
+    </div>
+
+    <div id="auth-register" style="display:none">
+      <div class="form-group">
+        <label class="form-label">Nome completo</label>
+        <input type="text" class="form-input" id="regName" placeholder="Seu nome">
+      </div>
+      <div class="form-group">
+        <label class="form-label">E-mail</label>
+        <input type="email" class="form-input" id="regEmail" placeholder="seu@email.com">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Senha</label>
+        <input type="password" class="form-input" id="regPassword" placeholder="Mínimo 6 caracteres">
+      </div>
+      <button class="btn btn-primary" onclick="doRegister()">Criar conta</button>
+    </div>
+
+    <div class="auth-divider">ou</div>
+    <button class="btn btn-google" onclick="doGoogleLogin()">
+      <svg width="18" height="18" viewBox="0 0 18 18"><path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z" fill="#4285F4"/><path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 009 18z" fill="#34A853"/><path d="M3.964 10.71A5.41 5.41 0 013.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 000 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/><path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 00.957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/></svg>
+      Entrar com Google
+    </button>
+  </div>
+</div>
+
+<!-- ======== SETUP ORG ======== -->
+<div class="screen" id="screen-setup">
+  <div class="setup-card">
+    <h2>🏢 Configure sua conta</h2>
+    <p>Para começar, crie ou entre em uma organização</p>
+
+    <div class="org-options">
+      <div class="org-option active" id="opt-create" onclick="selectOrgOpt('create')">
+        <div class="icon">🆕</div>
+        <h3>Criar empresa</h3>
+        <p>Sou dono/gestor</p>
+      </div>
+      <div class="org-option" id="opt-join" onclick="selectOrgOpt('join')">
+        <div class="icon">🔗</div>
+        <h3>Entrar</h3>
+        <p>Tenho um convite</p>
+      </div>
+    </div>
+
+    <div id="setup-create">
+      <div class="form-group">
+        <label class="form-label">Nome da empresa/organização</label>
+        <input type="text" class="form-input" id="orgName" placeholder="Ex: Donena Nutrição Animal">
+      </div>
+      <div class="form-group">
+        <label class="form-label">CNPJ (opcional)</label>
+        <input type="text" class="form-input" id="orgCnpj" placeholder="00.000.000/0001-00">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Cidade/UF</label>
+        <input type="text" class="form-input" id="orgCidade" placeholder="Taquarana/AL">
+      </div>
+      <button class="btn btn-primary" onclick="createOrg()">Criar organização</button>
+    </div>
+
+    <div id="setup-join" style="display:none">
+      <div class="form-group">
+        <label class="form-label">Código de convite</label>
+        <input type="text" class="form-input" id="inviteCode" placeholder="Ex: ABC123" style="text-transform:uppercase;letter-spacing:4px;font-family:var(--mono);font-size:1.1rem;text-align:center;">
+      </div>
+      <button class="btn btn-primary" onclick="joinOrg()">Entrar na organização</button>
+    </div>
+  </div>
+</div>
+
+<!-- ======== MAIN APP ======== -->
+<div class="screen" id="screen-app">
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <div class="topbar-logo">📒 CadernoGestor</div>
+    <div class="topbar-org">
+      <span class="org-badge" id="currentOrgBadge" onclick="openOrgSelector()">Carregando...</span>
+    </div>
+    <div class="topbar-actions">
+      <div class="dropdown">
+        <div class="avatar" id="userAvatar" onclick="toggleDropdown('userMenu')">?</div>
+        <div class="dropdown-menu" id="userMenu">
+          <div class="dropdown-item" onclick="navigate('configuracoes')">⚙️ Configurações</div>
+          <div class="dropdown-item" onclick="navigate('equipe')">👥 Equipe</div>
+          <div class="dropdown-item danger" onclick="doLogout()">🚪 Sair</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- APP CONTENT -->
+  <div class="app-content">
+    <!-- SIDEBAR -->
+    <div class="sidebar" id="sidebar">
+      <div class="nav-section-title">Principal</div>
+      <div class="nav-item active" onclick="navigate('dashboard')" id="nav-dashboard">
+        <span class="icon">📊</span> Dashboard
+      </div>
+
+      <div class="nav-section-title">Funcionários</div>
+      <div class="nav-item" onclick="navigate('funcionarios')" id="nav-funcionarios">
+        <span class="icon">👥</span> Funcionários
+      </div>
+      <div class="nav-item" onclick="navigate('grupos')" id="nav-grupos">
+        <span class="icon">🏷️</span> Grupos Salário
+      </div>
+
+      <div class="nav-section-title">Financeiro</div>
+      <div class="nav-item" onclick="navigate('folha')" id="nav-folha">
+        <span class="icon">📋</span> Folha Pgto.
+      </div>
+      <div class="nav-item" onclick="navigate('emprestimos')" id="nav-emprestimos">
+        <span class="icon">💰</span> Empréstimos
+      </div>
+      <div class="nav-item" onclick="navigate('vales')" id="nav-vales">
+        <span class="icon">🎫</span> Vales
+      </div>
+      <div class="nav-item" onclick="navigate('acerto')" id="nav-acerto">
+        <span class="icon">🤝</span> Acerto Mútuo
+      </div>
+
+      <div class="nav-section-title">Gestão</div>
+      <div class="nav-item" onclick="navigate('equipe')" id="nav-equipe">
+        <span class="icon">🔑</span> Equipe/Acesso
+      </div>
+      <div class="nav-item" onclick="navigate('configuracoes')" id="nav-configuracoes">
+        <span class="icon">⚙️</span> Configurações
+      </div>
+    </div>
+
+    <!-- MAIN PANEL -->
+    <div class="main-panel">
+
+      <!-- ===== DASHBOARD ===== -->
+      <div class="page active" id="page-dashboard">
+        <div class="page-header">
+          <div>
+            <div class="page-title">Dashboard</div>
+            <div class="page-sub" id="dashDate"></div>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="navigate('folha')">➕ Nova Folha</button>
+        </div>
+
+        <div class="cards-grid" id="dashCards">
+          <div class="stat-card">
+            <div class="stat-label">Funcionários ativos</div>
+            <div class="stat-value accent" id="dashFuncionarios">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Empréstimos ativos</div>
+            <div class="stat-value yellow" id="dashEmprestimos">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Total em aberto</div>
+            <div class="stat-value red" id="dashTotal">R$ 0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Última folha</div>
+            <div class="stat-value" style="font-size:1rem" id="dashUltimaFolha">—</div>
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <div class="table-header">
+            <div class="table-title">Empréstimos em andamento</div>
+          </div>
+          <div id="dashEmprestimosList">
+            <div class="empty-state">
+              <div class="icon">💰</div>
+              <h3>Nenhum empréstimo</h3>
+              <p>Os empréstimos ativos aparecerão aqui</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== FUNCIONÁRIOS ===== -->
+      <div class="page" id="page-funcionarios">
+        <div class="page-header">
+          <div>
+            <div class="page-title">Funcionários</div>
+            <div class="page-sub">Cadastro e gestão</div>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="openModal('modal-funcionario')">➕ Novo funcionário</button>
+        </div>
+
+        <div class="table-wrap">
+          <div class="table-header">
+            <div class="table-title">Lista de funcionários</div>
+            <input type="text" class="search-input" placeholder="🔍 Buscar..." oninput="filterFuncionarios(this.value)">
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>CPF</th>
+                <th>Cargo</th>
+                <th>Grupo</th>
+                <th>Status</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="tabelaFuncionarios">
+              <tr><td colspan="6"><div class="empty-state"><div class="icon">👥</div><h3>Nenhum funcionário cadastrado</h3></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ===== GRUPOS SALÁRIO ===== -->
+      <div class="page" id="page-grupos">
+        <div class="page-header">
+          <div>
+            <div class="page-title">Grupos de Salário</div>
+            <div class="page-sub">Modelos reutilizáveis por cargo</div>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="openModal('modal-grupo')">➕ Novo grupo</button>
+        </div>
+        <div id="listaGrupos">
+          <div class="empty-state">
+            <div class="icon">🏷️</div>
+            <h3>Nenhum grupo criado</h3>
+            <p>Crie grupos para padronizar salários de cargos semelhantes</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== FOLHA DE PAGAMENTO ===== -->
+      <div class="page" id="page-folha">
+        <div class="page-header">
+          <div>
+            <div class="page-title">Folha de Pagamento</div>
+            <div class="page-sub">Gere e exporte contracheques</div>
+          </div>
+          <div style="display:flex;gap:10px">
+            <button class="btn btn-outline btn-sm" onclick="navigate('historico-folha')">📁 Histórico</button>
+            <button class="btn btn-primary btn-sm" onclick="gerarNovaFolha()">📋 Gerar folha do mês</button>
+          </div>
+        </div>
+
+        <!-- Selector mes/ano -->
+        <div class="section-card" style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap">
+          <div class="form-group" style="margin:0;flex:1;min-width:140px">
+            <label class="form-label">Mês referência</label>
+            <select class="form-input" id="folhaMes">
+              <option value="1">Janeiro</option><option value="2">Fevereiro</option>
+              <option value="3">Março</option><option value="4">Abril</option>
+              <option value="5">Maio</option><option value="6">Junho</option>
+              <option value="7">Julho</option><option value="8">Agosto</option>
+              <option value="9">Setembro</option><option value="10">Outubro</option>
+              <option value="11">Novembro</option><option value="12">Dezembro</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin:0;flex:1;min-width:100px">
+            <label class="form-label">Ano</label>
+            <input type="number" class="form-input" id="folhaAno" value="2026">
+          </div>
+          <button class="btn btn-primary" onclick="loadFolha()" style="height:42px">Carregar</button>
+        </div>
+
+        <div id="folhaList"></div>
+      </div>
+
+      <!-- ===== EMPRÉSTIMOS ===== -->
+      <div class="page" id="page-emprestimos">
+        <div class="page-header">
+          <div>
+            <div class="page-title">Empréstimos</div>
+            <div class="page-sub">Parcelados descontados na folha</div>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="openModal('modal-emprestimo')">➕ Novo empréstimo</button>
+        </div>
+
+        <div class="table-wrap">
+          <div class="table-header">
+            <div class="table-title">Empréstimos ativos</div>
+            <input type="text" class="search-input" placeholder="🔍 Buscar..." oninput="filterEmprestimos(this.value)">
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Funcionário</th>
+                <th>Descrição</th>
+                <th>Total</th>
+                <th>Parcelas</th>
+                <th>Valor/Parcela</th>
+                <th>Pago</th>
+                <th>Status</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="tabelaEmprestimos">
+              <tr><td colspan="8"><div class="empty-state"><div class="icon">💰</div><h3>Nenhum empréstimo</h3></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ===== VALES ===== -->
+      <div class="page" id="page-vales">
+        <div class="page-header">
+          <div>
+            <div class="page-title">Vales</div>
+            <div class="page-sub">Descontados integralmente na folha</div>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="openModal('modal-vale')">➕ Registrar vale</button>
+        </div>
+
+        <div class="table-wrap">
+          <div class="table-header">
+            <div class="table-title">Vales pendentes</div>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Funcionário</th>
+                <th>Data</th>
+                <th>Descrição</th>
+                <th>Valor</th>
+                <th>Status</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="tabelaVales">
+              <tr><td colspan="6"><div class="empty-state"><div class="icon">🎫</div><h3>Nenhum vale pendente</h3></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ===== ACERTO MÚTUO ===== -->
+      <div class="page" id="page-acerto">
+        <div class="page-header">
+          <div>
+            <div class="page-title">Acerto Mútuo</div>
+            <div class="page-sub">Empréstimos entre pessoas — saldo líquido</div>
+          </div>
+          <div style="display:flex;gap:10px">
+            <button class="btn btn-outline btn-sm" onclick="openModal('modal-acerto-par')">🔗 Novo par</button>
+            <button class="btn btn-primary btn-sm" onclick="openModal('modal-lancamento')">➕ Lançamento</button>
+          </div>
+        </div>
+
+        <div id="acertoPares">
+          <div class="empty-state">
+            <div class="icon">🤝</div>
+            <h3>Nenhum par configurado</h3>
+            <p>Crie um par (ex: você e marido) para começar a registrar empréstimos mútuos</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== EQUIPE ===== -->
+      <div class="page" id="page-equipe">
+        <div class="page-header">
+          <div>
+            <div class="page-title">Equipe & Acessos</div>
+            <div class="page-sub">Convide pessoas e defina permissões</div>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="gerarConvite()">🔗 Gerar convite</button>
+        </div>
+
+        <div class="section-card" style="margin-bottom:20px">
+          <div class="section-card-title">Código de convite da organização</div>
+          <div class="invite-code" id="inviteDisplay" onclick="copyInvite()">—</div>
+          <p style="color:var(--text3);font-size:0.78rem;text-align:center;margin-top:8px">Clique para copiar</p>
+        </div>
+
+        <div class="table-wrap">
+          <div class="table-header"><div class="table-title">Membros da equipe</div></div>
+          <table>
+            <thead>
+              <tr><th>Nome</th><th>E-mail</th><th>Função</th><th>Status</th><th></th></tr>
+            </thead>
+            <tbody id="tabelaEquipe">
+              <tr><td colspan="5"><div class="empty-state"><div class="icon">👥</div><h3>Apenas você</h3></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ===== CONFIGURAÇÕES ===== -->
+      <div class="page" id="page-configuracoes">
+        <div class="page-header">
+          <div>
+            <div class="page-title">Configurações</div>
+            <div class="page-sub">Empresa e preferências</div>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="salvarConfig()">💾 Salvar</button>
+        </div>
+
+        <div class="section-card">
+          <div class="section-card-title">Dados da empresa</div>
+          <div class="form-grid form-grid-2">
+            <div class="form-group">
+              <label class="form-label">Nome da empresa</label>
+              <input type="text" class="form-input" id="cfgNome">
+            </div>
+            <div class="form-group">
+              <label class="form-label">CNPJ</label>
+              <input type="text" class="form-input" id="cfgCnpj">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Cidade/UF</label>
+              <input type="text" class="form-input" id="cfgCidade">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Responsável</label>
+              <input type="text" class="form-input" id="cfgResponsavel">
+            </div>
+          </div>
+        </div>
+
+        <div class="section-card">
+          <div class="section-card-title">Padrões de folha</div>
+          <div class="form-grid form-grid-2">
+            <div class="form-group">
+              <label class="form-label">INSS padrão (R$)</label>
+              <input type="number" class="form-input" id="cfgInss" placeholder="207.00">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Vale quinzena padrão (R$)</label>
+              <input type="number" class="form-input" id="cfgVale" placeholder="700.00">
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /main-panel -->
+  </div><!-- /app-content -->
+
+  <!-- MOBILE NAV -->
+  <div class="mobile-nav">
+    <div class="mobile-nav-items">
+      <div class="mobile-nav-item active" onclick="navigate('dashboard')"><span class="icon">📊</span>Início</div>
+      <div class="mobile-nav-item" onclick="navigate('funcionarios')"><span class="icon">👥</span>Equipe</div>
+      <div class="mobile-nav-item" onclick="navigate('folha')"><span class="icon">📋</span>Folha</div>
+      <div class="mobile-nav-item" onclick="navigate('emprestimos')"><span class="icon">💰</span>Emprést.</div>
+      <div class="mobile-nav-item" onclick="navigate('acerto')"><span class="icon">🤝</span>Acerto</div>
+    </div>
+  </div>
+</div>
+
+<!-- ======== MODALS ======== -->
+
+<!-- MODAL FUNCIONÁRIO -->
+<div class="modal-overlay" id="modal-funcionario">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Cadastrar funcionário</div>
+      <div class="modal-close" onclick="closeModal('modal-funcionario')">✕</div>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="funcId">
+      <div class="form-grid form-grid-2">
+        <div class="form-group" style="grid-column:1/-1">
+          <label class="form-label">Nome completo *</label>
+          <input type="text" class="form-input" id="funcNome" placeholder="Nome completo">
+        </div>
+        <div class="form-group">
+          <label class="form-label">CPF</label>
+          <input type="text" class="form-input" id="funcCpf" placeholder="000.000.000-00" oninput="maskCpf(this)">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Cargo</label>
+          <input type="text" class="form-input" id="funcCargo" placeholder="Ex: Ajudante de C&D">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Grupo salarial</label>
+          <select class="form-input" id="funcGrupo">
+            <option value="">Nenhum (manual)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Salário base (R$)</label>
+          <input type="number" class="form-input" id="funcSalario" placeholder="1621.00" step="0.01">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Valor hora extra (R$)</label>
+          <input type="number" class="form-input" id="funcHoraExtra" placeholder="13.26" step="0.01">
+        </div>
+        <div class="form-group">
+          <label class="form-label">% Insalubridade</label>
+          <input type="number" class="form-input" id="funcInsalubridade" placeholder="20" step="1">
+        </div>
+        <div class="form-group">
+          <label class="form-label">INSS (R$)</label>
+          <input type="number" class="form-input" id="funcInss" placeholder="207.00" step="0.01">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline btn-sm" onclick="closeModal('modal-funcionario')">Cancelar</button>
+      <button class="btn btn-primary btn-sm" onclick="salvarFuncionario()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL GRUPO SALARIAL -->
+<div class="modal-overlay" id="modal-grupo">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Grupo Salarial</div>
+      <div class="modal-close" onclick="closeModal('modal-grupo')">✕</div>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="grupoId">
+      <div class="form-grid form-grid-2">
+        <div class="form-group" style="grid-column:1/-1">
+          <label class="form-label">Nome do grupo *</label>
+          <input type="text" class="form-input" id="grupoNome" placeholder="Ex: Ajudante Padrão">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Salário base (R$)</label>
+          <input type="number" class="form-input" id="grupoSalario" placeholder="1621.00" step="0.01">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Valor hora extra (R$)</label>
+          <input type="number" class="form-input" id="grupoHoraExtra" placeholder="13.26" step="0.01">
+        </div>
+        <div class="form-group">
+          <label class="form-label">% Insalubridade</label>
+          <input type="number" class="form-input" id="grupoInsalubridade" placeholder="20" step="1">
+        </div>
+        <div class="form-group">
+          <label class="form-label">INSS padrão (R$)</label>
+          <input type="number" class="form-input" id="grupoInss" placeholder="207.00" step="0.01">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Vale quinzena padrão (R$)</label>
+          <input type="number" class="form-input" id="grupoValeQuinzena" placeholder="700.00" step="0.01">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline btn-sm" onclick="closeModal('modal-grupo')">Cancelar</button>
+      <button class="btn btn-primary btn-sm" onclick="salvarGrupo()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EMPRÉSTIMO -->
+<div class="modal-overlay" id="modal-emprestimo">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Novo Empréstimo</div>
+      <div class="modal-close" onclick="closeModal('modal-emprestimo')">✕</div>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Funcionário *</label>
+          <select class="form-input" id="empFuncionario"></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Descrição *</label>
+          <input type="text" class="form-input" id="empDescricao" placeholder="Ex: Empréstimo celular">
+        </div>
+        <div class="form-grid form-grid-2">
+          <div class="form-group">
+            <label class="form-label">Valor total (R$)</label>
+            <input type="number" class="form-input" id="empTotal" placeholder="800.00" step="0.01" oninput="calcParcela()">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Nº de parcelas</label>
+            <input type="number" class="form-input" id="empParcelas" placeholder="8" min="1" oninput="calcParcela()">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Valor por parcela (R$)</label>
+          <input type="number" class="form-input" id="empValorParcela" placeholder="100.00" step="0.01">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Data início</label>
+          <input type="date" class="form-input" id="empDataInicio">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline btn-sm" onclick="closeModal('modal-emprestimo')">Cancelar</button>
+      <button class="btn btn-primary btn-sm" onclick="salvarEmprestimo()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL VALE -->
+<div class="modal-overlay" id="modal-vale">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Registrar Vale</div>
+      <div class="modal-close" onclick="closeModal('modal-vale')">✕</div>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Funcionário *</label>
+          <select class="form-input" id="valeFuncionario"></select>
+        </div>
+        <div class="form-grid form-grid-2">
+          <div class="form-group">
+            <label class="form-label">Data</label>
+            <input type="date" class="form-input" id="valeData">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Valor (R$)</label>
+            <input type="number" class="form-input" id="valeValor" placeholder="100.00" step="0.01">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Descrição</label>
+          <input type="text" class="form-input" id="valeDescricao" placeholder="Ex: Vale alimentação">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Tipo de desconto</label>
+          <select class="form-input" id="valeTipo">
+            <option value="integral">Integral (desconta tudo de uma vez)</option>
+            <option value="parcela">Parcela de empréstimo</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline btn-sm" onclick="closeModal('modal-vale')">Cancelar</button>
+      <button class="btn btn-primary btn-sm" onclick="salvarVale()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL ACERTO PAR -->
+<div class="modal-overlay" id="modal-acerto-par">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Novo par de acerto</div>
+      <div class="modal-close" onclick="closeModal('modal-acerto-par')">✕</div>
+    </div>
+    <div class="modal-body">
+      <p style="color:var(--text3);font-size:0.85rem;margin-bottom:20px">Registre duas pessoas que se emprestam dinheiro. O saldo líquido será calculado automaticamente.</p>
+      <div class="form-grid form-grid-2">
+        <div class="form-group">
+          <label class="form-label">Pessoa A (você)</label>
+          <input type="text" class="form-input" id="parPessoaA" placeholder="Ex: Maria">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Pessoa B</label>
+          <input type="text" class="form-input" id="parPessoaB" placeholder="Ex: João (marido)">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline btn-sm" onclick="closeModal('modal-acerto-par')">Cancelar</button>
+      <button class="btn btn-primary btn-sm" onclick="salvarPar()">Criar par</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL LANÇAMENTO MÚTUO -->
+<div class="modal-overlay" id="modal-lancamento">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Novo lançamento</div>
+      <div class="modal-close" onclick="closeModal('modal-lancamento')">✕</div>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Par *</label>
+          <select class="form-input" id="lancPar"></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Quem emprestou *</label>
+          <select class="form-input" id="lancDe"></select>
+        </div>
+        <div class="form-grid form-grid-2">
+          <div class="form-group">
+            <label class="form-label">Valor (R$)</label>
+            <input type="number" class="form-input" id="lancValor" placeholder="200.00" step="0.01">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Data</label>
+            <input type="date" class="form-input" id="lancData">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Descrição</label>
+          <input type="text" class="form-input" id="lancDescricao" placeholder="Ex: Pagamento conta de água">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline btn-sm" onclick="closeModal('modal-lancamento')">Cancelar</button>
+      <button class="btn btn-primary btn-sm" onclick="salvarLancamento()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL FOLHA DETALHADA (para editar antes de gerar PDF) -->
+<div class="modal-overlay" id="modal-folha-detalhe">
+  <div class="modal" style="max-width:700px">
+    <div class="modal-header">
+      <div class="modal-title" id="folhaDetalheTitulo">Folha — Funcionário</div>
+      <div class="modal-close" onclick="closeModal('modal-folha-detalhe')">✕</div>
+    </div>
+    <div class="modal-body" id="folhaDetalheBody"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline btn-sm" onclick="closeModal('modal-folha-detalhe')">Fechar</button>
+      <button class="btn btn-success btn-sm" onclick="salvarFolhaDetalhe()">💾 Salvar</button>
+      <button class="btn btn-primary btn-sm" onclick="gerarPdfFolha()">📄 Gerar PDF</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL MEMBRO EQUIPE -->
+<div class="modal-overlay" id="modal-membro">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Editar permissões</div>
+      <div class="modal-close" onclick="closeModal('modal-membro')">✕</div>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="membroId">
+      <div class="form-group">
+        <label class="form-label">Função</label>
+        <div class="role-grid">
+          <div class="role-option active" id="role-gestor" onclick="selectRole('gestor')">
+            <div class="ri">👑</div>
+            <h3>Gestor</h3>
+            <p>Acesso total</p>
+          </div>
+          <div class="role-option" id="role-empregador" onclick="selectRole('empregador')">
+            <div class="ri">🏢</div>
+            <h3>Empregador</h3>
+            <p>Folha e vales</p>
+          </div>
+          <div class="role-option" id="role-funcionario" onclick="selectRole('funcionario')">
+            <div class="ri">👤</div>
+            <h3>Funcionário</h3>
+            <p>Só visualiza</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline btn-sm" onclick="closeModal('modal-membro')">Cancelar</button>
+      <button class="btn btn-primary btn-sm" onclick="salvarMembro()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// =====================================================
+// FIREBASE CONFIG
+// =====================================================
+const firebaseConfig = {
+  apiKey: "AIzaSyAjLvQcgbdisKnuXap6ISE9-doao3HszKM",
+  authDomain: "cadernogestor.firebaseapp.com",
+  projectId: "cadernogestor",
+  storageBucket: "cadernogestor.firebasestorage.app",
+  messagingSenderId: "651102579775",
+  appId: "1:651102579775:web:169a18acdcfc7d9ad15c8a",
+  measurementId: "G-60MRP19E12"
+};
+
+// =====================================================
+// APP STATE
+// =====================================================
+let db, auth;
+let currentUser = null;
+let currentOrg = null;
+let funcionarios = [];
+let grupos = [];
+let emprestimos = [];
+let vales = [];
+let acertoPares = [];
+let folhaAtualId = null;
+let firebaseReady = false;
+
+// =====================================================
+// INIT
+// =====================================================
+window.addEventListener('load', async () => {
+  setTimeout(() => {
+    try {
+      firebase.initializeApp(firebaseConfig);
+      db = firebase.firestore();
+      auth = firebase.auth();
+      firebaseReady = true;
+
+      auth.onAuthStateChanged(async user => {
+        if (user) {
+          currentUser = user;
+          const orgId = localStorage.getItem('cgOrgId');
+          if (orgId) {
+            await loadOrg(orgId);
+            showScreen('app');
+            await loadAllData();
+          } else {
+            showScreen('setup');
+          }
+        } else {
+          showScreen('auth');
+        }
+      });
+    } catch(e) {
+      console.warn('Firebase não configurado, modo demo:', e.message);
+      // MODO DEMO: app funciona localmente
+      showScreen('auth');
+    }
+  }, 1800);
+});
+
+// =====================================================
+// SCREENS
+// =====================================================
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+
+  if (name === 'app') {
+    // Set date
+    const d = new Date();
+    document.getElementById('dashDate').textContent =
+      d.toLocaleDateString('pt-BR', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
+
+    // Set default month/year
+    document.getElementById('folhaMes').value = d.getMonth() + 1;
+    document.getElementById('folhaAno').value = d.getFullYear();
+  }
+}
+
+// =====================================================
+// AUTH
+// =====================================================
+function switchAuthTab(tab) {
+  document.querySelectorAll('.auth-tab').forEach((t,i) => t.classList.toggle('active', (i===0 && tab==='login') || (i===1 && tab==='register')));
+  document.getElementById('auth-login').style.display = tab === 'login' ? 'block' : 'none';
+  document.getElementById('auth-register').style.display = tab === 'register' ? 'block' : 'none';
+}
+
+async function doLogin() {
+  const email = document.getElementById('loginEmail').value;
+  const pass = document.getElementById('loginPassword').value;
+  if (!email || !pass) { toast('Preencha e-mail e senha', 'error'); return; }
+
+  if (!firebaseReady) {
+    // Demo mode
+    currentUser = { uid: 'demo', email, displayName: 'Usuário Demo' };
+    handleAfterAuth();
+    return;
+  }
+
+  try {
+    await auth.signInWithEmailAndPassword(email, pass);
+  } catch(e) {
+    toast('Erro: ' + e.message, 'error');
+  }
+}
+
+async function doRegister() {
+  const name = document.getElementById('regName').value;
+  const email = document.getElementById('regEmail').value;
+  const pass = document.getElementById('regPassword').value;
+  if (!name || !email || !pass) { toast('Preencha todos os campos', 'error'); return; }
+
+  if (!firebaseReady) {
+    currentUser = { uid: 'demo', email, displayName: name };
+    handleAfterAuth();
+    return;
+  }
+
+  try {
+    const cred = await auth.createUserWithEmailAndPassword(email, pass);
+    await cred.user.updateProfile({ displayName: name });
+    currentUser = cred.user;
+  } catch(e) {
+    toast('Erro: ' + e.message, 'error');
+  }
+}
+
+async function doGoogleLogin() {
+  if (!firebaseReady) {
+    currentUser = { uid: 'demo', email: 'demo@email.com', displayName: 'Usuário Demo' };
+    handleAfterAuth();
+    return;
+  }
+  try {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    await auth.signInWithPopup(provider);
+  } catch(e) {
+    toast('Erro Google: ' + e.message, 'error');
+  }
+}
+
+function handleAfterAuth() {
+  const orgId = localStorage.getItem('cgOrgId');
+  if (orgId) {
+    currentOrg = { id: orgId, nome: localStorage.getItem('cgOrgNome') || 'Minha Empresa' };
+    afterOrgLoad();
+  } else {
+    showScreen('setup');
+  }
+}
+
+function doLogout() {
+  localStorage.removeItem('cgOrgId');
+  localStorage.removeItem('cgOrgNome');
+  if (auth) auth.signOut();
+  currentUser = null; currentOrg = null;
+  funcionarios = []; emprestimos = []; vales = []; acertoPares = [];
+  showScreen('auth');
+}
+
+// =====================================================
+// ORG SETUP
+// =====================================================
+function selectOrgOpt(opt) {
+  document.getElementById('opt-create').classList.toggle('active', opt === 'create');
+  document.getElementById('opt-join').classList.toggle('active', opt === 'join');
+  document.getElementById('setup-create').style.display = opt === 'create' ? 'block' : 'none';
+  document.getElementById('setup-join').style.display = opt === 'join' ? 'block' : 'none';
+}
+
+async function createOrg() {
+  const nome = document.getElementById('orgName').value.trim();
+  if (!nome) { toast('Informe o nome da empresa', 'error'); return; }
+
+  const cnpj = document.getElementById('orgCnpj').value;
+  const cidade = document.getElementById('orgCidade').value;
+  const invite = Math.random().toString(36).substring(2,8).toUpperCase();
+
+  const org = { nome, cnpj, cidade, invite, dono: currentUser?.uid || 'demo',
+    membros: [{ uid: currentUser?.uid || 'demo', nome: currentUser?.displayName || 'Você', role: 'gestor', email: currentUser?.email || '' }],
+    criadoEm: new Date().toISOString() };
+
+  if (db) {
+    const ref = await db.collection('orgs').add(org);
+    org.id = ref.id;
+    // Atualizar membro com id
+    await ref.update({ id: ref.id });
+  } else {
+    org.id = 'org_' + Date.now();
+    localDB.setOrg(org.id, org);
+  }
+
+  localStorage.setItem('cgOrgId', org.id);
+  localStorage.setItem('cgOrgNome', nome);
+  currentOrg = org;
+  afterOrgLoad();
+}
+
+async function joinOrg() {
+  const code = document.getElementById('inviteCode').value.trim().toUpperCase();
+  if (!code) { toast('Informe o código de convite', 'error'); return; }
+
+  if (db) {
+    const snap = await db.collection('orgs').where('invite', '==', code).get();
+    if (snap.empty) { toast('Código inválido', 'error'); return; }
+    const doc = snap.docs[0];
+    const org = { id: doc.id, ...doc.data() };
+    // Adicionar como membro
+    const membros = org.membros || [];
+    if (!membros.find(m => m.uid === currentUser.uid)) {
+      membros.push({ uid: currentUser.uid, nome: currentUser.displayName, role: 'funcionario', email: currentUser.email });
+      await doc.ref.update({ membros });
+    }
+    localStorage.setItem('cgOrgId', org.id);
+    localStorage.setItem('cgOrgNome', org.nome);
+    currentOrg = { ...org, membros };
+    afterOrgLoad();
+  } else {
+    toast('Firebase não configurado — use modo demo', 'error');
+  }
+}
+
+async function loadOrg(orgId) {
+  if (db) {
+    const doc = await db.collection('orgs').doc(orgId).get();
+    if (doc.exists) { currentOrg = { id: doc.id, ...doc.data() }; }
+    else { localStorage.removeItem('cgOrgId'); showScreen('setup'); }
+  } else {
+    const stored = localDB.getOrg(orgId);
+    if (stored) currentOrg = stored;
+    else { currentOrg = { id: orgId, nome: localStorage.getItem('cgOrgNome') || 'Demo', invite: 'DEMO01', membros: [] }; }
+  }
+}
+
+function afterOrgLoad() {
+  showScreen('app');
+  updateOrgUI();
+  loadAllData();
+}
+
+function updateOrgUI() {
+  if (!currentOrg) return;
+  document.getElementById('currentOrgBadge').textContent = '🏢 ' + currentOrg.nome;
+  document.getElementById('inviteDisplay').textContent = currentOrg.invite || '—';
+  const name = currentUser?.displayName || currentUser?.email || 'U';
+  document.getElementById('userAvatar').textContent = name[0].toUpperCase();
+  // Config fields
+  document.getElementById('cfgNome').value = currentOrg.nome || '';
+  document.getElementById('cfgCnpj').value = currentOrg.cnpj || '';
+  document.getElementById('cfgCidade').value = currentOrg.cidade || '';
+  document.getElementById('cfgInss').value = currentOrg.inssDefault || '207';
+  document.getElementById('cfgVale').value = currentOrg.valeDefault || '700';
+}
+
+// =====================================================
+// LOCAL DB (fallback sem Firebase)
+// =====================================================
+const localDB = {
+  get: (key) => { try { return JSON.parse(localStorage.getItem('cg_' + key) || 'null'); } catch { return null; } },
+  set: (key, val) => localStorage.setItem('cg_' + key, JSON.stringify(val)),
+  getOrg: (id) => { try { return JSON.parse(localStorage.getItem('cg_org_' + id) || 'null'); } catch { return null; } },
+  setOrg: (id, val) => localStorage.setItem('cg_org_' + id, JSON.stringify(val)),
+  collection: (orgId, col) => {
+    const key = `${orgId}_${col}`;
+    return {
+      getAll: () => localDB.get(key) || [],
+      set: (items) => localDB.set(key, items),
+      add: (item) => {
+        const items = localDB.get(key) || [];
+        item.id = col + '_' + Date.now();
+        items.push(item);
+        localDB.set(key, items);
+        return item;
+      },
+      update: (id, data) => {
+        const items = localDB.get(key) || [];
+        const idx = items.findIndex(i => i.id === id);
+        if (idx >= 0) { items[idx] = {...items[idx], ...data}; localDB.set(key, items); }
+      },
+      delete: (id) => {
+        const items = (localDB.get(key) || []).filter(i => i.id !== id);
+        localDB.set(key, items);
+      }
+    };
+  }
+};
+
+// DB helpers
+function getCol(name) { return localDB.collection(currentOrg?.id || 'demo', name); }
+
+async function fsGetAll(col) {
+  if (db && currentOrg) {
+    const snap = await db.collection('orgs').doc(currentOrg.id).collection(col).get();
+    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  }
+  return getCol(col).getAll();
+}
+
+async function fsAdd(col, data) {
+  if (db && currentOrg) {
+    const ref = await db.collection('orgs').doc(currentOrg.id).collection(col).add({...data, criadoEm: new Date().toISOString()});
+    return { id: ref.id, ...data };
+  }
+  return getCol(col).add({...data, criadoEm: new Date().toISOString()});
+}
+
+async function fsUpdate(col, id, data) {
+  if (db && currentOrg) {
+    await db.collection('orgs').doc(currentOrg.id).collection(col).doc(id).update(data);
+    return;
+  }
+  getCol(col).update(id, data);
+}
+
+async function fsDelete(col, id) {
+  if (db && currentOrg) {
+    await db.collection('orgs').doc(currentOrg.id).collection(col).doc(id).delete();
+    return;
+  }
+  getCol(col).delete(id);
+}
+
+// =====================================================
+// LOAD ALL DATA
+// =====================================================
+async function loadAllData() {
+  updateOrgUI();
+  [funcionarios, grupos, emprestimos, vales, acertoPares] = await Promise.all([
+    fsGetAll('funcionarios'), fsGetAll('grupos'), fsGetAll('emprestimos'),
+    fsGetAll('vales'), fsGetAll('acertoPares')
+  ]);
+  renderDashboard();
+  renderFuncionarios();
+  renderGrupos();
+  renderEmprestimos();
+  renderVales();
+  renderAcerto();
+  renderEquipe();
+  populateSelects();
+}
+
+// =====================================================
+// NAVIGATION
+// =====================================================
+function navigate(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.querySelectorAll('.mobile-nav-item').forEach(n => n.classList.remove('active'));
+
+  const p = document.getElementById('page-' + page);
+  if (p) p.classList.add('active');
+  const n = document.getElementById('nav-' + page);
+  if (n) n.classList.add('active');
+  // Close dropdown
+  document.querySelectorAll('.dropdown-menu').forEach(m => m.classList.remove('open'));
+}
+
+// =====================================================
+// MODALS
+// =====================================================
+function openModal(id) {
+  document.getElementById(id).classList.add('active');
+  // populate selects when opening
+  if (id === 'modal-emprestimo' || id === 'modal-vale') populateSelects();
+  if (id === 'modal-lancamento') populateLancPar();
+  if (id === 'modal-funcionario') populateGrupoSelect();
+}
+
+function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+// Close on overlay click
+document.querySelectorAll('.modal-overlay').forEach(o => {
+  o.addEventListener('click', e => { if (e.target === o) o.classList.remove('active'); });
+});
+
+function toggleDropdown(id) {
+  const m = document.getElementById(id);
+  m.classList.toggle('open');
+}
+document.addEventListener('click', e => {
+  if (!e.target.closest('.dropdown')) {
+    document.querySelectorAll('.dropdown-menu').forEach(m => m.classList.remove('open'));
+  }
+});
+
+// =====================================================
+// DASHBOARD
+// =====================================================
+function renderDashboard() {
+  document.getElementById('dashFuncionarios').textContent = funcionarios.filter(f => f.ativo !== false).length;
+  const ativos = emprestimos.filter(e => e.status === 'ativo' || !e.status);
+  document.getElementById('dashEmprestimos').textContent = ativos.length;
+  const totalAberto = ativos.reduce((s, e) => s + ((e.total || 0) - (e.pago || 0)), 0);
+  document.getElementById('dashTotal').textContent = 'R$ ' + fmtMoney(totalAberto);
+
+  // Últimas folhas
+  const folhasKey = getCol('folhas').getAll();
+  document.getElementById('dashUltimaFolha').textContent = folhasKey.length > 0
+    ? folhasKey[folhasKey.length-1].mesRef || '—' : '—';
+
+  // Lista empréstimos ativos
+  const container = document.getElementById('dashEmprestimosList');
+  if (ativos.length === 0) {
+    container.innerHTML = `<div class="empty-state"><div class="icon">💰</div><h3>Nenhum empréstimo ativo</h3></div>`;
+    return;
+  }
+  container.innerHTML = `<table><thead><tr><th>Funcionário</th><th>Descrição</th><th>Total</th><th>Restante</th><th>Próxima parcela</th></tr></thead>
+    <tbody>${ativos.map(e => {
+      const func = funcionarios.find(f => f.id === e.funcionarioId);
+      const restante = (e.total||0) - (e.pago||0);
+      return `<tr>
+        <td>${func?.nome || e.funcionarioNome || '—'}</td>
+        <td>${e.descricao}</td>
+        <td class="mono">R$ ${fmtMoney(e.total)}</td>
+        <td class="mono" style="color:var(--red)">R$ ${fmtMoney(restante)}</td>
+        <td class="mono">R$ ${fmtMoney(e.valorParcela)}</td>
+      </tr>`;
+    }).join('')}</tbody></table>`;
+}
+
+// =====================================================
+// FUNCIONÁRIOS
+// =====================================================
+function renderFuncionarios(filter='') {
+  const tbody = document.getElementById('tabelaFuncionarios');
+  const list = filter ? funcionarios.filter(f => f.nome.toLowerCase().includes(filter.toLowerCase())) : funcionarios;
+  if (list.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><div class="icon">👥</div><h3>Nenhum funcionário</h3></div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = list.map(f => {
+    const grupo = grupos.find(g => g.id === f.grupoId);
+    return `<tr>
+      <td><strong>${f.nome}</strong></td>
+      <td style="font-family:var(--mono);font-size:0.78rem">${f.cpf || '—'}</td>
+      <td>${f.cargo || '—'}</td>
+      <td>${grupo ? `<span class="badge badge-accent">${grupo.nome}</span>` : '<span class="badge badge-gray">Manual</span>'}</td>
+      <td><span class="badge ${f.ativo!==false ? 'badge-green' : 'badge-gray'}">${f.ativo!==false ? 'Ativo' : 'Inativo'}</span></td>
+      <td style="text-align:right;white-space:nowrap">
+        <button class="btn-icon" onclick="editarFuncionario('${f.id}')" title="Editar">✏️</button>
+        <button class="btn-icon" onclick="excluirFuncionario('${f.id}')" title="Excluir" style="margin-left:4px">🗑️</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function filterFuncionarios(v) { renderFuncionarios(v); }
+
+function populateGrupoSelect() {
+  const sel = document.getElementById('funcGrupo');
+  sel.innerHTML = '<option value="">Nenhum (manual)</option>' +
+    grupos.map(g => `<option value="${g.id}">${g.nome}</option>`).join('');
+}
+
+async function salvarFuncionario() {
+  const id = document.getElementById('funcId').value;
+  const nome = document.getElementById('funcNome').value.trim();
+  if (!nome) { toast('Nome obrigatório', 'error'); return; }
+
+  const data = {
+    nome, cpf: document.getElementById('funcCpf').value,
+    cargo: document.getElementById('funcCargo').value,
+    grupoId: document.getElementById('funcGrupo').value,
+    salario: parseFloat(document.getElementById('funcSalario').value) || 0,
+    horaExtra: parseFloat(document.getElementById('funcHoraExtra').value) || 0,
+    insalubridade: parseFloat(document.getElementById('funcInsalubridade').value) || 0,
+    inss: parseFloat(document.getElementById('funcInss').value) || 0,
+    ativo: true
+  };
+
+  if (id) {
+    await fsUpdate('funcionarios', id, data);
+    const idx = funcionarios.findIndex(f => f.id === id);
+    if (idx >= 0) funcionarios[idx] = { ...funcionarios[idx], ...data };
+  } else {
+    const novo = await fsAdd('funcionarios', data);
+    funcionarios.push(novo);
+  }
+
+  closeModal('modal-funcionario');
+  renderFuncionarios();
+  populateSelects();
+  toast(id ? 'Funcionário atualizado' : 'Funcionário cadastrado!', 'success');
+  limparFormFuncionario();
+}
+
+function editarFuncionario(id) {
+  const f = funcionarios.find(f => f.id === id);
+  if (!f) return;
+  populateGrupoSelect();
+  document.getElementById('funcId').value = f.id;
+  document.getElementById('funcNome').value = f.nome;
+  document.getElementById('funcCpf').value = f.cpf || '';
+  document.getElementById('funcCargo').value = f.cargo || '';
+  document.getElementById('funcGrupo').value = f.grupoId || '';
+  document.getElementById('funcSalario').value = f.salario || '';
+  document.getElementById('funcHoraExtra').value = f.horaExtra || '';
+  document.getElementById('funcInsalubridade').value = f.insalubridade || '';
+  document.getElementById('funcInss').value = f.inss || '';
+  openModal('modal-funcionario');
+}
+
+async function excluirFuncionario(id) {
+  if (!confirm('Excluir funcionário?')) return;
+  await fsDelete('funcionarios', id);
+  funcionarios = funcionarios.filter(f => f.id !== id);
+  renderFuncionarios();
+  renderDashboard();
+  toast('Funcionário removido', 'info');
+}
+
+function limparFormFuncionario() {
+  ['funcId','funcNome','funcCpf','funcCargo','funcSalario','funcHoraExtra','funcInsalubridade','funcInss']
+    .forEach(id => document.getElementById(id).value = '');
+  document.getElementById('funcGrupo').value = '';
+}
+
+// =====================================================
+// GRUPOS SALARIAIS
+// =====================================================
+function renderGrupos() {
+  const container = document.getElementById('listaGrupos');
+  if (grupos.length === 0) {
+    container.innerHTML = `<div class="empty-state"><div class="icon">🏷️</div><h3>Nenhum grupo criado</h3><p>Crie grupos para padronizar salários por cargo</p></div>`;
+    return;
+  }
+  container.innerHTML = grupos.map(g => {
+    const count = funcionarios.filter(f => f.grupoId === g.id).length;
+    return `<div class="section-card" style="display:flex;align-items:center;gap:16px">
+      <div style="flex:1">
+        <div style="font-weight:600">${g.nome}</div>
+        <div style="color:var(--text3);font-size:0.78rem;margin-top:2px">${count} funcionário(s) vinculado(s)</div>
+      </div>
+      <div style="display:flex;gap:16px;font-size:0.82rem">
+        <div><div style="color:var(--text3)">Salário</div><div style="font-family:var(--mono)">R$ ${fmtMoney(g.salario)}</div></div>
+        <div><div style="color:var(--text3)">H. Extra</div><div style="font-family:var(--mono)">R$ ${fmtMoney(g.horaExtra)}</div></div>
+        <div><div style="color:var(--text3)">Insal.</div><div style="font-family:var(--mono)">${g.insalubridade||0}%</div></div>
+        <div><div style="color:var(--text3)">INSS</div><div style="font-family:var(--mono)">R$ ${fmtMoney(g.inss)}</div></div>
+      </div>
+      <div style="display:flex;gap:6px">
+        <button class="btn-icon" onclick="editarGrupo('${g.id}')">✏️</button>
+        <button class="btn-icon" onclick="excluirGrupo('${g.id}')">🗑️</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function salvarGrupo() {
+  const id = document.getElementById('grupoId').value;
+  const nome = document.getElementById('grupoNome').value.trim();
+  if (!nome) { toast('Nome obrigatório', 'error'); return; }
+  const data = {
+    nome,
+    salario: parseFloat(document.getElementById('grupoSalario').value) || 0,
+    horaExtra: parseFloat(document.getElementById('grupoHoraExtra').value) || 0,
+    insalubridade: parseFloat(document.getElementById('grupoInsalubridade').value) || 0,
+    inss: parseFloat(document.getElementById('grupoInss').value) || 0,
+    valeQuinzena: parseFloat(document.getElementById('grupoValeQuinzena').value) || 0
+  };
+  if (id) {
+    await fsUpdate('grupos', id, data);
+    const idx = grupos.findIndex(g => g.id === id);
+    if (idx >= 0) grupos[idx] = { ...grupos[idx], ...data };
+  } else {
+    const novo = await fsAdd('grupos', data);
+    grupos.push(novo);
+  }
+  closeModal('modal-grupo');
+  renderGrupos();
+  populateGrupoSelect();
+  toast('Grupo salvo!', 'success');
+  document.getElementById('grupoId').value = '';
+}
+
+function editarGrupo(id) {
+  const g = grupos.find(g => g.id === id);
+  if (!g) return;
+  document.getElementById('grupoId').value = g.id;
+  document.getElementById('grupoNome').value = g.nome;
+  document.getElementById('grupoSalario').value = g.salario || '';
+  document.getElementById('grupoHoraExtra').value = g.horaExtra || '';
+  document.getElementById('grupoInsalubridade').value = g.insalubridade || '';
+  document.getElementById('grupoInss').value = g.inss || '';
+  document.getElementById('grupoValeQuinzena').value = g.valeQuinzena || '';
+  openModal('modal-grupo');
+}
+
+async function excluirGrupo(id) {
+  if (!confirm('Excluir grupo?')) return;
+  await fsDelete('grupos', id);
+  grupos = grupos.filter(g => g.id !== id);
+  renderGrupos();
+  toast('Grupo removido', 'info');
+}
+
+// =====================================================
+// EMPRÉSTIMOS
+// =====================================================
+function renderEmprestimos(filter='') {
+  const tbody = document.getElementById('tabelaEmprestimos');
+  const list = filter ? emprestimos.filter(e => {
+    const f = funcionarios.find(fn => fn.id === e.funcionarioId);
+    return (f?.nome||'').toLowerCase().includes(filter.toLowerCase()) || e.descricao.toLowerCase().includes(filter.toLowerCase());
+  }) : emprestimos;
+
+  if (list.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="icon">💰</div><h3>Nenhum empréstimo</h3></div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = list.map(e => {
+    const func = funcionarios.find(f => f.id === e.funcionarioId);
+    const restante = (e.total||0) - (e.pago||0);
+    const pct = e.total > 0 ? Math.min(100, (e.pago||0)/e.total*100) : 0;
+    const parcelasRestantes = e.valorParcela > 0 ? Math.ceil(restante / e.valorParcela) : 0;
+    const status = restante <= 0 ? 'quitado' : 'ativo';
+    return `<tr>
+      <td><strong>${func?.nome || e.funcionarioNome || '—'}</strong></td>
+      <td>${e.descricao}</td>
+      <td class="mono">R$ ${fmtMoney(e.total)}</td>
+      <td>${e.parcelas}x</td>
+      <td class="mono">R$ ${fmtMoney(e.valorParcela)}</td>
+      <td>
+        <div style="font-family:var(--mono);font-size:0.82rem">R$ ${fmtMoney(e.pago||0)}</div>
+        <div class="progress-bar" style="width:80px"><div class="progress-fill" style="width:${pct}%"></div></div>
+      </td>
+      <td><span class="badge ${status==='quitado'?'badge-green':'badge-yellow'}">${status==='quitado'?'Quitado':'Ativo'}</span></td>
+      <td style="white-space:nowrap">
+        <button class="btn-icon" onclick="registrarPagamento('${e.id}')" title="Registrar pagamento">💳</button>
+        <button class="btn-icon" onclick="excluirEmprestimo('${e.id}')" title="Excluir" style="margin-left:4px">🗑️</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function filterEmprestimos(v) { renderEmprestimos(v); }
+
+function calcParcela() {
+  const total = parseFloat(document.getElementById('empTotal').value) || 0;
+  const n = parseInt(document.getElementById('empParcelas').value) || 1;
+  if (total && n) document.getElementById('empValorParcela').value = (total/n).toFixed(2);
+}
+
+async function salvarEmprestimo() {
+  const funcId = document.getElementById('empFuncionario').value;
+  const descricao = document.getElementById('empDescricao').value.trim();
+  if (!funcId || !descricao) { toast('Funcionário e descrição obrigatórios', 'error'); return; }
+  const func = funcionarios.find(f => f.id === funcId);
+  const data = {
+    funcionarioId: funcId,
+    funcionarioNome: func?.nome || '',
+    descricao,
+    total: parseFloat(document.getElementById('empTotal').value) || 0,
+    parcelas: parseInt(document.getElementById('empParcelas').value) || 1,
+    valorParcela: parseFloat(document.getElementById('empValorParcela').value) || 0,
+    dataInicio: document.getElementById('empDataInicio').value || new Date().toISOString().slice(0,10),
+    pago: 0, parcelasPagas: 0, status: 'ativo'
+  };
+  const novo = await fsAdd('emprestimos', data);
+  emprestimos.push(novo);
+  closeModal('modal-emprestimo');
+  renderEmprestimos();
+  renderDashboard();
+  toast('Empréstimo registrado!', 'success');
+}
+
+async function registrarPagamento(id) {
+  const e = emprestimos.find(e => e.id === id);
+  if (!e) return;
+  const valor = parseFloat(prompt(`Valor pago (parcela sugerida: R$ ${fmtMoney(e.valorParcela)}):`, e.valorParcela));
+  if (!valor || isNaN(valor)) return;
+  const novoPago = (e.pago || 0) + valor;
+  const novasParcelas = (e.parcelasPagas || 0) + 1;
+  const status = novoPago >= e.total ? 'quitado' : 'ativo';
+  await fsUpdate('emprestimos', id, { pago: novoPago, parcelasPagas: novasParcelas, status });
+  const idx = emprestimos.findIndex(e => e.id === id);
+  if (idx >= 0) emprestimos[idx] = { ...emprestimos[idx], pago: novoPago, parcelasPagas: novasParcelas, status };
+  renderEmprestimos();
+  renderDashboard();
+  toast(`Pagamento de R$ ${fmtMoney(valor)} registrado!`, 'success');
+}
+
+async function excluirEmprestimo(id) {
+  if (!confirm('Excluir empréstimo?')) return;
+  await fsDelete('emprestimos', id);
+  emprestimos = emprestimos.filter(e => e.id !== id);
+  renderEmprestimos();
+  renderDashboard();
+  toast('Empréstimo removido', 'info');
+}
+
+// =====================================================
+// VALES
+// =====================================================
+function renderVales() {
+  const tbody = document.getElementById('tabelaVales');
+  const pendentes = vales.filter(v => v.status !== 'descontado');
+  if (pendentes.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><div class="icon">🎫</div><h3>Nenhum vale pendente</h3></div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = pendentes.map(v => {
+    const func = funcionarios.find(f => f.id === v.funcionarioId);
+    return `<tr>
+      <td><strong>${func?.nome || v.funcionarioNome || '—'}</strong></td>
+      <td style="font-family:var(--mono);font-size:0.82rem">${v.data ? fmtData(v.data) : '—'}</td>
+      <td>${v.descricao || 'Vale'}</td>
+      <td class="mono" style="color:var(--red)">R$ ${fmtMoney(v.valor)}</td>
+      <td><span class="badge badge-yellow">Pendente</span></td>
+      <td style="white-space:nowrap">
+        <button class="btn-icon" onclick="marcarValeDescontado('${v.id}')" title="Marcar como descontado">✅</button>
+        <button class="btn-icon" onclick="excluirVale('${v.id}')" title="Excluir" style="margin-left:4px">🗑️</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+async function salvarVale() {
+  const funcId = document.getElementById('valeFuncionario').value;
+  if (!funcId) { toast('Selecione o funcionário', 'error'); return; }
+  const func = funcionarios.find(f => f.id === funcId);
+  const data = {
+    funcionarioId: funcId,
+    funcionarioNome: func?.nome || '',
+    data: document.getElementById('valeData').value,
+    valor: parseFloat(document.getElementById('valeValor').value) || 0,
+    descricao: document.getElementById('valeDescricao').value,
+    tipo: document.getElementById('valeTipo').value,
+    status: 'pendente'
+  };
+  const novo = await fsAdd('vales', data);
+  vales.push(novo);
+  closeModal('modal-vale');
+  renderVales();
+  toast('Vale registrado!', 'success');
+}
+
+async function marcarValeDescontado(id) {
+  await fsUpdate('vales', id, { status: 'descontado' });
+  const idx = vales.findIndex(v => v.id === id);
+  if (idx >= 0) vales[idx].status = 'descontado';
+  renderVales();
+  toast('Vale marcado como descontado', 'success');
+}
+
+async function excluirVale(id) {
+  if (!confirm('Excluir vale?')) return;
+  await fsDelete('vales', id);
+  vales = vales.filter(v => v.id !== id);
+  renderVales();
+}
+
+// =====================================================
+// FOLHA DE PAGAMENTO
+// =====================================================
+let folhaDetalhe = {}; // funcionario id -> dados folha
+
+async function gerarNovaFolha() {
+  navigate('folha');
+  await loadFolha();
+}
+
+async function loadFolha() {
+  const mes = parseInt(document.getElementById('folhaMes').value);
+  const ano = parseInt(document.getElementById('folhaAno').value);
+  const mesRef = `${String(mes).padStart(2,'0')}/${ano}`;
+  const ativos = funcionarios.filter(f => f.ativo !== false);
+
+  if (ativos.length === 0) {
+    document.getElementById('folhaList').innerHTML = `<div class="empty-state"><div class="icon">📋</div><h3>Nenhum funcionário ativo</h3><p>Cadastre funcionários primeiro</p></div>`;
+    return;
+  }
+
+  // Buscar vales e empréstimos do mês
+  const valesMes = vales.filter(v => {
+    if (!v.data) return false;
+    const d = new Date(v.data + 'T00:00:00');
+    return d.getMonth() + 1 === mes && d.getFullYear() === ano && v.status !== 'descontado';
+  });
+  const empAtivos = emprestimos.filter(e => e.status === 'ativo' || !e.status);
+
+  folhaDetalhe = {};
+  const cards = ativos.map(f => {
+    const grupo = f.grupoId ? grupos.find(g => g.id === f.grupoId) : null;
+    const salario = grupo ? grupo.salario : (f.salario || 0);
+    const horaExtraVal = grupo ? grupo.horaExtra : (f.horaExtra || 0);
+    const insalPct = grupo ? grupo.insalubridade : (f.insalubridade || 0);
+    const inssValor = grupo ? grupo.inss : (f.inss || 0);
+    const insalubridade = salario * (insalPct / 100);
+
+    const empFuncionario = empAtivos.filter(e => e.funcionarioId === f.id);
+    const valesFuncionario = valesMes.filter(v => v.funcionarioId === f.id);
+
+    // Calcular descontos de parcelas
+    const descontoEmprestimos = empFuncionario.map(e => ({
+      label: e.descricao,
+      valor: e.valorParcela,
+      numero: (e.parcelasPagas||0) + 1,
+      total: e.parcelas,
+      id: e.id
+    }));
+
+    // Vales do mês
+    const descontoVales = valesFuncionario.map(v => ({
+      label: v.descricao || 'Vale',
+      data: v.data,
+      valor: v.valor,
+      id: v.id,
+      valeQuinzena: v.descricao === 'Vale quinzena'
+    }));
+
+    // Estado inicial (horas extras = 0 pois usuário precisa preencher)
+    folhaDetalhe[f.id] = {
+      funcionario: f,
+      salario, horaExtraVal, insalPct, inssValor,
+      diasTrabalhados: 0, // 0 = mês completo
+      horasExtras: 0,
+      insalubridade,
+      reflexoDsr: 0,
+      premioDesempenho: 0,
+      descontoEmprestimos,
+      descontoVales,
+      valeQuinzena: grupo ? grupo.valeQuinzena : 0,
+      outrosProventos: [],
+      outrosDescontos: [],
+      faltas: 0
+    };
+    return buildFolhaCard(f, folhaDetalhe[f.id]);
+  }).join('');
+
+  document.getElementById('folhaList').innerHTML = `
+    <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
+      <button class="btn btn-primary btn-sm" onclick="gerarTodosPDFs()">📄 Gerar todos os PDFs</button>
+    </div>
+    ${cards}`;
+}
+
+function buildFolhaCard(f, d) {
+  const horasExtrasValor = d.horasExtras * d.horaExtraVal;
+  const insalubridade = d.salario * (d.insalPct / 100);
+  let reflexoDsr = 0;
+  if (d.horasExtras > 0) {
+    reflexoDsr = d.reflexoDsr || calcReflexoDsr(d.salario, d.horasExtras, d.horaExtraVal);
+  }
+
+  let salarioBase = d.salario;
+  if (d.diasTrabalhados > 0 && d.diasTrabalhados < 30) {
+    salarioBase = (d.salario / 30) * d.diasTrabalhados;
+  }
+
+  const totalProventos = salarioBase + horasExtrasValor + (d.insalPct > 0 ? insalubridade : 0) + reflexoDsr + (d.premioDesempenho||0) +
+    (d.outrosProventos||[]).reduce((s,o) => s + (o.valor||0), 0);
+
+  let totalDescontos = (d.inssValor||0) + (d.valeQuinzena||0) +
+    d.descontoEmprestimos.reduce((s,e) => s + e.valor, 0) +
+    d.descontoVales.reduce((s,v) => s + v.valor, 0) +
+    (d.outrosDescontos||[]).reduce((s,o) => s + (o.valor||0), 0);
+
+  if (d.faltas > 0) {
+    const descFalta = calcFaltas(d.salario, d.faltas, reflexoDsr);
+    totalDescontos += descFalta;
+  }
+
+  const liquido = totalProventos - totalDescontos;
+
+  return `<div class="folha-card" id="fc-${f.id}">
+    <div class="folha-card-header">
+      <div>
+        <div class="folha-employee-name">${f.nome}</div>
+        <div class="folha-employee-role">${f.cargo || '—'} • CPF: ${f.cpf || '—'}</div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-outline btn-sm" onclick="openFolhaDetalhe('${f.id}')">✏️ Editar</button>
+        <button class="btn btn-primary btn-sm" onclick="gerarPdfFuncionario('${f.id}')">📄 PDF</button>
+      </div>
+    </div>
+    <div class="folha-values">
+      <div class="folha-value-item">
+        <div class="folha-value-label">Salário bruto</div>
+        <div class="folha-value-num pos">R$ ${fmtMoney(totalProventos)}</div>
+      </div>
+      <div class="folha-value-item">
+        <div class="folha-value-label">Descontos</div>
+        <div class="folha-value-num neg">- R$ ${fmtMoney(totalDescontos)}</div>
+      </div>
+      <div class="folha-value-item">
+        <div class="folha-value-label">Líquido a receber</div>
+        <div class="folha-value-num total">R$ ${fmtMoney(liquido)}</div>
+      </div>
+      <div class="folha-value-item">
+        <div class="folha-value-label">Horas extras</div>
+        <div class="folha-value-num">${d.horasExtras}h</div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function calcReflexoDsr(salario, horas, valHora) {
+  // Reflexo DSR ~= 1/5 dos extras (simplificado)
+  return Math.round((horas * valHora) / 5 * 100) / 100;
+}
+
+function calcFaltas(salario, faltas, reflexo) {
+  const diasFalta = (salario / 30) * faltas;
+  const dsrFalta = reflexo || 0;
+  return diasFalta + dsrFalta;
+}
+
+function openFolhaDetalhe(funcId) {
+  const d = folhaDetalhe[funcId];
+  if (!d) return;
+  const f = d.funcionario;
+  document.getElementById('folhaDetalheTitulo').textContent = `Folha — ${f.nome}`;
+  document.getElementById('folhaDetalheBody').innerHTML = buildFolhaDetalheForm(funcId, d);
+  folhaAtualId = funcId;
+  openModal('modal-folha-detalhe');
+}
+
+function buildFolhaDetalheForm(funcId, d) {
+  return `
+  <div class="form-grid">
+    <div class="section-card-title" style="margin-top:0">COMPOSIÇÃO SALARIAL</div>
+    <div class="form-grid form-grid-2">
+      <div class="form-group">
+        <label class="form-label">Salário mensal (R$)</label>
+        <input type="number" class="form-input" id="fd-salario" value="${d.salario}" step="0.01">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Dias trabalhados (0 = mês completo)</label>
+        <input type="number" class="form-input" id="fd-dias" value="${d.diasTrabalhados}" min="0" max="31">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Horas extras</label>
+        <input type="number" class="form-input" id="fd-horas" value="${d.horasExtras}" step="0.01">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Valor hora extra (R$)</label>
+        <input type="number" class="form-input" id="fd-valhoraextra" value="${d.horaExtraVal}" step="0.01">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Insalubridade %</label>
+        <input type="number" class="form-input" id="fd-insalubridade" value="${d.insalPct}" step="1">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Prêmio bom desempenho (R$)</label>
+        <input type="number" class="form-input" id="fd-premio" value="${d.premioDesempenho||0}" step="0.01">
+      </div>
+    </div>
+
+    <div class="section-card-title">DESCONTOS</div>
+    <div class="form-grid form-grid-2">
+      <div class="form-group">
+        <label class="form-label">INSS (R$)</label>
+        <input type="number" class="form-input" id="fd-inss" value="${d.inssValor||0}" step="0.01">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Vale quinzena (R$)</label>
+        <input type="number" class="form-input" id="fd-valequinzena" value="${d.valeQuinzena||0}" step="0.01">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Faltas injustificadas</label>
+        <input type="number" class="form-input" id="fd-faltas" value="${d.faltas||0}" min="0">
+      </div>
+    </div>
+
+    ${d.descontoEmprestimos.length > 0 ? `
+    <div class="section-card-title">PARCELAS DE EMPRÉSTIMOS</div>
+    ${d.descontoEmprestimos.map((e,i) => `
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+      <input type="text" class="form-input" value="${e.numero}ª PARCELA ${e.label.toUpperCase()}" style="flex:2" readonly>
+      <input type="number" class="form-input fd-emp-val" data-idx="${i}" value="${e.valor}" step="0.01" style="flex:1">
+    </div>`).join('')}` : ''}
+
+    ${d.descontoVales.length > 0 ? `
+    <div class="section-card-title">VALES</div>
+    ${d.descontoVales.map((v,i) => `
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+      <input type="text" class="form-input" value="${v.descricao || 'Vale'}${v.data ? ' ' + fmtData(v.data) : ''}" style="flex:2" readonly>
+      <input type="number" class="form-input fd-vale-val" data-idx="${i}" value="${v.valor}" step="0.01" style="flex:1">
+    </div>`).join('')}` : ''}
+  </div>`;
+}
+
+function salvarFolhaDetalhe() {
+  const id = folhaAtualId;
+  if (!id || !folhaDetalhe[id]) return;
+  const d = folhaDetalhe[id];
+  d.salario = parseFloat(document.getElementById('fd-salario').value) || d.salario;
+  d.diasTrabalhados = parseInt(document.getElementById('fd-dias').value) || 0;
+  d.horasExtras = parseFloat(document.getElementById('fd-horas').value) || 0;
+  d.horaExtraVal = parseFloat(document.getElementById('fd-valhoraextra').value) || d.horaExtraVal;
+  d.insalPct = parseFloat(document.getElementById('fd-insalubridade').value) || 0;
+  d.premioDesempenho = parseFloat(document.getElementById('fd-premio').value) || 0;
+  d.inssValor = parseFloat(document.getElementById('fd-inss').value) || 0;
+  d.valeQuinzena = parseFloat(document.getElementById('fd-valequinzena').value) || 0;
+  d.faltas = parseInt(document.getElementById('fd-faltas').value) || 0;
+
+  document.querySelectorAll('.fd-emp-val').forEach(el => {
+    const idx = parseInt(el.dataset.idx);
+    d.descontoEmprestimos[idx].valor = parseFloat(el.value) || 0;
+  });
+  document.querySelectorAll('.fd-vale-val').forEach(el => {
+    const idx = parseInt(el.dataset.idx);
+    d.descontoVales[idx].valor = parseFloat(el.value) || 0;
+  });
+
+  folhaDetalhe[id] = d;
+  // Re-render card
+  const card = document.getElementById('fc-' + id);
+  if (card) card.outerHTML = buildFolhaCard(d.funcionario, d);
+
+  closeModal('modal-folha-detalhe');
+  toast('Folha salva!', 'success');
+}
+
+// =====================================================
+// PDF GENERATION
+// =====================================================
+function computeFolha(d) {
+  const horasExtrasValor = d.horasExtras * d.horaExtraVal;
+  let salarioBase = d.salario;
+  if (d.diasTrabalhados > 0 && d.diasTrabalhados < 30) salarioBase = (d.salario / 30) * d.diasTrabalhados;
+  const insalubridade = salarioBase * (d.insalPct / 100);
+  const reflexoDsr = d.horasExtras > 0 ? calcReflexoDsr(d.salario, d.horasExtras, d.horaExtraVal) : 0;
+  const premioDesempenho = d.premioDesempenho || 0;
+  const totalProventos = salarioBase + horasExtrasValor + (d.insalPct > 0 ? insalubridade : 0) + reflexoDsr + premioDesempenho;
+  const totalDescontos = (d.inssValor||0) + (d.valeQuinzena||0) +
+    d.descontoEmprestimos.reduce((s,e) => s + e.valor, 0) +
+    d.descontoVales.reduce((s,v) => s + v.valor, 0) +
+    (d.faltas > 0 ? calcFaltas(d.salario, d.faltas, reflexoDsr) : 0);
+  const liquido = totalProventos - totalDescontos;
+  return { salarioBase, horasExtrasValor, insalubridade, reflexoDsr, premioDesempenho, totalProventos, totalDescontos, liquido };
+}
+
+function gerarPdfFolha() { gerarPdfFuncionario(folhaAtualId); }
+
+function gerarPdfFuncionario(funcId) {
+  const d = folhaDetalhe[funcId];
+  if (!d) { toast('Carregue a folha primeiro', 'error'); return; }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
+  const f = d.funcionario;
+  const calc = computeFolha(d);
+  const orgNome = currentOrg?.nome || 'Empresa';
+  const orgCnpj = currentOrg?.cnpj || '';
+  const cidade = currentOrg?.cidade || '';
+
+  const mes = document.getElementById('folhaMes');
+  const ano = document.getElementById('folhaAno').value;
+  const mesNome = mes.options[mes.selectedIndex].text;
+  const dataFolha = cidade + ', ' + new Date().getDate() + ' de ' + mesNome.toLowerCase() + ' de ' + ano;
+
+  gerarPdfFolhaCompleto(doc, { f, d, calc, orgNome, orgCnpj, dataFolha, mesNome, ano }, 10, true);
+}
+
+function gerarPdfFolhaCompleto(doc, params, startY = 10, save = false) {
+  const { f, d, calc, orgNome, orgCnpj, dataFolha } = params;
+
+  const lm = 15, rm = 195, pw = 180;
+  let y = startY;
+
+  // --- HEADER ---
+  doc.setFillColor(255,255,255);
+  doc.rect(lm, y, pw, 8, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(11);
+  doc.setTextColor(0,0,0);
+  doc.text('FOLHA DE PAGAMENTO', lm + pw/2, y + 6, { align: 'center' });
+  doc.rect(lm, y, pw, 8);
+  y += 8;
+
+  // Cabeçalho funcionário
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'normal');
+  const cabRows = [
+    ['NOME:', f.nome || ''],
+    ['CPF:', f.cpf || ''],
+    ['CARGO:', f.cargo || '']
+  ];
+  cabRows.forEach(([lbl, val]) => {
+    doc.setFont('helvetica', 'bold'); doc.text(lbl, lm + 2, y + 5);
+    doc.setFont('helvetica', 'normal'); doc.text(val, lm + 20, y + 5);
+    doc.rect(lm, y, pw, 6);
+    y += 6;
+  });
+
+  // --- COMPOSIÇÃO SALARIAL ---
+  doc.setFillColor(240,240,240);
+  doc.rect(lm, y, pw, 7, 'F');
+  doc.rect(lm, y, pw, 7);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.text('COMPOSIÇÃO SALARIAL:', lm + pw/2, y + 5, { align: 'center' });
+  y += 7;
+
+  // Proventos rows
+  const proventos = [];
+  if (d.horasExtras > 0) proventos.push([`${d.horasExtras}`, `x ${fmtMoney(d.horaExtraVal)}`, 'HORAS EXTRAS =', fmtMoney(calc.horasExtrasValor)]);
+  const diasLabel = d.diasTrabalhados > 0 ? `SALÁRIO MENSAL (${d.diasTrabalhados} DIAS TRABALHADOS) =` : 'SALÁRIO MENSAL =';
+  proventos.push(['', '', diasLabel, fmtMoney(calc.salarioBase)]);
+  if (d.insalPct > 0) proventos.push(['', '', `ADICIONAL POR INSALUBRIDADE ${d.insalPct}% =`, fmtMoney(calc.insalubridade)]);
+  if (calc.reflexoDsr > 0) proventos.push(['', '', 'REFLEXO EXTRA DSR =', fmtMoney(calc.reflexoDsr)]);
+  if (calc.premioDesempenho > 0) proventos.push(['', '', 'PRÊMIO BOM DESEMPENHO =', fmtMoney(calc.premioDesempenho)]);
+  // Blank rows to match template
+  while (proventos.length < 6) proventos.push(['', '', '', '']);
+
+  proventos.forEach(([c1, c2, c3, c4]) => {
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(8);
+    doc.rect(lm, y, 20, 5); doc.text(c1, lm + 2, y + 3.5);
+    doc.rect(lm+20, y, 20, 5); doc.text(c2, lm + 22, y + 3.5);
+    doc.rect(lm+40, y, 120, 5); doc.text(c3, lm + 80, y + 3.5, { align: 'center' });
+    doc.rect(lm+160, y, 20, 5); doc.text(c4, rm - 2, y + 3.5, { align: 'right' });
+    y += 5;
+  });
+
+  // TOTAL proventos
+  doc.setFillColor(240,240,240);
+  doc.rect(lm+40, y, 120, 6, 'F'); doc.rect(lm+160, y, 20, 6, 'F');
+  doc.rect(lm, y, 20, 6); doc.rect(lm+20, y, 20, 6); doc.rect(lm+40, y, 120, 6); doc.rect(lm+160, y, 20, 6);
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(255,0,0);
+  doc.text('TOTAL =', lm + 100, y + 4, { align: 'center' });
+  doc.text(fmtMoney(calc.totalProventos), rm - 2, y + 4, { align: 'right' });
+  doc.setTextColor(0,0,0);
+  y += 6;
+
+  // --- DESCONTOS ---
+  const descontos = [];
+  if (d.inssValor > 0) descontos.push(['', 'INSS =', fmtMoney(-d.inssValor)]);
+  if (d.valeQuinzena > 0) descontos.push(['', 'VALE DA QUINZENA =', fmtMoney(-d.valeQuinzena)]);
+  d.descontoEmprestimos.forEach(e => {
+    descontos.push([`${e.numero}ª`, `PARCELA ${e.label.toUpperCase()} =`, fmtMoney(-e.valor)]);
+  });
+  d.descontoVales.forEach(v => {
+    const label = (v.descricao || 'VALE').toUpperCase() + (v.data ? ' ' + fmtData(v.data) : '') + ' =';
+    descontos.push(['', label, fmtMoney(-v.valor)]);
+  });
+  if (d.faltas > 0) {
+    const descFalta = calcFaltas(d.salario, d.faltas, calc.reflexoDsr);
+    descontos.push([`${d.faltas}`, 'FALTA(S) INJUSTIFICADA / DESCONTAR DSR =', fmtMoney(-descFalta)]);
+  }
+  while (descontos.length < 10) descontos.push(['', '', '']);
+
+  // Header descontos
+  doc.setFillColor(240,240,240);
+  doc.rect(lm, y, 40, 5, 'F'); doc.rect(lm, y, 40, 5);
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(8);
+  doc.text('DESCONTOS:', lm + 20, y + 3.5, { align: 'center' });
+
+  descontos.forEach(([c1, c2, c3]) => {
+    if (descontos.indexOf([c1,c2,c3]) === 0 && c2) {} // already rendered header row
+    doc.rect(lm, y, 20, 5); doc.setFont('helvetica', 'normal'); doc.setFontSize(8);
+    doc.text(c1, lm + 10, y + 3.5, { align: 'center' });
+    doc.rect(lm+20, y, 20, 5);
+    doc.rect(lm+40, y, 120, 5); doc.text(c2, lm + 100, y + 3.5, { align: 'center' });
+    doc.rect(lm+160, y, 20, 5);
+    if (c3 && c3 !== '') {
+      doc.setTextColor(180,0,0);
+      doc.text(c3, rm - 2, y + 3.5, { align: 'right' });
+      doc.setTextColor(0,0,0);
+    }
+    y += 5;
+  });
+
+  // TOTAL DESCONTADO
+  doc.setFillColor(240,240,240);
+  doc.rect(lm+40, y, 120, 6, 'F'); doc.rect(lm+160, y, 20, 'F');
+  doc.rect(lm, y, 20, 6); doc.rect(lm+20, y, 20, 6); doc.rect(lm+40, y, 120, 6); doc.rect(lm+160, y, 20, 6);
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(255,0,0);
+  doc.text('TOTAL DESCONTADO =', lm + 100, y + 4, { align: 'center' });
+  doc.text(fmtMoney(-calc.totalDescontos), rm - 2, y + 4, { align: 'right' });
+  y += 6;
+
+  // TOTAL RESTANTE
+  doc.setFillColor(240,240,240);
+  doc.rect(lm, y, pw, 6, 'F'); doc.rect(lm, y, pw, 6);
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(255,0,0);
+  doc.text('TOTAL RESTANTE A RECEBER =', lm + 80, y + 4, { align: 'center' });
+  doc.text(fmtMoney(calc.liquido), rm - 2, y + 4, { align: 'right' });
+  doc.setTextColor(0,0,0);
+  y += 6;
+
+  // --- RECIBO ---
+  y += 4;
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(10);
+  doc.text('RECIBO', lm + pw/2, y, { align: 'center' });
+  y += 5;
+
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5);
+  const valorExtenso = numberToWords(calc.liquido);
+  const recibo = `Pelo presente, eu, ${f.nome}, CPF sob nº ${f.cpf || '—'}, declaro que RECEBI na data de hoje, o valor de R$ ${fmtMoney(calc.liquido)} (${valorExtenso}), referente ao pagamento de salário mensal no valor de R$ ${fmtMoney(calc.salarioBase)} + R$ ${fmtMoney(calc.horasExtrasValor)} (referente a ${d.horasExtras} horas extras), pago pela empresa ${orgNome}${orgCnpj ? ', inscrita no CNPJ nº ' + orgCnpj : ''}, relativo aos serviços prestado na função de ${f.cargo || 'cargo não definido'}.`;
+
+  const lines = doc.splitTextToSize(recibo, pw);
+  doc.text(lines, lm, y);
+  y += lines.length * 5 + 6;
+
+  doc.setFontSize(9);
+  doc.text(dataFolha, rm, y, { align: 'right' });
+  y += 14;
+
+  // Assinatura
+  doc.line(lm + pw/2 - 40, y, lm + pw/2 + 40, y);
+  y += 4;
+  doc.setFont('helvetica', 'normal');
+  doc.text(f.nome || '', lm + pw/2, y, { align: 'center' });
+
+  if (save) {
+    doc.save(`Folha_${(f.nome||'').replace(/\s+/g,'_')}.pdf`);
+    toast('PDF gerado!', 'success');
+    closeModal('modal-folha-detalhe');
+  }
+  return y;
+}
+
+function gerarTodosPDFs() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const orgNome = currentOrg?.nome || 'Empresa';
+  const orgCnpj = currentOrg?.cnpj || '';
+  const cidade = currentOrg?.cidade || '';
+  const mes = document.getElementById('folhaMes');
+  const ano = document.getElementById('folhaAno').value;
+  const mesNome = mes.options[mes.selectedIndex].text;
+  const dataFolha = cidade + ', ' + new Date().getDate() + ' de ' + mesNome.toLowerCase() + ' de ' + ano;
+
+  const ids = Object.keys(folhaDetalhe);
+  ids.forEach((funcId, idx) => {
+    if (idx > 0) doc.addPage();
+    const d = folhaDetalhe[funcId];
+    const calc = computeFolha(d);
+    gerarPdfFolhaCompleto(doc, { f: d.funcionario, d, calc, orgNome, orgCnpj, dataFolha, mesNome, ano }, 10, false);
+  });
+
+  doc.save(`Folhas_${mesNome}_${ano}.pdf`);
+  toast(`${ids.length} folhas geradas!`, 'success');
+}
+
+// =====================================================
+// ACERTO MÚTUO
+// =====================================================
+function renderAcerto() {
+  const container = document.getElementById('acertoPares');
+  if (acertoPares.length === 0) {
+    container.innerHTML = `<div class="empty-state"><div class="icon">🤝</div><h3>Nenhum par configurado</h3><p>Crie um par para começar os registros</p></div>`;
+    return;
+  }
+  container.innerHTML = acertoPares.map(par => {
+    const lances = getCol('lancamentos').getAll().filter(l => l.parId === par.id);
+    const totalAB = lances.filter(l => l.de === par.pessoaA).reduce((s,l) => s + l.valor, 0);
+    const totalBA = lances.filter(l => l.de === par.pessoaB).reduce((s,l) => s + l.valor, 0);
+    const saldo = totalAB - totalBA;
+    const devedor = saldo > 0 ? par.pessoaB : par.pessoaA;
+    const credor = saldo > 0 ? par.pessoaA : par.pessoaB;
+
+    return `<div class="acerto-card" style="margin-bottom:16px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+        <div style="font-weight:700;font-size:1.05rem">${par.pessoaA} ↔ ${par.pessoaB}</div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-primary btn-sm" onclick="openLancamentoPar('${par.id}')">➕ Lançamento</button>
+          <button class="btn btn-outline btn-sm" onclick="verLancamentos('${par.id}')">📋 Histórico</button>
+          <button class="btn-icon" onclick="excluirPar('${par.id}')">🗑️</button>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:16px;align-items:center">
+        <div class="acerto-person">
+          <div class="acerto-person-name">${par.pessoaA}</div>
+          <div class="acerto-person-debt" style="color:var(--green)">emprestou R$ ${fmtMoney(totalAB)}</div>
+        </div>
+        <div class="acerto-saldo">
+          <div class="acerto-saldo-label">${Math.abs(saldo) < 0.01 ? '✅ Quitados' : devedor + ' deve a ' + credor}</div>
+          <div class="acerto-saldo-value" style="color:${Math.abs(saldo) < 0.01 ? 'var(--green)' : 'var(--yellow)'}">
+            R$ ${fmtMoney(Math.abs(saldo))}
+          </div>
+        </div>
+        <div class="acerto-person">
+          <div class="acerto-person-name">${par.pessoaB}</div>
+          <div class="acerto-person-debt" style="color:var(--green)">emprestou R$ ${fmtMoney(totalBA)}</div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function populateLancPar() {
+  const sel = document.getElementById('lancPar');
+  sel.innerHTML = acertoPares.map(p => `<option value="${p.id}">${p.pessoaA} ↔ ${p.pessoaB}</option>`).join('');
+  if (acertoPares.length > 0) lancParChanged();
+}
+
+function lancParChanged() {
+  const parId = document.getElementById('lancPar').value;
+  const par = acertoPares.find(p => p.id === parId);
+  if (!par) return;
+  const sel = document.getElementById('lancDe');
+  sel.innerHTML = `<option value="${par.pessoaA}">${par.pessoaA}</option><option value="${par.pessoaB}">${par.pessoaB}</option>`;
+}
+
+document.getElementById('lancPar').addEventListener('change', lancParChanged);
+
+function openLancamentoPar(parId) {
+  populateLancPar();
+  document.getElementById('lancPar').value = parId;
+  lancParChanged();
+  document.getElementById('lancData').value = new Date().toISOString().slice(0,10);
+  openModal('modal-lancamento');
+}
+
+async function salvarPar() {
+  const a = document.getElementById('parPessoaA').value.trim();
+  const b = document.getElementById('parPessoaB').value.trim();
+  if (!a || !b) { toast('Preencha os dois nomes', 'error'); return; }
+  const novo = await fsAdd('acertoPares', { pessoaA: a, pessoaB: b });
+  acertoPares.push(novo);
+  closeModal('modal-acerto-par');
+  renderAcerto();
+  toast('Par criado!', 'success');
+}
+
+async function salvarLancamento() {
+  const parId = document.getElementById('lancPar').value;
+  const de = document.getElementById('lancDe').value;
+  const valor = parseFloat(document.getElementById('lancValor').value);
+  if (!parId || !de || !valor) { toast('Preencha todos os campos', 'error'); return; }
+  const data = {
+    parId, de, valor,
+    data: document.getElementById('lancData').value,
+    descricao: document.getElementById('lancDescricao').value
+  };
+  await fsAdd('lancamentos', data);
+  closeModal('modal-lancamento');
+  renderAcerto();
+  toast('Lançamento registrado!', 'success');
+}
+
+async function excluirPar(id) {
+  if (!confirm('Excluir par e todos os lançamentos?')) return;
+  await fsDelete('acertoPares', id);
+  acertoPares = acertoPares.filter(p => p.id !== id);
+  renderAcerto();
+}
+
+function verLancamentos(parId) {
+  const par = acertoPares.find(p => p.id === parId);
+  if (!par) return;
+  const lances = getCol('lancamentos').getAll().filter(l => l.parId === parId);
+  if (lances.length === 0) { toast('Nenhum lançamento ainda', 'info'); return; }
+  const html = `<table><thead><tr><th>Data</th><th>De</th><th>Valor</th><th>Descrição</th></tr></thead><tbody>
+    ${lances.map(l => `<tr>
+      <td>${l.data ? fmtData(l.data) : '—'}</td>
+      <td><strong>${l.de}</strong></td>
+      <td class="mono" style="color:var(--green)">R$ ${fmtMoney(l.valor)}</td>
+      <td>${l.descricao || '—'}</td>
+    </tr>`).join('')}
+  </tbody></table>`;
+  document.getElementById('folhaDetalheTitulo').textContent = `Histórico: ${par.pessoaA} ↔ ${par.pessoaB}`;
+  document.getElementById('folhaDetalheBody').innerHTML = html;
+  document.querySelector('#modal-folha-detalhe .modal-footer').innerHTML =
+    `<button class="btn btn-outline btn-sm" onclick="closeModal('modal-folha-detalhe')">Fechar</button>`;
+  openModal('modal-folha-detalhe');
+}
+
+// =====================================================
+// EQUIPE
+// =====================================================
+function renderEquipe() {
+  const tbody = document.getElementById('tabelaEquipe');
+  const membros = currentOrg?.membros || [];
+  if (membros.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="5"><div class="empty-state"><div class="icon">👥</div><h3>Só você</h3></div></td></tr>`;
+    return;
+  }
+  const roles = { gestor: '👑 Gestor', empregador: '🏢 Empregador', funcionario: '👤 Funcionário' };
+  tbody.innerHTML = membros.map(m => `<tr>
+    <td><strong>${m.nome || '—'}</strong></td>
+    <td style="color:var(--text3)">${m.email || '—'}</td>
+    <td><span class="badge badge-accent">${roles[m.role] || m.role}</span></td>
+    <td><span class="badge badge-green">Ativo</span></td>
+    <td style="text-align:right"><button class="btn btn-outline btn-sm" onclick="editarMembro('${m.uid}')">✏️ Permissões</button></td>
+  </tr>`).join('');
+}
+
+function editarMembro(uid) {
+  document.getElementById('membroId').value = uid;
+  const membro = currentOrg?.membros?.find(m => m.uid === uid);
+  if (membro) selectRole(membro.role || 'funcionario');
+  openModal('modal-membro');
+}
+
+async function salvarMembro() {
+  const uid = document.getElementById('membroId').value;
+  const role = document.querySelector('.role-option.active')?.id?.replace('role-','') || 'funcionario';
+  if (!currentOrg?.membros) return;
+  const idx = currentOrg.membros.findIndex(m => m.uid === uid);
+  if (idx >= 0) {
+    currentOrg.membros[idx].role = role;
+    if (db) await db.collection('orgs').doc(currentOrg.id).update({ membros: currentOrg.membros });
+    else localDB.setOrg(currentOrg.id, currentOrg);
+  }
+  closeModal('modal-membro');
+  renderEquipe();
+  toast('Permissões atualizadas', 'success');
+}
+
+function selectRole(role) {
+  document.querySelectorAll('.role-option').forEach(r => r.classList.remove('active'));
+  document.getElementById('role-' + role)?.classList.add('active');
+}
+
+function gerarConvite() {
+  if (!currentOrg) return;
+  const code = Math.random().toString(36).substring(2,8).toUpperCase();
+  currentOrg.invite = code;
+  if (db) db.collection('orgs').doc(currentOrg.id).update({ invite: code });
+  else localDB.setOrg(currentOrg.id, currentOrg);
+  document.getElementById('inviteDisplay').textContent = code;
+  toast('Novo código gerado: ' + code, 'success');
+}
+
+function copyInvite() {
+  const code = document.getElementById('inviteDisplay').textContent;
+  navigator.clipboard.writeText(code).then(() => toast('Código copiado!', 'success'));
+}
+
+function openOrgSelector() {
+  const nome = prompt('Nome da organização:', currentOrg?.nome || '');
+  if (nome && currentOrg) {
+    currentOrg.nome = nome;
+    if (db) db.collection('orgs').doc(currentOrg.id).update({ nome });
+    else localDB.setOrg(currentOrg.id, currentOrg);
+    localStorage.setItem('cgOrgNome', nome);
+    document.getElementById('currentOrgBadge').textContent = '🏢 ' + nome;
+    toast('Nome atualizado', 'success');
+  }
+}
+
+// =====================================================
+// CONFIGURAÇÕES
+// =====================================================
+async function salvarConfig() {
+  if (!currentOrg) return;
+  const update = {
+    nome: document.getElementById('cfgNome').value,
+    cnpj: document.getElementById('cfgCnpj').value,
+    cidade: document.getElementById('cfgCidade').value,
+    inssDefault: parseFloat(document.getElementById('cfgInss').value) || 207,
+    valeDefault: parseFloat(document.getElementById('cfgVale').value) || 700
+  };
+  Object.assign(currentOrg, update);
+  if (db) await db.collection('orgs').doc(currentOrg.id).update(update);
+  else localDB.setOrg(currentOrg.id, currentOrg);
+  localStorage.setItem('cgOrgNome', update.nome);
+  document.getElementById('currentOrgBadge').textContent = '🏢 ' + update.nome;
+  toast('Configurações salvas!', 'success');
+}
+
+// =====================================================
+// POPULATE SELECTS
+// =====================================================
+function populateSelects() {
+  const opts = funcionarios.map(f => `<option value="${f.id}">${f.nome}</option>`).join('');
+  ['empFuncionario','valeFuncionario'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = '<option value="">Selecione...</option>' + opts;
+  });
+}
+
+// =====================================================
+// UTILS
+// =====================================================
+function fmtMoney(val) {
+  return (parseFloat(val) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function fmtData(d) {
+  if (!d) return '—';
+  const [y,m,day] = d.split('-');
+  return `${day}/${m}/${y}`;
+}
+
+function maskCpf(el) {
+  let v = el.value.replace(/\D/g,'');
+  if (v.length > 11) v = v.slice(0,11);
+  v = v.replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+  el.value = v;
+}
+
+function toast(msg, type='info') {
+  const c = document.getElementById('toastContainer');
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.innerHTML = `<span>${type==='success'?'✅':type==='error'?'❌':'ℹ️'}</span> ${msg}`;
+  c.appendChild(t);
+  setTimeout(() => t.remove(), 3500);
+}
+
+// Number to words (PT-BR, simplified)
+function numberToWords(num) {
+  const n = Math.round(num * 100);
+  const reais = Math.floor(n / 100);
+  const centavos = n % 100;
+  const units = ['','um','dois','três','quatro','cinco','seis','sete','oito','nove','dez','onze','doze','treze','quatorze','quinze','dezesseis','dezessete','dezoito','dezenove'];
+  const tens = ['','dez','vinte','trinta','quarenta','cinquenta','sessenta','setenta','oitenta','noventa'];
+  const hundreds = ['','cento','duzentos','trezentos','quatrocentos','quinhentos','seiscentos','setecentos','oitocentos','novecentos'];
+
+  function convert(n) {
+    if (n === 0) return 'zero';
+    if (n === 100) return 'cem';
+    if (n < 20) return units[n];
+    if (n < 100) return tens[Math.floor(n/10)] + (n%10 ? ' e ' + units[n%10] : '');
+    if (n < 1000) return hundreds[Math.floor(n/100)] + (n%100 ? ' e ' + convert(n%100) : '');
+    if (n < 1000000) {
+      const k = Math.floor(n/1000);
+      return (k===1 ? 'mil' : convert(k) + ' mil') + (n%1000 ? ' e ' + convert(n%1000) : '');
+    }
+    return n.toString();
+  }
+
+  let text = convert(reais) + (reais === 1 ? ' real' : ' reais');
+  if (centavos > 0) text += ' e ' + convert(centavos) + (centavos === 1 ? ' centavo' : ' centavos');
+  return text;
+}
+
+// Service worker for PWA
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}
+</script>
+</body>
+</html>
