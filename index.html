@@ -1609,8 +1609,10 @@ tr:hover td { background: rgba(108,99,255,0.04); }
               </select>
             </div>
             <button class="btn btn-primary" onclick="generateEscala()" style="height:42px">Gerar escala</button>
-            <button class="btn btn-outline" onclick="printEscalaPreview()" style="height:42px">Imprimir</button>
-            <button class="btn btn-outline" onclick="downloadEscalaPdf()" style="height:42px">PDF</button>
+            <button class="btn btn-outline" onclick="printEscalaPreview()" style="height:42px">🖨️ Imprimir</button>
+            <button class="btn btn-outline" onclick="downloadEscalaPdf()" style="height:42px">📄 PDF</button>
+            <button class="btn btn-outline" onclick="printTodasEscalas()" style="height:42px">🖨️ Imprimir Todos</button>
+            <button class="btn btn-success btn-sm" onclick="downloadTodasEscalasPdf()" style="height:42px">📄 PDF Todos</button>
           </div>
         </div>
 
@@ -1665,7 +1667,14 @@ tr:hover td { background: rgba(108,99,255,0.04); }
 
         <div class="table-wrap">
           <div class="table-header">
-            <div class="table-title">Vales pendentes</div>
+            <div class="table-title">Vales</div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <select class="form-input" id="valesFiltro" onchange="renderVales()" style="width:auto;font-size:0.8rem;padding:6px 10px">
+                <option value="pendente">Pendentes</option>
+                <option value="todos">Todos</option>
+                <option value="descontado">Descontados</option>
+              </select>
+            </div>
           </div>
           <table>
             <thead>
@@ -1679,7 +1688,7 @@ tr:hover td { background: rgba(108,99,255,0.04); }
               </tr>
             </thead>
             <tbody id="tabelaVales">
-              <tr><td colspan="6"><div class="empty-state"><div class="icon">🎫</div><h3>Nenhum vale pendente</h3></div></td></tr>
+              <tr><td colspan="6"><div class="empty-state"><div class="icon">🎫</div><h3>Nenhum vale</h3></div></td></tr>
             </tbody>
           </table>
         </div>
@@ -1802,7 +1811,10 @@ tr:hover td { background: rgba(108,99,255,0.04); }
             <div class="page-title">Configurações</div>
             <div class="page-sub">Empresa e preferências</div>
           </div>
-          <button class="btn btn-primary btn-sm" onclick="salvarConfig()">💾 Salvar</button>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-outline btn-sm" onclick="exportarBackup()">💾 Backup JSON</button>
+            <button class="btn btn-primary btn-sm" onclick="salvarConfig()">💾 Salvar</button>
+          </div>
         </div>
 
         <div class="section-card">
@@ -1849,16 +1861,33 @@ tr:hover td { background: rgba(108,99,255,0.04); }
   <div class="mobile-nav">
     <div class="mobile-nav-items">
       <div class="mobile-nav-item active" onclick="navigate('dashboard')"><span class="icon">📊</span>Início</div>
-      <div class="mobile-nav-item" onclick="navigate('funcionarios')"><span class="icon">👥</span>Equipe</div>
       <div class="mobile-nav-item" onclick="navigate('folha')"><span class="icon">📋</span>Folha</div>
-      <div class="mobile-nav-item" onclick="navigate('escala')"><span class="icon">🗓️</span>Escala</div>
       <div class="mobile-nav-item" onclick="navigate('emprestimos')"><span class="icon">💰</span>Emprést.</div>
+      <div class="mobile-nav-item" onclick="navigate('vales')"><span class="icon">🎫</span>Vales</div>
+      <div class="mobile-nav-item" onclick="navigate('relatorio')"><span class="icon">📈</span>Relatório</div>
       <div class="mobile-nav-item" onclick="navigate('acerto')"><span class="icon">🤝</span>Acerto</div>
     </div>
   </div>
 </div>
 
 <!-- ======== MODALS ======== -->
+
+<!-- MODAL CONFIRMAÇÃO -->
+<div class="modal-overlay" id="modal-confirmar">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-header">
+      <div class="modal-title" id="confirmarTitulo">Confirmar</div>
+      <div class="modal-close" onclick="resolveConfirmar(false)">✕</div>
+    </div>
+    <div class="modal-body">
+      <p id="confirmarMsg" style="color:var(--text2);font-size:0.9rem"></p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline btn-sm" onclick="resolveConfirmar(false)">Cancelar</button>
+      <button class="btn btn-danger btn-sm" onclick="resolveConfirmar(true)">Confirmar</button>
+    </div>
+  </div>
+</div>
 
 <!-- MODAL FUNCIONÁRIO -->
 <div class="modal-overlay" id="modal-funcionario">
@@ -1880,13 +1909,21 @@ tr:hover td { background: rgba(108,99,255,0.04); }
         </div>
         <div class="form-group">
           <label class="form-label">Cargo</label>
-          <input type="text" class="form-input" id="funcCargo" placeholder="Ex: Ajudante de C&D">
+          <div style="display:flex;gap:8px">
+            <select class="form-input" id="funcCargo" style="flex:1" onchange="onCargoChange(this)">
+              <option value="">Selecione ou cadastre...</option>
+            </select>
+            <button type="button" class="btn btn-outline btn-sm" onclick="cadastrarNovoCargo()" title="Cadastrar novo cargo" style="white-space:nowrap;padding:0 12px">+ Cargo</button>
+          </div>
         </div>
         <div class="form-group">
           <label class="form-label">Grupo salarial</label>
-          <select class="form-input" id="funcGrupo">
+          <select class="form-input" id="funcGrupo" onchange="onGrupoFuncChange(this.value)">
             <option value="">Nenhum (manual)</option>
           </select>
+          <div id="grupoHerancaInfo" style="font-size:0.75rem;color:var(--accent2);margin-top:4px;display:none">
+            ✅ Valores herdados do grupo (salário, hora extra, INSS)
+          </div>
         </div>
         <div class="form-group">
           <label class="form-label">Salário base (R$)</label>
@@ -2111,9 +2148,23 @@ tr:hover td { background: rgba(108,99,255,0.04); }
           </div>
         </div>
         <div class="form-group">
-          <label class="form-label">Valor por parcela (R$)</label>
-          <input type="number" class="form-input" id="empValorParcela" placeholder="100.00" step="0.01">
+          <label class="form-label">Tipo de parcelamento</label>
+          <select class="form-input" id="empTipoParcela" onchange="calcParcela()">
+            <option value="igual">Parcelas iguais (ex: 7x R$107,14)</option>
+            <option value="ultima_diferente">Última parcela diferente (ex: 6x R$100 + 1x R$50)</option>
+          </select>
         </div>
+        <div class="form-grid form-grid-2">
+          <div class="form-group">
+            <label class="form-label">Valor por parcela (R$)</label>
+            <input type="number" class="form-input" id="empValorParcela" placeholder="100.00" step="0.01" oninput="calcUltimaParcela()">
+          </div>
+          <div class="form-group" id="empUltimaParcelaGroup" style="display:none">
+            <label class="form-label">Última parcela (R$)</label>
+            <input type="number" class="form-input" id="empUltimaParcela" placeholder="50.00" step="0.01">
+          </div>
+        </div>
+        <div id="empResumoParcelamento" style="font-size:0.82rem;color:var(--text3);margin-top:-8px"></div>
         <div class="form-group">
           <label class="form-label">Data início</label>
           <input type="date" class="form-input" id="empDataInicio">
@@ -2818,7 +2869,7 @@ async function salvarFuncionario() {
   const data = {
     nome, cpf: document.getElementById('funcCpf').value,
     cargo: document.getElementById('funcCargo').value,
-    grupoId: document.getElementById('funcGrupo').value,
+    grupoId: document.getElementById('funcGrupo').value || null,
     salario: parseFloat(document.getElementById('funcSalario').value) || 0,
     horaExtra: parseFloat(document.getElementById('funcHoraExtra').value) || 0,
     insalubridade: parseFloat(document.getElementById('funcInsalubridade').value) || 0,
@@ -2826,14 +2877,20 @@ async function salvarFuncionario() {
     ativo: true
   };
 
-  // Se tem grupo, herdar valores do grupo
+  // Se tem grupo, herdar TODOS os valores do grupo
   if (data.grupoId) {
     const grupo = grupos.find(g => g.id === data.grupoId);
     if (grupo) {
-      if (!data.salario) data.salario = grupo.salario;
-      if (!data.horaExtra) data.horaExtra = grupo.horaExtra;
-      if (!data.inss) data.inss = grupo.inss;
-      if (!data.cargaMensal) data.cargaMensal = grupo.cargaMensal || 220;
+      data.salario = grupo.salario || data.salario;
+      data.horaExtra = grupo.horaExtra || data.horaExtra;
+      data.horaExtraPct = grupo.horaExtraPct || data.horaExtraPct;
+      data.inss = grupo.inss || data.inss;
+      data.inssPct = grupo.inssPct || data.inssPct;
+      data.inssType = grupo.inssType || data.inssType;
+      data.cargaSemanal = grupo.cargaSemanal || 44;
+      data.cargaMensal = grupo.cargaMensal || 220;
+      data.adicionais = grupo.adicionais || [];
+      data.valeQuinzena = grupo.valeQuinzena || data.valeQuinzena;
     }
   }
 
@@ -2857,10 +2914,13 @@ function editarFuncionario(id) {
   const f = funcionarios.find(f => f.id === id);
   if (!f) return;
   populateGrupoSelect();
+  loadCargos(); // garante que o select de cargo está populado
+  setTimeout(() => {
+    document.getElementById('funcCargo').value = f.cargo || '';
+  }, 50); // aguarda populate
   document.getElementById('funcId').value = f.id;
   document.getElementById('funcNome').value = f.nome;
   document.getElementById('funcCpf').value = f.cpf || '';
-  document.getElementById('funcCargo').value = f.cargo || '';
   document.getElementById('funcGrupo').value = f.grupoId || '';
   document.getElementById('funcSalario').value = f.salario || '';
   document.getElementById('funcHoraExtra').value = f.horaExtra || '';
@@ -2870,7 +2930,7 @@ function editarFuncionario(id) {
 }
 
 async function excluirFuncionario(id) {
-  if (!confirm('Excluir funcionário?')) return;
+  if (!await confirmar('Excluir funcionário?', 'Esta ação não pode ser desfeita.')) return;
   await fsDelete('funcionarios', id);
   funcionarios = funcionarios.filter(f => f.id !== id);
   renderFuncionarios();
@@ -2934,6 +2994,7 @@ async function salvarGrupo() {
     inssPct: inssType === 'pct' ? (parseFloat(document.getElementById('grupoInssPct').value) || 0) : 0,
     valeQuinzena: parseFloat(document.getElementById('grupoValeQuinzena').value) || 0
   };
+  let grupoIdFinal = id;
   if (id) {
     await fsUpdate('grupos', id, data);
     const idx = grupos.findIndex(g => g.id === id);
@@ -2941,24 +3002,42 @@ async function salvarGrupo() {
   } else {
     const novo = await fsAdd('grupos', data);
     grupos.push(novo);
+    grupoIdFinal = novo.id; // ID real do novo grupo
   }
-  // Atualizar funcionários vinculados
-  const vinculados = funcionarios.filter(f => f.grupoId === (id || 'novo'));
-  for (const f of vinculados) {
-    await fsUpdate('funcionarios', f.id, {
+
+  // Atualizar TODOS os funcionários vinculados a este grupo
+  if (grupoIdFinal) {
+    const vinculados = funcionarios.filter(f => f.grupoId === grupoIdFinal);
+    const atualizacao = {
       salario: data.salario,
       horaExtra: data.horaExtra,
+      horaExtraPct: data.horaExtraPct,
       inss: data.inss,
-      cargaMensal: data.cargaMensal
-    });
-    const fi = funcionarios.findIndex(fn => fn.id === f.id);
-    if (fi >= 0) Object.assign(funcionarios[fi], { salario: data.salario, horaExtra: data.horaExtra, inss: data.inss });
+      inssPct: data.inssPct,
+      inssType: data.inssType,
+      cargaSemanal: data.cargaSemanal,
+      cargaMensal: data.cargaMensal,
+      adicionais: data.adicionais,
+      valeQuinzena: data.valeQuinzena
+    };
+    for (const f of vinculados) {
+      await fsUpdate('funcionarios', f.id, atualizacao);
+      const fi = funcionarios.findIndex(fn => fn.id === f.id);
+      if (fi >= 0) Object.assign(funcionarios[fi], atualizacao);
+    }
+    if (vinculados.length > 0) {
+      toast(`Grupo salvo e ${vinculados.length} funcionário(s) atualizado(s)!`, 'success');
+    } else {
+      toast('Grupo salvo!', 'success');
+    }
+  } else {
+    toast('Grupo salvo!', 'success');
   }
+
   closeModal('modal-grupo');
   renderGrupos();
   renderFuncionarios();
   populateGrupoSelect();
-  toast('Grupo salvo!', 'success');
   adicionaisGrupo = [];
   document.getElementById('grupoId').value = '';
 }
@@ -2984,7 +3063,7 @@ function editarGrupo(id) {
 }
 
 async function excluirGrupo(id) {
-  if (!confirm('Excluir grupo?')) return;
+  if (!await confirmar('Excluir grupo salarial?', 'Os funcionários vinculados ficarão sem grupo.')) return;
   await fsDelete('grupos', id);
   grupos = grupos.filter(g => g.id !== id);
   renderGrupos();
@@ -3016,7 +3095,10 @@ function renderEmprestimos(filter='') {
       <td>${e.descricao}</td>
       <td class="mono">R$ ${fmtMoney(e.total)}</td>
       <td>${e.parcelas}x</td>
-      <td class="mono">R$ ${fmtMoney(e.valorParcela)}</td>
+      <td class="mono">${e.tipoParcela === 'ultima_diferente'
+        ? `${e.parcelas-1}x R$ ${fmtMoney(e.valorParcela)} + 1x R$ ${fmtMoney(e.ultimaParcela||0)}`
+        : `R$ ${fmtMoney(e.valorParcela)}`
+      }</td>
       <td>
         <div style="font-family:var(--mono);font-size:0.82rem">R$ ${fmtMoney(e.pago||0)}</div>
         <div class="progress-bar" style="width:80px"><div class="progress-fill" style="width:${pct}%"></div></div>
@@ -3032,11 +3114,7 @@ function renderEmprestimos(filter='') {
 
 function filterEmprestimos(v) { renderEmprestimos(v); }
 
-function calcParcela() {
-  const total = parseFloat(document.getElementById('empTotal').value) || 0;
-  const n = parseInt(document.getElementById('empParcelas').value) || 1;
-  if (total && n) document.getElementById('empValorParcela').value = (total/n).toFixed(2);
-}
+// calcParcela is defined later with full logic
 
 async function salvarEmprestimo() {
   const funcId = document.getElementById('empFuncionario').value;
@@ -3049,7 +3127,9 @@ async function salvarEmprestimo() {
     descricao,
     total: parseFloat(document.getElementById('empTotal').value) || 0,
     parcelas: parseInt(document.getElementById('empParcelas').value) || 1,
+    tipoParcela: document.getElementById('empTipoParcela')?.value || 'igual',
     valorParcela: parseFloat(document.getElementById('empValorParcela').value) || 0,
+    ultimaParcela: parseFloat(document.getElementById('empUltimaParcela')?.value) || 0,
     dataInicio: document.getElementById('empDataInicio').value || new Date().toISOString().slice(0,10),
     pago: 0, parcelasPagas: 0, status: 'ativo'
   };
@@ -3064,7 +3144,10 @@ async function salvarEmprestimo() {
 async function registrarPagamento(id) {
   const e = emprestimos.find(e => e.id === id);
   if (!e) return;
-  const valor = parseFloat(prompt(`Valor pago (parcela sugerida: R$ ${fmtMoney(e.valorParcela)}):`, e.valorParcela));
+  const parcelasPagas = e.parcelasPagas || 0;
+  const isUltima = e.tipoParcela === 'ultima_diferente' && parcelasPagas === e.parcelas - 1;
+  const sugerido = isUltima ? (e.ultimaParcela || e.valorParcela) : e.valorParcela;
+  const valor = parseFloat(prompt(`Valor pago (parcela sugerida: R$ ${fmtMoney(sugerido)}):`, sugerido));
   if (!valor || isNaN(valor)) return;
   const novoPago = (e.pago || 0) + valor;
   const novasParcelas = (e.parcelasPagas || 0) + 1;
@@ -3078,7 +3161,7 @@ async function registrarPagamento(id) {
 }
 
 async function excluirEmprestimo(id) {
-  if (!confirm('Excluir empréstimo?')) return;
+  if (!await confirmar('Excluir empréstimo?', 'Todos os dados deste empréstimo serão removidos.')) return;
   await fsDelete('emprestimos', id);
   emprestimos = emprestimos.filter(e => e.id !== id);
   renderEmprestimos();
@@ -3091,12 +3174,18 @@ async function excluirEmprestimo(id) {
 // =====================================================
 function renderVales() {
   const tbody = document.getElementById('tabelaVales');
-  const pendentes = vales.filter(v => v.status !== 'descontado');
-  if (pendentes.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><div class="icon">🎫</div><h3>Nenhum vale pendente</h3></div></td></tr>`;
+  const filtro = document.getElementById('valesFiltro')?.value || 'pendente';
+  const lista = vales.filter(v => {
+    if (filtro === 'pendente') return v.status !== 'descontado';
+    if (filtro === 'descontado') return v.status === 'descontado';
+    return true; // todos
+  });
+  if (lista.length === 0) {
+    const msg = filtro === 'pendente' ? 'Nenhum vale pendente' : filtro === 'descontado' ? 'Nenhum vale descontado' : 'Nenhum vale registrado';
+    tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><div class="icon">🎫</div><h3>${msg}</h3></div></td></tr>`;
     return;
   }
-  tbody.innerHTML = pendentes.map(v => {
+  tbody.innerHTML = lista.map(v => {
     const func = funcionarios.find(f => f.id === v.funcionarioId);
     return `<tr>
       <td><strong>${func?.nome || v.funcionarioNome || '—'}</strong></td>
@@ -3141,7 +3230,7 @@ async function marcarValeDescontado(id) {
 }
 
 async function excluirVale(id) {
-  if (!confirm('Excluir vale?')) return;
+  if (!await confirmar('Excluir vale?', '')) return;
   await fsDelete('vales', id);
   vales = vales.filter(v => v.id !== id);
   renderVales();
@@ -3449,6 +3538,14 @@ function gerarPdfFuncionario(funcId) {
   const dataFolha = cidade + ', ' + new Date().getDate() + ' de ' + mesNome.toLowerCase() + ' de ' + ano;
 
   gerarPdfFolhaCompleto(doc, { f, d, calc, orgNome, orgCnpj, dataFolha, mesNome, ano }, 10, true);
+  // Salvar no histórico
+  const mesRef2 = `${String(parseInt(document.getElementById('folhaMes').value)).padStart(2,'0')}/${document.getElementById('folhaAno').value}`;
+  const historicoAtual = getCol('historicoFolhas').getAll().find(h => h.mesRef === mesRef2);
+  const snapAtual = historicoAtual?.snapshot || [];
+  const jaExiste = snapAtual.findIndex(s => s.nome === f.nome);
+  const novoEntry = { nome: f.nome, totalProventos: calc.totalProventos, totalDescontos: calc.totalDescontos, liquido: calc.liquido };
+  if (jaExiste >= 0) snapAtual[jaExiste] = novoEntry; else snapAtual.push(novoEntry);
+  salvarHistoricoFolha(mesRef2, snapAtual);
 }
 
 function gerarPdfFolhaCompleto(doc, params, startY = 10, save = false) {
@@ -3738,7 +3835,7 @@ async function salvarLancamento() {
 }
 
 async function excluirPar(id) {
-  if (!confirm('Excluir par e todos os lançamentos?')) return;
+  if (!await confirmar('Excluir par?', 'Todos os lançamentos deste par serão removidos.')) return;
   await fsDelete('acertoPares', id);
   acertoPares = acertoPares.filter(p => p.id !== id);
   renderAcerto();
@@ -3891,7 +3988,7 @@ function getEscalaRule(funcionarioId) {
     preferenciaTurno: 'indiferente',
     entradaPreferida: '',
     diasIndisponiveis: [],
-    folgaFixa: '',
+    folgaFixa: '0',
     cargaSemanalIndividual: null,
     observacoes: ''
   };
@@ -3960,7 +4057,7 @@ function openEscalaRuleModal(funcionarioId) {
   document.getElementById('escalaRegraLimiteExtra').value = rule.limiteExtraIndividual ?? '';
   document.getElementById('escalaRegraTurno').value = rule.preferenciaTurno || 'indiferente';
   document.getElementById('escalaRegraEntradaPreferida').value = rule.entradaPreferida || '';
-  document.getElementById('escalaRegraFolgaFixa').value = rule.folgaFixa ?? '';
+  document.getElementById('escalaRegraFolgaFixa').value = rule.folgaFixa ?? '0';
   document.getElementById('escalaRegraCargaSemanal').value = rule.cargaSemanalIndividual ?? '';
   document.getElementById('escalaRegraObservacoes').value = rule.observacoes || '';
   const indisponiveis = rule.diasIndisponiveis || [];
@@ -4221,33 +4318,34 @@ function renderEscalaPreview() {
       <div class="escala-preview-sheet" id="escalaPrintableArea">
         <div class="escala-preview-head">
           <div>
-            <div class="escala-preview-title">Folha de horarios previstos</div>
+            <div class="escala-preview-title">FOLHA DE PONTO</div>
             <div class="escala-preview-sub">${currentOrg?.nome || 'Empresa'} • ${item.funcionario.nome} • ${item.funcionario.cargo || 'Funcionario'}</div>
           </div>
           <div class="escala-preview-meta">
             <div><strong>Competencia:</strong> ${monthNameFromPeriod(escalaGerada.competencia)}</div>
-            <div><strong>Total previsto:</strong> ${item.totalHorasMes}h</div>
-            <div><strong>Hora extra prevista:</strong> ${item.totalExtrasMes}h</div>
+            <div><strong>TOTAL:</strong> ${item.totalHorasMes}h</div>
+            <div><strong>HORA EXTRA:</strong> ${item.totalExtrasMes}h</div>
           </div>
         </div>
         <table class="escala-preview-table">
-          <thead><tr><th>Data</th><th>Dia</th><th>Entrada</th><th>Saida intervalo</th><th>Retorno</th><th>Saida final</th><th>Horas</th><th>Obs.</th></tr></thead>
+          <thead><tr><th>DATA</th><th>DIA</th><th>ENTRADA</th><th>SAÍDA INT.</th><th>RETORNO</th><th>SAÍDA</th><th>TOTAL</th><th>H. EXTRA</th><th>OBS.</th></tr></thead>
           <tbody>${item.dias.map(dia => `
             <tr>
               <td>${fmtData(dia.data)}</td>
-              <td>${dayNameShort(dia.diaSemana)}</td>
+              <td>${dayNameShort(dia.diaSemana).toUpperCase()}</td>
               <td>${dia.entrada}</td>
               <td>${dia.saidaIntervalo}</td>
               <td>${dia.retornoIntervalo}</td>
               <td>${dia.saidaFinal}</td>
               <td>${dia.horasPrevistas}h</td>
-              <td>${dia.observacao || ''}</td>
+              <td>${dia.horaExtraPrevista > 0 ? dia.horaExtraPrevista + 'h' : '—'}</td>
+              <td>${(dia.observacao || '').toUpperCase()}</td>
             </tr>
           `).join('')}</tbody>
         </table>
         <div class="escala-preview-sign">
-          <div class="escala-preview-sign-line">Assinatura do funcionario</div>
-          <div class="escala-preview-sign-line">Responsavel / gestor</div>
+          <div class="escala-preview-sign-line">ASSINATURA DO FUNCIONÁRIO</div>
+          <div class="escala-preview-sign-line">RESPONSÁVEL / GESTOR</div>
         </div>
       </div>
     </div>`;
@@ -4262,7 +4360,7 @@ function printEscalaPreview() {
   const area = document.getElementById('escalaPrintableArea');
   if (!area) return;
   const popup = window.open('', '_blank', 'width=980,height=720');
-  popup.document.write(`<!DOCTYPE html><html><head><title>Folha de horarios</title><style>body{font-family:Arial,sans-serif;padding:24px;background:#fff;color:#111}table{width:100%;border-collapse:collapse}th,td{border:1px solid #cbd5e1;padding:8px;font-size:12px;text-align:left}.escala-preview-head{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:20px}.escala-preview-title{font-size:22px;font-weight:700}.escala-preview-sub,.escala-preview-meta{font-size:13px;color:#475569}.escala-preview-sign{margin-top:28px;display:flex;justify-content:space-between;gap:24px}.escala-preview-sign-line{flex:1;padding-top:14px;border-top:1px solid #94a3b8;text-align:center;font-size:12px}</style></head><body>${area.innerHTML}</body></html>`);
+  popup.document.write(`<!DOCTYPE html><html><head><title>FOLHA DE PONTO</title><style>body{font-family:Arial,sans-serif;padding:24px;background:#fff;color:#111}table{width:100%;border-collapse:collapse}th,td{border:1px solid #cbd5e1;padding:8px;font-size:12px;text-align:left}.escala-preview-head{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:20px}.escala-preview-title{font-size:22px;font-weight:700}.escala-preview-sub,.escala-preview-meta{font-size:13px;color:#475569}.escala-preview-sign{margin-top:28px;display:flex;justify-content:space-between;gap:24px}.escala-preview-sign-line{flex:1;padding-top:14px;border-top:1px solid #94a3b8;text-align:center;font-size:12px}</style></head><body>${area.innerHTML}</body></html>`);
   popup.document.close();
   popup.focus();
   popup.print();
@@ -4280,18 +4378,18 @@ function downloadEscalaPdf() {
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(16);
-  doc.text('Folha de horarios previstos', 14, 16);
+  doc.text('FOLHA DE PONTO', 14, 16);
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(10);
   doc.text(`Empresa: ${currentOrg?.nome || 'Empresa'}`, 14, 24);
   doc.text(`Funcionario: ${item.funcionario.nome}`, 14, 30);
   doc.text(`Competencia: ${monthNameFromPeriod(escalaGerada.competencia)}`, 14, 36);
-  doc.text(`Total previsto: ${item.totalHorasMes}h`, 14, 42);
-  doc.text(`Hora extra prevista: ${item.totalExtrasMes}h`, 14, 48);
+  doc.text(`TOTAL: ${item.totalHorasMes}h`, 14, 42);
+  doc.text(`HORA EXTRA: ${item.totalExtrasMes}h`, 14, 48);
   doc.autoTable({
     startY: 54,
-    head: [['Data', 'Dia', 'Entrada', 'Saida int.', 'Retorno', 'Saida', 'Horas']],
-    body: item.dias.map(dia => [fmtData(dia.data), dayNameShort(dia.diaSemana), dia.entrada, dia.saidaIntervalo, dia.retornoIntervalo, dia.saidaFinal, `${dia.horasPrevistas}h`]),
+    head: [['DATA', 'DIA', 'ENTRADA', 'SAÍDA INT.', 'RETORNO', 'SAÍDA', 'TOTAL', 'H. EXTRA']],
+    body: item.dias.map(dia => [fmtData(dia.data), dayNameShort(dia.diaSemana).toUpperCase(), dia.entrada, dia.saidaIntervalo, dia.retornoIntervalo, dia.saidaFinal, `${dia.horasPrevistas}h`, dia.horaExtraPrevista > 0 ? `${dia.horaExtraPrevista}h` : '—']),
     styles: { fontSize: 8, cellPadding: 2.4 },
     headStyles: { fillColor: [15, 23, 42] }
   });
@@ -4862,6 +4960,268 @@ service cloud.firestore {
     `<button class="btn btn-outline btn-sm" onclick="closeModal('modal-folha-detalhe')">Fechar</button>
      <button class="btn btn-primary btn-sm" onclick="navigator.clipboard.writeText(document.querySelector('pre').textContent).then(()=>toast('Copiado!','success'))">📋 Copiar</button>`;
   openModal('modal-folha-detalhe');
+}
+
+
+// =====================================================
+// CARGOS — lista gerenciável
+// =====================================================
+let cargosLista = [];
+
+function loadCargos() {
+  cargosLista = getCol('cargos').getAll().map(c => c.nome).filter(Boolean);
+  if (cargosLista.length === 0) {
+    // Cargos padrão
+    cargosLista = ['AJUDANTE DE CARGA E DESCARGA','AUXILIAR ADMINISTRATIVO','AUXILIAR DE LIMPEZA','MOTORISTA','OPERADOR'];
+  }
+  populateCargoSelect();
+}
+
+function populateCargoSelect() {
+  const sel = document.getElementById('funcCargo');
+  if (!sel) return;
+  const current = sel.value;
+  sel.innerHTML = '<option value="">Selecione ou cadastre...</option>' +
+    cargosLista.map(c => `<option value="${c}">${c}</option>`).join('') +
+    '<option value="__novo__">+ Cadastrar novo cargo...</option>';
+  if (current) sel.value = current;
+}
+
+function onCargoChange(sel) {
+  if (sel.value === '__novo__') {
+    sel.value = '';
+    cadastrarNovoCargo();
+  }
+}
+
+async function cadastrarNovoCargo() {
+  const nome = prompt('Nome do novo cargo (será salvo em maiúsculas):');
+  if (!nome || !nome.trim()) return;
+  const nomeFmt = nome.trim().toUpperCase();
+  if (cargosLista.includes(nomeFmt)) { toast('Cargo já existe', 'info'); return; }
+  cargosLista.push(nomeFmt);
+  await fsAdd('cargos', { nome: nomeFmt });
+  populateCargoSelect();
+  document.getElementById('funcCargo').value = nomeFmt;
+  toast('Cargo cadastrado!', 'success');
+}
+
+// Carregar cargos ao abrir modal funcionário
+const _openModal = openModal;
+function openModal(id) {
+  _openModal(id);
+  if (id === 'modal-funcionario') loadCargos();
+}
+
+// =====================================================
+// PARCELAMENTO — última parcela diferente
+// =====================================================
+function calcParcela() {
+  const total = parseFloat(document.getElementById('empTotal').value) || 0;
+  const n = parseInt(document.getElementById('empParcelas').value) || 1;
+  const tipo = document.getElementById('empTipoParcela')?.value || 'igual';
+  const grupoUltima = document.getElementById('empUltimaParcelaGroup');
+  const resumo = document.getElementById('empResumoParcelamento');
+
+  if (grupoUltima) grupoUltima.style.display = tipo === 'ultima_diferente' ? '' : 'none';
+
+  if (!total || !n) return;
+
+  if (tipo === 'igual') {
+    const val = Math.round((total / n) * 100) / 100;
+    document.getElementById('empValorParcela').value = val.toFixed(2);
+    if (resumo) resumo.textContent = `${n}x R$ ${fmtMoney(val)} = R$ ${fmtMoney(val * n)}${Math.abs(val * n - total) > 0.01 ? ' (diferença de R$ ' + fmtMoney(Math.abs(val*n-total)) + ')' : ''}`;
+  } else {
+    // Últimas n-1 parcelas iguais, última diferente
+    const parcelaPadrao = parseFloat(document.getElementById('empValorParcela').value) || 0;
+    if (parcelaPadrao && n > 1) {
+      const ultimaVal = Math.round((total - parcelaPadrao * (n - 1)) * 100) / 100;
+      document.getElementById('empUltimaParcela').value = ultimaVal > 0 ? ultimaVal.toFixed(2) : '0.00';
+      if (resumo) resumo.textContent = `${n-1}x R$ ${fmtMoney(parcelaPadrao)} + 1x R$ ${fmtMoney(ultimaVal)} = R$ ${fmtMoney(parcelaPadrao*(n-1)+ultimaVal)}`;
+    }
+  }
+}
+
+function calcUltimaParcela() {
+  const tipo = document.getElementById('empTipoParcela')?.value;
+  if (tipo === 'ultima_diferente') calcParcela();
+}
+
+// =====================================================
+// IMPRIMIR / PDF TODOS OS FUNCIONÁRIOS
+// =====================================================
+function printTodasEscalas() {
+  if (!escalaGerada || escalaGerada.equipe.length === 0) {
+    toast('Gere a escala primeiro', 'error'); return;
+  }
+  const orgNome = currentOrg?.nome || 'Empresa';
+  const competencia = monthNameFromPeriod(escalaGerada.competencia);
+  let html = `<!DOCTYPE html><html><head><title>FOLHA DE PONTO — ${competencia}</title>
+  <style>
+    body{font-family:Arial,sans-serif;padding:0;background:#fff;color:#111}
+    .sheet{padding:24px;page-break-after:always}
+    .sheet:last-child{page-break-after:auto}
+    table{width:100%;border-collapse:collapse;margin-top:12px}
+    th,td{border:1px solid #aaa;padding:6px;font-size:11px;text-align:left}
+    th{background:#f0f0f0;font-weight:bold}
+    .head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
+    .title{font-size:18px;font-weight:bold}
+    .sub{font-size:12px;color:#555;margin-top:2px}
+    .meta{font-size:12px;text-align:right}
+    .sign{margin-top:24px;display:flex;justify-content:space-between;gap:24px}
+    .sign-line{flex:1;padding-top:12px;border-top:1px solid #666;text-align:center;font-size:11px}
+    @media print{.sheet{padding:16px}}
+  </style></head><body>`;
+
+  escalaGerada.equipe.forEach(item => {
+    html += `<div class="sheet">
+      <div class="head">
+        <div>
+          <div class="title">FOLHA DE PONTO</div>
+          <div class="sub">${orgNome} • ${item.funcionario.nome} • ${item.funcionario.cargo || ''}</div>
+        </div>
+        <div class="meta">
+          <div><strong>COMPETÊNCIA:</strong> ${competencia}</div>
+          <div><strong>TOTAL:</strong> ${item.totalHorasMes}h</div>
+          <div><strong>HORA EXTRA:</strong> ${item.totalExtrasMes}h</div>
+        </div>
+      </div>
+      <table>
+        <thead><tr><th>DATA</th><th>DIA</th><th>ENTRADA</th><th>SAÍDA INT.</th><th>RETORNO</th><th>SAÍDA</th><th>TOTAL</th><th>H. EXTRA</th><th>OBS.</th></tr></thead>
+        <tbody>
+          ${item.dias.map(dia => `<tr>
+            <td>${fmtData(dia.data)}</td>
+            <td>${dayNameShort(dia.diaSemana).toUpperCase()}</td>
+            <td>${dia.entrada}</td>
+            <td>${dia.saidaIntervalo}</td>
+            <td>${dia.retornoIntervalo}</td>
+            <td>${dia.saidaFinal}</td>
+            <td>${dia.horasPrevistas}h</td>
+            <td>${dia.horaExtraPrevista > 0 ? dia.horaExtraPrevista + 'h' : '—'}</td>
+            <td></td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+      <div class="sign">
+        <div class="sign-line">ASSINATURA DO FUNCIONÁRIO</div>
+        <div class="sign-line">RESPONSÁVEL / GESTOR</div>
+      </div>
+    </div>`;
+  });
+
+  html += '</body></html>';
+  const popup = window.open('', '_blank');
+  popup.document.write(html);
+  popup.document.close();
+  popup.onload = () => { popup.focus(); popup.print(); };
+  toast(`${escalaGerada.equipe.length} folhas preparadas para impressão`, 'success');
+}
+
+function downloadTodasEscalasPdf() {
+  if (!escalaGerada || escalaGerada.equipe.length === 0) {
+    toast('Gere a escala primeiro', 'error'); return;
+  }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+  const orgNome = currentOrg?.nome || 'Empresa';
+  const competencia = monthNameFromPeriod(escalaGerada.competencia);
+
+  escalaGerada.equipe.forEach((item, idx) => {
+    if (idx > 0) doc.addPage();
+    doc.setFontSize(14); doc.setFont('helvetica','bold');
+    doc.text('FOLHA DE PONTO', 14, 14);
+    doc.setFontSize(9); doc.setFont('helvetica','normal');
+    doc.text(`${orgNome} • ${item.funcionario.nome} • ${item.funcionario.cargo || ''}`, 14, 20);
+    doc.text(`COMPETÊNCIA: ${competencia}`, 200, 14, { align: 'right' });
+    doc.text(`TOTAL: ${item.totalHorasMes}h  |  HORA EXTRA: ${item.totalExtrasMes}h`, 200, 20, { align: 'right' });
+
+    doc.autoTable({
+      startY: 25,
+      head: [['DATA','DIA','ENTRADA','SAÍDA INT.','RETORNO','SAÍDA','TOTAL','H. EXTRA','OBS.']],
+      body: item.dias.map(dia => [
+        fmtData(dia.data), dayNameShort(dia.diaSemana).toUpperCase(),
+        dia.entrada, dia.saidaIntervalo, dia.retornoIntervalo, dia.saidaFinal,
+        `${dia.horasPrevistas}h`, dia.horaExtraPrevista > 0 ? `${dia.horaExtraPrevista}h` : '—', ''
+      ]),
+      styles: { fontSize: 7, cellPadding: 2 },
+      headStyles: { fillColor: [27,45,107], textColor: 255, fontStyle: 'bold' },
+      alternateRowStyles: { fillColor: [245,248,252] }
+    });
+
+    const finalY = doc.lastAutoTable.finalY + 14;
+    doc.line(14, finalY, 100, finalY);
+    doc.line(110, finalY, 196, finalY);
+    doc.setFontSize(8);
+    doc.text('ASSINATURA DO FUNCIONÁRIO', 57, finalY + 4, { align: 'center' });
+    doc.text('RESPONSÁVEL / GESTOR', 153, finalY + 4, { align: 'center' });
+  });
+
+  doc.save(`FolhaPonto_${escalaGerada.competencia}_Todos.pdf`);
+  toast(`PDF com ${escalaGerada.equipe.length} folhas gerado!`, 'success');
+}
+
+
+// =====================================================
+// MODAL DE CONFIRMAÇÃO
+// =====================================================
+let _confirmarResolve = null;
+
+function confirmar(titulo, msg) {
+  return new Promise(resolve => {
+    _confirmarResolve = resolve;
+    document.getElementById('confirmarTitulo').textContent = titulo;
+    document.getElementById('confirmarMsg').textContent = msg || '';
+    document.getElementById('modal-confirmar').classList.add('active');
+  });
+}
+
+function resolveConfirmar(val) {
+  document.getElementById('modal-confirmar').classList.remove('active');
+  if (_confirmarResolve) { _confirmarResolve(val); _confirmarResolve = null; }
+}
+
+
+// =====================================================
+// BACKUP JSON
+// =====================================================
+function exportarBackup() {
+  const backup = {
+    exportadoEm: new Date().toISOString(),
+    org: currentOrg?.nome || '',
+    funcionarios, grupos, emprestimos, vales, acertoPares,
+    historicoFolhas: getCol('historicoFolhas').getAll(),
+    cargos: getCol('cargos').getAll()
+  };
+  const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `CadernoGestor_Backup_${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('Backup exportado!', 'success');
+}
+
+
+// Auto-preenche campos do funcionário ao selecionar grupo
+function onGrupoFuncChange(grupoId) {
+  const info = document.getElementById('grupoHerancaInfo');
+  if (!grupoId) {
+    if (info) info.style.display = 'none';
+    return;
+  }
+  const grupo = grupos.find(g => g.id === grupoId);
+  if (!grupo) return;
+  // Preencher campos automaticamente
+  if (grupo.salario) document.getElementById('funcSalario').value = grupo.salario;
+  if (grupo.horaExtra) document.getElementById('funcHoraExtra').value = grupo.horaExtra;
+  if (grupo.inss) document.getElementById('funcInss').value = grupo.inss;
+  if (grupo.insalubridade || grupo.adicionais?.find(a => a.tipo === 'insalubridade')) {
+    const insal = grupo.adicionais?.find(a => a.tipo === 'insalubridade');
+    if (insal) document.getElementById('funcInsalubridade').value = insal.pct || 20;
+  }
+  if (info) info.style.display = 'block';
+  toast(`Valores herdados do grupo "${grupo.nome}"`, 'info');
 }
 
 // Service worker for PWA
