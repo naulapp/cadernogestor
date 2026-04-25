@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#0f1e4a">
 <meta name="description" content="CadernoGestor — Saia do papel. Sem sair do caderno.">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="CadernoGestor">
 <!-- Open Graph (WhatsApp, Facebook) -->
@@ -2627,12 +2628,50 @@ async function fsDelete(col, id) {
 // =====================================================
 // LOAD ALL DATA
 // =====================================================
+// Migração automática: garante que membroIds existe na org
+async function garantirMembroIds() {
+  if (!db || !currentOrg) return;
+  try {
+    const orgRef = db.collection('orgs').doc(currentOrg.id);
+    const doc = await orgRef.get();
+    if (!doc.exists) return;
+    const data = doc.data();
+    // Se membroIds não existe, criar a partir de membros
+    if (!data.membroIds || data.membroIds.length === 0) {
+      const membroIds = (data.membros || []).map(m => m.uid).filter(Boolean);
+      if (membroIds.length > 0) {
+        await orgRef.update({ membroIds });
+        currentOrg.membroIds = membroIds;
+      }
+    } else {
+      currentOrg.membroIds = data.membroIds;
+    }
+  } catch(e) {
+    console.warn('Não foi possível verificar membroIds:', e.message);
+  }
+}
+
 async function loadAllData() {
   updateOrgUI();
-  [funcionarios, grupos, emprestimos, vales, acertoPares] = await Promise.all([
-    fsGetAll('funcionarios'), fsGetAll('grupos'), fsGetAll('emprestimos'),
-    fsGetAll('vales'), fsGetAll('acertoPares')
-  ]);
+  // Garantir que membroIds existe na org (migração automática)
+  await garantirMembroIds();
+  try {
+    [funcionarios, grupos, emprestimos, vales, acertoPares] = await Promise.all([
+      fsGetAll('funcionarios'), fsGetAll('grupos'), fsGetAll('emprestimos'),
+      fsGetAll('vales'), fsGetAll('acertoPares')
+    ]);
+  } catch(e) {
+    console.warn('Erro ao carregar dados:', e.message);
+    // Tentar carregar do localStorage como fallback
+    funcionarios = getCol('funcionarios').getAll();
+    grupos = getCol('grupos').getAll();
+    emprestimos = getCol('emprestimos').getAll();
+    vales = getCol('vales').getAll();
+    acertoPares = getCol('acertoPares').getAll();
+    if (e.code === 'permission-denied') {
+      toast('⚠️ Permissões do Firebase precisam ser atualizadas. Usando dados locais.', 'error');
+    }
+  }
   [escalaSettings, escalaRules] = await Promise.all([
     fsGetAll('escalaSettings'),
     fsGetAll('escalaRules')
