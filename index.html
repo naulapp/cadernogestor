@@ -3,8 +3,19 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="theme-color" content="#1a1a2e">
-<meta name="description" content="CadernoGestor - Gestão de folha de pagamento, empréstimos e acertos">
+<meta name="theme-color" content="#0f1e4a">
+<meta name="description" content="CadernoGestor — Saia do papel. Sem sair do caderno.">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="CadernoGestor">
+<!-- Open Graph (WhatsApp, Facebook) -->
+<meta property="og:title" content="CadernoGestor">
+<meta property="og:description" content="Saia do papel. Sem sair do caderno. Folha de pagamento, empréstimos e acertos para pequenas empresas.">
+<meta property="og:image" content="https://naulapp.github.io/cadernogestor/logo.png">
+<meta property="og:url" content="https://naulapp.github.io/cadernogestor/">
+<meta property="og:type" content="website">
+<!-- Favicon -->
+<link rel="icon" type="image/png" href="logo.png">
+<link rel="apple-touch-icon" href="logo.png">
 <title>CadernoGestor</title>
 <link rel="manifest" href="manifest.json">
 
@@ -23,27 +34,28 @@
 
 <style>
 :root {
-  --bg: #0f0f1a;
-  --bg2: #16162a;
-  --bg3: #1e1e35;
-  --card: #1a1a30;
-  --card2: #22223a;
-  --border: #2e2e50;
-  --accent: #6c63ff;
-  --accent2: #a78bfa;
-  --accent3: #22d3ee;
-  --green: #10b981;
+  --bg: #0a1229;
+  --bg2: #0f1e3d;
+  --bg3: #162550;
+  --card: #111d3a;
+  --card2: #1a2a4a;
+  --border: #1e3060;
+  --accent: #2E9E4F;
+  --accent2: #3dbb66;
+  --accent3: #F5A623;
+  --green: #2E9E4F;
   --red: #ef4444;
-  --yellow: #f59e0b;
-  --text: #e8e8f0;
-  --text2: #9999bb;
-  --text3: #6666aa;
+  --yellow: #F5A623;
+  --navy: #1B2D6B;
+  --text: #e8eef8;
+  --text2: #8aaccf;
+  --text3: #4a6a99;
   --font: 'Sora', sans-serif;
   --mono: 'JetBrains Mono', monospace;
   --radius: 12px;
   --radius2: 20px;
-  --shadow: 0 4px 24px rgba(108,99,255,0.15);
-  --shadow2: 0 8px 40px rgba(0,0,0,0.4);
+  --shadow: 0 4px 24px rgba(46,158,79,0.15);
+  --shadow2: 0 8px 40px rgba(0,0,0,0.5);
   --transition: 0.2s cubic-bezier(0.4,0,0.2,1);
 }
 
@@ -71,7 +83,7 @@ body {
   align-items: center;
   justify-content: center;
   flex-direction: column;
-  background: radial-gradient(ellipse at 30% 40%, #1a1540 0%, var(--bg) 70%);
+  background: radial-gradient(ellipse at 30% 40%, #1B2D6B 0%, var(--bg) 70%);
 }
 
 .splash-logo {
@@ -83,7 +95,7 @@ body {
 .splash-title {
   font-size: 2.4rem;
   font-weight: 700;
-  background: linear-gradient(135deg, var(--accent2), var(--accent3));
+  background: linear-gradient(135deg, #3dbb66, #F5A623);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   letter-spacing: -1px;
@@ -121,7 +133,7 @@ body {
   align-items: center;
   justify-content: center;
   flex-direction: column;
-  background: radial-gradient(ellipse at 70% 60%, #1a1540 0%, var(--bg) 70%);
+  background: radial-gradient(ellipse at 70% 60%, #1B2D6B 0%, var(--bg) 70%);
   padding: 24px;
 }
 
@@ -249,7 +261,7 @@ select.form-input { cursor: pointer; }
   justify-content: center;
   flex-direction: column;
   padding: 24px;
-  background: radial-gradient(ellipse at 50% 20%, #1a1540 0%, var(--bg) 60%);
+  background: radial-gradient(ellipse at 50% 20%, #1B2D6B 0%, var(--bg) 60%);
 }
 
 .setup-card {
@@ -989,7 +1001,7 @@ tr:hover td { background: rgba(108,99,255,0.04); }
 
 <!-- ======== SPLASH ======== -->
 <div class="screen active" id="screen-splash">
-  <div class="splash-logo">📒</div>
+  <img src="logo.png" style="width:100px;height:100px;object-fit:contain;margin-bottom:16px;animation:float 3s ease-in-out infinite;filter:drop-shadow(0 8px 24px rgba(46,158,79,0.4))">
   <div class="splash-title">CadernoGestor</div>
   <div class="splash-sub">Gestão simplificada. Resultado real.</div>
   <div class="splash-loader"></div>
@@ -999,9 +1011,9 @@ tr:hover td { background: rgba(108,99,255,0.04); }
 <div class="screen" id="screen-auth">
   <div class="auth-card">
     <div class="auth-logo">
-      <div class="emoji">📒</div>
+      <img src="logo.png" style="width:72px;height:72px;object-fit:contain">
       <h1>CadernoGestor</h1>
-      <p>Folha de pagamento, empréstimos e acertos</p>
+      <p>Saia do papel. Sem sair do caderno.</p>
     </div>
 
     <div class="auth-tabs">
@@ -1067,7 +1079,7 @@ tr:hover td { background: rgba(108,99,255,0.04); }
     <div id="setup-create">
       <div class="form-group">
         <label class="form-label">Nome da empresa/organização</label>
-        <input type="text" class="form-input" id="orgName" placeholder="Ex: Donena Nutrição Animal">
+        <input type="text" class="form-input" id="orgName" placeholder="Ex: Minha Empresa Ltda">
       </div>
       <div class="form-group">
         <label class="form-label">CNPJ (opcional)</label>
@@ -1075,7 +1087,7 @@ tr:hover td { background: rgba(108,99,255,0.04); }
       </div>
       <div class="form-group">
         <label class="form-label">Cidade/UF</label>
-        <input type="text" class="form-input" id="orgCidade" placeholder="Taquarana/AL">
+        <input type="text" class="form-input" id="orgCidade" placeholder="Ex: São Paulo/SP">
       </div>
       <button class="btn btn-primary" onclick="createOrg()">Criar organização</button>
     </div>
@@ -1094,7 +1106,7 @@ tr:hover td { background: rgba(108,99,255,0.04); }
 <div class="screen" id="screen-app">
   <!-- TOP BAR -->
   <div class="topbar">
-    <div class="topbar-logo">📒 CadernoGestor</div>
+    <div class="topbar-logo"><img src="logo.png" style="height:28px;width:28px;object-fit:contain;border-radius:6px"> CadernoGestor</div>
     <div class="topbar-org">
       <span class="org-badge" id="currentOrgBadge" onclick="openOrgSelector()">Carregando...</span>
     </div>
