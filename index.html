@@ -2727,6 +2727,11 @@ async function loadAllData() {
     fsGetAll('escalaSettings'),
     fsGetAll('escalaRules')
   ]);
+  // Carregar cargos
+  cargosLista = getCol('cargos').getAll().map(c => c.nome).filter(Boolean);
+  if (cargosLista.length === 0) {
+    cargosLista = ['AJUDANTE DE CARGA E DESCARGA','AUXILIAR ADMINISTRATIVO','AUXILIAR DE LIMPEZA','MOTORISTA','OPERADOR'];
+  }
   renderDashboard();
   renderFuncionarios();
   renderGrupos();
@@ -2735,6 +2740,7 @@ async function loadAllData() {
   renderAcerto();
   renderEquipe();
   renderEscalaPage();
+  renderHistoricoFolhas();
   populateSelects();
 }
 
@@ -2748,6 +2754,8 @@ function navigate(page) {
 
   const p = document.getElementById('page-' + page);
   if (p) p.classList.add('active');
+  if (page === 'relatorio') populateRelatorioGrupos();
+  if (page === 'historico-folha') renderHistoricoFolhas();
   const n = document.getElementById('nav-' + page);
   if (n) n.classList.add('active');
   // Close dropdown
@@ -4755,21 +4763,21 @@ function verDetalhesHistorico(id) {
 // =====================================================
 // RELATÓRIO CONSOLIDADO
 // =====================================================
+function populateRelatorioGrupos() {
+  const relGrupoSel = document.getElementById('relGrupo');
+  if (!relGrupoSel) return;
+  const current = relGrupoSel.value;
+  relGrupoSel.innerHTML = '<option value="">Todos</option>' +
+    grupos.map(g => `<option value="${g.id}">${g.nome}</option>`).join('');
+  if (current) relGrupoSel.value = current;
+}
+
 function gerarRelatorio() {
   const mes = parseInt(document.getElementById('relMes').value);
   const ano = parseInt(document.getElementById('relAno').value);
   const grupoFiltro = document.getElementById('relGrupo').value;
   const mesRef = `${String(mes).padStart(2,'0')}/${ano}`;
-
-  // Populate grupo select
-  const relGrupoSel = document.getElementById('relGrupo');
-  if (relGrupoSel.options.length <= 1) {
-    grupos.forEach(g => {
-      const opt = document.createElement('option');
-      opt.value = g.id; opt.textContent = g.nome;
-      relGrupoSel.appendChild(opt);
-    });
-  }
+  populateRelatorioGrupos();
 
   const ativos = funcionarios.filter(f => {
     if (f.ativo === false) return false;
