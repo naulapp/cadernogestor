@@ -31,6 +31,7 @@
 <!-- jsPDF for PDF generation -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
 <style>
 /* LIGHT MODE (padrão) */
@@ -1016,6 +1017,153 @@ tr:hover td { background: rgba(108,99,255,0.04); }
 .folha-preview table { width: 100%; border-collapse: collapse; }
 .folha-preview td { padding: 4px 8px; border: 1px solid #aaa; }
 .folha-preview .total-row { background: #f0f0f0; font-weight: bold; }
+
+/* ASSISTENTE DE ESCALA */
+.escala-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.escala-toolbar {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+
+.escala-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.escala-summary-card {
+  background: var(--card2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px;
+}
+
+.escala-summary-card .label {
+  font-size: 0.76rem;
+  color: var(--text3);
+  margin-bottom: 6px;
+}
+
+.escala-summary-card .value {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--accent2);
+}
+
+.escala-alert {
+  border: 1px solid rgba(217, 119, 6, 0.18);
+  background: rgba(217, 119, 6, 0.08);
+  color: var(--text2);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  margin-bottom: 10px;
+}
+
+.escala-alert strong {
+  color: var(--accent3);
+}
+
+.escala-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  color: var(--text2);
+  font-size: 0.76rem;
+  margin: 0 6px 6px 0;
+}
+
+.escala-preview-sheet {
+  background: #fff;
+  color: #111827;
+  border-radius: 18px;
+  padding: 24px;
+  border: 1px solid #d1d5db;
+  box-shadow: 0 10px 32px rgba(15, 23, 42, 0.08);
+}
+
+.escala-preview-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.escala-preview-title {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.escala-preview-sub {
+  color: #475569;
+  margin-top: 4px;
+  font-size: 0.88rem;
+}
+
+.escala-preview-meta {
+  text-align: right;
+  font-size: 0.82rem;
+  color: #475569;
+}
+
+.escala-preview-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 12px;
+}
+
+.escala-preview-table th,
+.escala-preview-table td {
+  border: 1px solid #d1d5db;
+  padding: 8px 9px;
+  text-align: left;
+  font-size: 0.78rem;
+}
+
+.escala-preview-table th {
+  background: #f8fafc;
+  color: #0f172a;
+}
+
+.escala-preview-sign {
+  margin-top: 28px;
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.escala-preview-sign-line {
+  flex: 1;
+  min-width: 220px;
+  padding-top: 14px;
+  border-top: 1px solid #94a3b8;
+  color: #475569;
+  font-size: 0.8rem;
+  text-align: center;
+}
+
+@media (max-width: 768px) {
+  .escala-preview-sheet {
+    padding: 16px;
+  }
+
+  .escala-preview-meta {
+    text-align: left;
+  }
+}
 </style>
 </head>
 <body>
@@ -1179,6 +1327,15 @@ tr:hover td { background: rgba(108,99,255,0.04); }
       </div>
 
       <div class="nav-section-title">Gestão</div>
+      <div class="nav-item" onclick="navigate('relatorio')" id="nav-relatorio">
+        <span class="icon">📊</span> Relatório
+      </div>
+      <div class="nav-item" onclick="navigate('historico-folha')" id="nav-historico-folha">
+        <span class="icon">📁</span> Histórico Folhas
+      </div>
+      <div class="nav-item" onclick="navigate('escala')" id="nav-escala">
+        <span class="icon">SC</span> Assist. Escala
+      </div>
       <div class="nav-item" onclick="navigate('equipe')" id="nav-equipe">
         <span class="icon">🔑</span> Equipe/Acesso
       </div>
@@ -1219,6 +1376,9 @@ tr:hover td { background: rgba(108,99,255,0.04); }
           </div>
         </div>
 
+        <!-- ALERTAS DASHBOARD -->
+        <div id="dashAlertas" style="margin-bottom:16px"></div>
+
         <div class="table-wrap">
           <div class="table-header">
             <div class="table-title">Empréstimos em andamento</div>
@@ -1240,7 +1400,10 @@ tr:hover td { background: rgba(108,99,255,0.04); }
             <div class="page-title">Funcionários</div>
             <div class="page-sub">Cadastro e gestão</div>
           </div>
-          <button class="btn btn-primary btn-sm" onclick="openModal('modal-funcionario')">➕ Novo funcionário</button>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-outline btn-sm" onclick="exportFuncionariosExcel()">📊 Excel</button>
+            <button class="btn btn-primary btn-sm" onclick="openModal('modal-funcionario')">➕ Novo funcionário</button>
+          </div>
         </div>
 
         <div class="table-wrap">
@@ -1321,6 +1484,140 @@ tr:hover td { background: rgba(108,99,255,0.04); }
       </div>
 
       <!-- ===== EMPRÉSTIMOS ===== -->
+      <div class="page" id="page-escala">
+        <div class="page-header">
+          <div>
+            <div class="page-title">Assistente de Escala</div>
+            <div class="page-sub">Planeje horarios mensais e gere folhas para impressao</div>
+          </div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <button class="btn btn-outline btn-sm" onclick="saveEscalaSettings()">Salvar configuracoes</button>
+            <button class="btn btn-primary btn-sm" onclick="generateEscala()">Gerar escala</button>
+          </div>
+        </div>
+
+        <div class="section-card">
+          <div class="section-card-title">Configuracoes gerais</div>
+          <div class="escala-grid">
+            <div class="form-group">
+              <label class="form-label">Nome da configuracao</label>
+              <input type="text" class="form-input" id="escalaConfigNome" placeholder="Escala padrao da empresa">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Hora de abertura</label>
+              <input type="time" class="form-input" id="escalaAbertura" value="08:00">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Hora de fechamento</label>
+              <input type="time" class="form-input" id="escalaFechamento" value="18:00">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Tipo de escala</label>
+              <select class="form-input" id="escalaTipo">
+                <option value="5x2">5x2</option>
+                <option value="6x1">6x1</option>
+                <option value="personalizada">Personalizada</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Carga semanal padrao</label>
+              <input type="number" class="form-input" id="escalaCargaSemanal" value="44" min="1">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Jornada diaria padrao</label>
+              <input type="number" class="form-input" id="escalaJornadaDiaria" value="8" min="1">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Intervalo padrao (min)</label>
+              <input type="number" class="form-input" id="escalaIntervalo" value="60" min="0">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Hora extra padrao (h/dia)</label>
+              <input type="number" class="form-input" id="escalaHoraExtraLimite" value="2" min="0" step="0.5">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Cobertura minima por dia</label>
+              <input type="number" class="form-input" id="escalaCoberturaMinima" value="1" min="1">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Prioridade da montagem</label>
+              <select class="form-input" id="escalaPrioridade">
+                <option value="equilibrar">Equilibrar equipe</option>
+                <option value="cobertura">Maximizar cobertura</option>
+              </select>
+            </div>
+            <div class="form-group" style="grid-column:1/-1">
+              <label class="form-label">Dias de funcionamento</label>
+              <select class="form-input" id="escalaDiasFuncionamento" multiple size="7">
+                <option value="0">Domingo</option>
+                <option value="1" selected>Segunda</option>
+                <option value="2" selected>Terca</option>
+                <option value="3" selected>Quarta</option>
+                <option value="4" selected>Quinta</option>
+                <option value="5" selected>Sexta</option>
+                <option value="6">Sabado</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-card">
+          <div class="table-header">
+            <div class="table-title">Funcionarios na escala</div>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Funcionario</th>
+                <th>Funcao</th>
+                <th>Participa</th>
+                <th>Hora extra</th>
+                <th>Turno</th>
+                <th>Folga fixa</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="escalaFuncionariosTable">
+              <tr><td colspan="7"><div class="empty-state"><div class="icon">S</div><h3>Nenhum funcionario para configurar</h3></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="section-card">
+          <div class="section-card-title">Geracao mensal</div>
+          <div class="escala-toolbar">
+            <div class="form-group" style="margin:0;min-width:160px">
+              <label class="form-label">Mes</label>
+              <select class="form-input" id="escalaMes">
+                <option value="1">Janeiro</option><option value="2">Fevereiro</option>
+                <option value="3">Marco</option><option value="4">Abril</option>
+                <option value="5">Maio</option><option value="6">Junho</option>
+                <option value="7">Julho</option><option value="8">Agosto</option>
+                <option value="9">Setembro</option><option value="10">Outubro</option>
+                <option value="11">Novembro</option><option value="12">Dezembro</option>
+              </select>
+            </div>
+            <div class="form-group" style="margin:0;min-width:120px">
+              <label class="form-label">Ano</label>
+              <input type="number" class="form-input" id="escalaAno" value="2026">
+            </div>
+            <div class="form-group" style="margin:0;min-width:220px">
+              <label class="form-label">Funcionario para visualizar</label>
+              <select class="form-input" id="escalaPreviewFuncionario" onchange="renderEscalaPreview()">
+                <option value="">Selecione...</option>
+              </select>
+            </div>
+            <button class="btn btn-primary" onclick="generateEscala()" style="height:42px">Gerar escala</button>
+            <button class="btn btn-outline" onclick="printEscalaPreview()" style="height:42px">Imprimir</button>
+            <button class="btn btn-outline" onclick="downloadEscalaPdf()" style="height:42px">PDF</button>
+          </div>
+        </div>
+
+        <div id="escalaResumo"></div>
+        <div id="escalaAlertas"></div>
+        <div id="escalaPreview"></div>
+      </div>
+
       <div class="page" id="page-emprestimos">
         <div class="page-header">
           <div>
@@ -1387,6 +1684,65 @@ tr:hover td { background: rgba(108,99,255,0.04); }
         </div>
       </div>
 
+      <!-- ===== RELATÓRIO CONSOLIDADO ===== -->
+      <div class="page" id="page-relatorio">
+        <div class="page-header">
+          <div>
+            <div class="page-title">Relatório Consolidado</div>
+            <div class="page-sub">Todos os funcionários em um mês</div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-outline btn-sm" onclick="exportRelatorioExcel()">📊 Excel</button>
+            <button class="btn btn-primary btn-sm" onclick="gerarRelatorio()">🔄 Gerar</button>
+          </div>
+        </div>
+        <div class="section-card" style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin-bottom:16px">
+          <div class="form-group" style="margin:0;flex:1;min-width:140px">
+            <label class="form-label">Mês</label>
+            <select class="form-input" id="relMes">
+              <option value="1">Janeiro</option><option value="2">Fevereiro</option>
+              <option value="3">Março</option><option value="4">Abril</option>
+              <option value="5">Maio</option><option value="6">Junho</option>
+              <option value="7">Julho</option><option value="8">Agosto</option>
+              <option value="9">Setembro</option><option value="10">Outubro</option>
+              <option value="11">Novembro</option><option value="12">Dezembro</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin:0;flex:1;min-width:100px">
+            <label class="form-label">Ano</label>
+            <input type="number" class="form-input" id="relAno" value="2026">
+          </div>
+          <div class="form-group" style="margin:0;flex:1;min-width:140px">
+            <label class="form-label">Grupo</label>
+            <select class="form-input" id="relGrupo">
+              <option value="">Todos</option>
+            </select>
+          </div>
+        </div>
+        <div id="relatorioContent">
+          <div class="empty-state"><div class="icon">📊</div><h3>Clique em Gerar para ver o relatório</h3></div>
+        </div>
+      </div>
+
+      <!-- ===== HISTÓRICO DE FOLHAS ===== -->
+      <div class="page" id="page-historico-folha">
+        <div class="page-header">
+          <div>
+            <div class="page-title">Histórico de Folhas</div>
+            <div class="page-sub">Folhas geradas e salvas</div>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <div class="table-header"><div class="table-title">Folhas geradas</div></div>
+          <table>
+            <thead><tr><th>Competência</th><th>Funcionários</th><th>Total Bruto</th><th>Total Descontos</th><th>Total Líquido</th><th>Gerado em</th><th></th></tr></thead>
+            <tbody id="tabelaHistoricoFolhas">
+              <tr><td colspan="7"><div class="empty-state"><div class="icon">📁</div><h3>Nenhuma folha salva</h3><p>Gere uma folha de pagamento para ela aparecer aqui</p></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       <!-- ===== ACERTO MÚTUO ===== -->
       <div class="page" id="page-acerto">
         <div class="page-header">
@@ -1445,7 +1801,10 @@ tr:hover td { background: rgba(108,99,255,0.04); }
             <div class="page-title">Configurações</div>
             <div class="page-sub">Empresa e preferências</div>
           </div>
-          <button class="btn btn-primary btn-sm" onclick="salvarConfig()">💾 Salvar</button>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-outline btn-sm" onclick="mostrarRegrasFirestore()">🔒 Regras Firestore</button>
+            <button class="btn btn-primary btn-sm" onclick="salvarConfig()">💾 Salvar</button>
+          </div>
         </div>
 
         <div class="section-card">
@@ -1494,6 +1853,7 @@ tr:hover td { background: rgba(108,99,255,0.04); }
       <div class="mobile-nav-item active" onclick="navigate('dashboard')"><span class="icon">📊</span>Início</div>
       <div class="mobile-nav-item" onclick="navigate('funcionarios')"><span class="icon">👥</span>Equipe</div>
       <div class="mobile-nav-item" onclick="navigate('folha')"><span class="icon">📋</span>Folha</div>
+      <div class="mobile-nav-item" onclick="navigate('escala')"><span class="icon">🗓️</span>Escala</div>
       <div class="mobile-nav-item" onclick="navigate('emprestimos')"><span class="icon">💰</span>Emprést.</div>
       <div class="mobile-nav-item" onclick="navigate('acerto')"><span class="icon">🤝</span>Acerto</div>
     </div>
@@ -1551,6 +1911,89 @@ tr:hover td { background: rgba(108,99,255,0.04); }
     <div class="modal-footer">
       <button class="btn btn-outline btn-sm" onclick="closeModal('modal-funcionario')">Cancelar</button>
       <button class="btn btn-primary btn-sm" onclick="salvarFuncionario()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL REGRA DE ESCALA -->
+<div class="modal-overlay" id="modal-escala-regra">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Regra do funcionario na escala</div>
+      <div class="modal-close" onclick="closeModal('modal-escala-regra')">âœ•</div>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="escalaRegraFuncionarioId">
+      <div class="form-grid form-grid-2">
+        <div class="form-group">
+          <label class="form-label">Participa da escala</label>
+          <select class="form-input" id="escalaRegraAtivo">
+            <option value="sim">Sim</option>
+            <option value="nao">Nao</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Pode fazer hora extra</label>
+          <select class="form-input" id="escalaRegraHoraExtra">
+            <option value="sim">Sim</option>
+            <option value="nao">Nao</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Limite individual de extra (h/dia)</label>
+          <input type="number" class="form-input" id="escalaRegraLimiteExtra" min="0" step="0.5">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Preferencia de turno</label>
+          <select class="form-input" id="escalaRegraTurno">
+            <option value="indiferente">Indiferente</option>
+            <option value="manha">Manha</option>
+            <option value="tarde">Tarde</option>
+            <option value="noite">Noite</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Horario preferido de entrada</label>
+          <input type="time" class="form-input" id="escalaRegraEntradaPreferida">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Folga fixa</label>
+          <select class="form-input" id="escalaRegraFolgaFixa">
+            <option value="">Nenhuma</option>
+            <option value="0">Domingo</option>
+            <option value="1">Segunda</option>
+            <option value="2">Terca</option>
+            <option value="3">Quarta</option>
+            <option value="4">Quinta</option>
+            <option value="5">Sexta</option>
+            <option value="6">Sabado</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Carga semanal individual</label>
+          <input type="number" class="form-input" id="escalaRegraCargaSemanal" min="1" placeholder="Usar padrao">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Dias indisponiveis</label>
+          <select class="form-input" id="escalaRegraIndisponiveis" multiple size="7">
+            <option value="0">Domingo</option>
+            <option value="1">Segunda</option>
+            <option value="2">Terca</option>
+            <option value="3">Quarta</option>
+            <option value="4">Quinta</option>
+            <option value="5">Sexta</option>
+            <option value="6">Sabado</option>
+          </select>
+        </div>
+        <div class="form-group" style="grid-column:1/-1">
+          <label class="form-label">Observacoes internas</label>
+          <input type="text" class="form-input" id="escalaRegraObservacoes" placeholder="Ex: prefere fechar a loja na sexta">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline btn-sm" onclick="closeModal('modal-escala-regra')">Cancelar</button>
+      <button class="btn btn-primary btn-sm" onclick="saveEscalaRule()">Salvar regra</button>
     </div>
   </div>
 </div>
@@ -1874,6 +2317,9 @@ let grupos = [];
 let emprestimos = [];
 let vales = [];
 let acertoPares = [];
+let escalaSettings = [];
+let escalaRules = [];
+let escalaGerada = null;
 let folhaAtualId = null;
 let firebaseReady = false;
 
@@ -1927,6 +2373,10 @@ function showScreen(name) {
     // Set default month/year
     document.getElementById('folhaMes').value = d.getMonth() + 1;
     document.getElementById('folhaAno').value = d.getFullYear();
+    const escalaMes = document.getElementById('escalaMes');
+    const escalaAno = document.getElementById('escalaAno');
+    if (escalaMes) escalaMes.value = d.getMonth() + 1;
+    if (escalaAno) escalaAno.value = d.getFullYear();
   }
 }
 
@@ -2102,6 +2552,7 @@ function updateOrgUI() {
   document.getElementById('cfgNome').value = currentOrg.nome || '';
   document.getElementById('cfgCnpj').value = currentOrg.cnpj || '';
   document.getElementById('cfgCidade').value = currentOrg.cidade || '';
+  document.getElementById('cfgResponsavel').value = currentOrg.responsavel || '';
   document.getElementById('cfgInss').value = currentOrg.inssDefault || '207';
   document.getElementById('cfgVale').value = currentOrg.valeDefault || '700';
 }
@@ -2183,6 +2634,10 @@ async function loadAllData() {
     fsGetAll('funcionarios'), fsGetAll('grupos'), fsGetAll('emprestimos'),
     fsGetAll('vales'), fsGetAll('acertoPares')
   ]);
+  [escalaSettings, escalaRules] = await Promise.all([
+    fsGetAll('escalaSettings'),
+    fsGetAll('escalaRules')
+  ]);
   renderDashboard();
   renderFuncionarios();
   renderGrupos();
@@ -2190,6 +2645,7 @@ async function loadAllData() {
   renderVales();
   renderAcerto();
   renderEquipe();
+  renderEscalaPage();
   populateSelects();
 }
 
@@ -2207,6 +2663,10 @@ function navigate(page) {
   if (n) n.classList.add('active');
   // Close dropdown
   document.querySelectorAll('.dropdown-menu').forEach(m => m.classList.remove('open'));
+  document.querySelectorAll('.mobile-nav-item').forEach(n => {
+    if (n.getAttribute('onclick')?.includes(`'${page}'`)) n.classList.add('active');
+  });
+  if (page === 'escala') renderEscalaPage();
 }
 
 // =====================================================
@@ -2241,6 +2701,7 @@ document.addEventListener('click', e => {
 // DASHBOARD
 // =====================================================
 function renderDashboard() {
+  renderAlertasDashboard();
   document.getElementById('dashFuncionarios').textContent = funcionarios.filter(f => f.ativo !== false).length;
   const ativos = emprestimos.filter(e => e.status === 'ativo' || !e.status);
   document.getElementById('dashEmprestimos').textContent = ativos.length;
@@ -2310,6 +2771,11 @@ async function salvarFuncionario() {
   const id = document.getElementById('funcId').value;
   const nome = document.getElementById('funcNome').value.trim();
   if (!nome) { toast('Nome obrigatório', 'error'); return; }
+  const cpfVal = document.getElementById('funcCpf').value;
+  if (cpfVal && !validarCpf(cpfVal)) { toast('CPF inválido', 'error'); return; }
+  if (cpfVal && verificarCpfDuplicado(cpfVal, document.getElementById('funcId').value)) {
+    toast('CPF já cadastrado em outro funcionário', 'error'); return;
+  }
 
   const data = {
     nome, cpf: document.getElementById('funcCpf').value,
@@ -3125,7 +3591,15 @@ function gerarTodosPDFs() {
   });
 
   doc.save(`Folhas_${mesNome}_${ano}.pdf`);
-  toast(`${ids.length} folhas geradas!`, 'success');
+  // Salvar histórico
+  const snapshot = ids.map(id => {
+    const d = folhaDetalhe[id];
+    const calc = computeFolha(d);
+    return { nome: d.funcionario.nome, totalProventos: calc.totalProventos, totalDescontos: calc.totalDescontos, liquido: calc.liquido };
+  });
+  const mesRef = `${String(mes.selectedIndex+1).padStart(2,'0')}/${ano}`;
+  salvarHistoricoFolha(mesRef, snapshot);
+  toast(`${ids.length} folhas geradas e histórico salvo!`, 'success');
 }
 
 // =====================================================
@@ -3335,6 +3809,7 @@ async function salvarConfig() {
     nome: document.getElementById('cfgNome').value,
     cnpj: document.getElementById('cfgCnpj').value,
     cidade: document.getElementById('cfgCidade').value,
+    responsavel: document.getElementById('cfgResponsavel').value,
     inssDefault: parseFloat(document.getElementById('cfgInss').value) || 207,
     valeDefault: parseFloat(document.getElementById('cfgVale').value) || 700
   };
@@ -3349,6 +3824,531 @@ async function salvarConfig() {
 // =====================================================
 // POPULATE SELECTS
 // =====================================================
+function getDefaultEscalaSettings() {
+  return {
+    nome: 'Escala padrao',
+    abertura: '08:00',
+    fechamento: '18:00',
+    tipo: '5x2',
+    cargaSemanal: 44,
+    jornadaDiaria: 8,
+    intervalo: 60,
+    limiteExtra: 2,
+    coberturaMinima: 1,
+    prioridade: 'equilibrar',
+    diasFuncionamento: [1, 2, 3, 4, 5]
+  };
+}
+
+function getEscalaSettings() {
+  return escalaSettings[0] ? { ...getDefaultEscalaSettings(), ...escalaSettings[0] } : getDefaultEscalaSettings();
+}
+
+function getEscalaRule(funcionarioId) {
+  return escalaRules.find(r => r.funcionarioId === funcionarioId) || {
+    funcionarioId,
+    participaEscala: true,
+    podeHoraExtra: false,
+    limiteExtraIndividual: null,
+    preferenciaTurno: 'indiferente',
+    entradaPreferida: '',
+    diasIndisponiveis: [],
+    folgaFixa: '',
+    cargaSemanalIndividual: null,
+    observacoes: ''
+  };
+}
+
+function renderEscalaPage() {
+  const settings = getEscalaSettings();
+  const fields = {
+    escalaConfigNome: settings.nome,
+    escalaAbertura: settings.abertura,
+    escalaFechamento: settings.fechamento,
+    escalaTipo: settings.tipo,
+    escalaCargaSemanal: settings.cargaSemanal,
+    escalaJornadaDiaria: settings.jornadaDiaria,
+    escalaIntervalo: settings.intervalo,
+    escalaHoraExtraLimite: settings.limiteExtra,
+    escalaCoberturaMinima: settings.coberturaMinima,
+    escalaPrioridade: settings.prioridade
+  };
+  Object.entries(fields).forEach(([id, value]) => {
+    const el = document.getElementById(id);
+    if (el && document.activeElement !== el) el.value = value ?? '';
+  });
+  const diasEl = document.getElementById('escalaDiasFuncionamento');
+  if (diasEl) {
+    Array.from(diasEl.options).forEach(opt => {
+      opt.selected = settings.diasFuncionamento.includes(parseInt(opt.value, 10));
+    });
+  }
+  const now = new Date();
+  const mesEl = document.getElementById('escalaMes');
+  const anoEl = document.getElementById('escalaAno');
+  if (mesEl && !mesEl.value) mesEl.value = now.getMonth() + 1;
+  if (anoEl && !anoEl.value) anoEl.value = now.getFullYear();
+  renderEscalaFuncionarios();
+  renderEscalaResultado();
+}
+
+function renderEscalaFuncionarios() {
+  const tbody = document.getElementById('escalaFuncionariosTable');
+  if (!tbody) return;
+  const ativos = funcionarios.filter(f => f.ativo !== false);
+  if (ativos.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="icon">S</div><h3>Nenhum funcionario ativo</h3><p>Cadastre funcionarios antes de montar a escala</p></div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = ativos.map(f => {
+    const rule = getEscalaRule(f.id);
+    return `<tr>
+      <td><strong>${f.nome}</strong></td>
+      <td>${f.cargo || '—'}</td>
+      <td><span class="badge ${rule.participaEscala !== false ? 'badge-green' : 'badge-gray'}">${rule.participaEscala !== false ? 'Sim' : 'Nao'}</span></td>
+      <td><span class="badge ${rule.podeHoraExtra ? 'badge-accent' : 'badge-gray'}">${rule.podeHoraExtra ? 'Permitida' : 'Bloqueada'}</span></td>
+      <td>${labelTurno(rule.preferenciaTurno)}</td>
+      <td>${labelDiaSemana(rule.folgaFixa)}</td>
+      <td style="text-align:right"><button class="btn btn-outline btn-sm" onclick="openEscalaRuleModal('${f.id}')">Configurar</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function openEscalaRuleModal(funcionarioId) {
+  const rule = getEscalaRule(funcionarioId);
+  document.getElementById('escalaRegraFuncionarioId').value = funcionarioId;
+  document.getElementById('escalaRegraAtivo').value = rule.participaEscala !== false ? 'sim' : 'nao';
+  document.getElementById('escalaRegraHoraExtra').value = rule.podeHoraExtra ? 'sim' : 'nao';
+  document.getElementById('escalaRegraLimiteExtra').value = rule.limiteExtraIndividual ?? '';
+  document.getElementById('escalaRegraTurno').value = rule.preferenciaTurno || 'indiferente';
+  document.getElementById('escalaRegraEntradaPreferida').value = rule.entradaPreferida || '';
+  document.getElementById('escalaRegraFolgaFixa').value = rule.folgaFixa ?? '';
+  document.getElementById('escalaRegraCargaSemanal').value = rule.cargaSemanalIndividual ?? '';
+  document.getElementById('escalaRegraObservacoes').value = rule.observacoes || '';
+  const indisponiveis = rule.diasIndisponiveis || [];
+  Array.from(document.getElementById('escalaRegraIndisponiveis').options).forEach(opt => {
+    opt.selected = indisponiveis.includes(parseInt(opt.value, 10));
+  });
+  openModal('modal-escala-regra');
+}
+
+async function saveEscalaRule() {
+  const funcionarioId = document.getElementById('escalaRegraFuncionarioId').value;
+  if (!funcionarioId) return;
+  const podeHoraExtra = document.getElementById('escalaRegraHoraExtra').value === 'sim';
+  const payload = {
+    funcionarioId,
+    participaEscala: document.getElementById('escalaRegraAtivo').value === 'sim',
+    podeHoraExtra,
+    limiteExtraIndividual: podeHoraExtra ? (parseFloat(document.getElementById('escalaRegraLimiteExtra').value) || null) : 0,
+    preferenciaTurno: document.getElementById('escalaRegraTurno').value,
+    entradaPreferida: document.getElementById('escalaRegraEntradaPreferida').value || '',
+    folgaFixa: document.getElementById('escalaRegraFolgaFixa').value,
+    cargaSemanalIndividual: parseFloat(document.getElementById('escalaRegraCargaSemanal').value) || null,
+    diasIndisponiveis: getSelectedValues('escalaRegraIndisponiveis').map(v => parseInt(v, 10)),
+    observacoes: document.getElementById('escalaRegraObservacoes').value.trim()
+  };
+  const existente = escalaRules.find(r => r.funcionarioId === funcionarioId);
+  if (existente?.id) {
+    await fsUpdate('escalaRules', existente.id, payload);
+    Object.assign(existente, payload);
+  } else {
+    const novo = await fsAdd('escalaRules', payload);
+    escalaRules.push(novo);
+  }
+  closeModal('modal-escala-regra');
+  renderEscalaFuncionarios();
+  toast('Regra da escala salva!', 'success');
+}
+
+async function saveEscalaSettings() {
+  const diasFuncionamento = getSelectedValues('escalaDiasFuncionamento').map(v => parseInt(v, 10));
+  if (diasFuncionamento.length === 0) {
+    toast('Selecione ao menos um dia de funcionamento', 'error');
+    return null;
+  }
+  const payload = {
+    nome: document.getElementById('escalaConfigNome').value.trim() || 'Escala padrao',
+    abertura: document.getElementById('escalaAbertura').value,
+    fechamento: document.getElementById('escalaFechamento').value,
+    tipo: document.getElementById('escalaTipo').value,
+    cargaSemanal: parseFloat(document.getElementById('escalaCargaSemanal').value) || 44,
+    jornadaDiaria: parseFloat(document.getElementById('escalaJornadaDiaria').value) || 8,
+    intervalo: parseFloat(document.getElementById('escalaIntervalo').value) || 60,
+    limiteExtra: parseFloat(document.getElementById('escalaHoraExtraLimite').value) || 0,
+    coberturaMinima: parseInt(document.getElementById('escalaCoberturaMinima').value, 10) || 1,
+    prioridade: document.getElementById('escalaPrioridade').value,
+    diasFuncionamento
+  };
+  if (!payload.abertura || !payload.fechamento || payload.abertura >= payload.fechamento) {
+    toast('Revise os horarios de abertura e fechamento', 'error');
+    return null;
+  }
+  if (escalaSettings[0]?.id) {
+    await fsUpdate('escalaSettings', escalaSettings[0].id, payload);
+    escalaSettings[0] = { ...escalaSettings[0], ...payload };
+  } else {
+    const novo = await fsAdd('escalaSettings', payload);
+    escalaSettings = [novo];
+  }
+  renderEscalaPage();
+  toast('Configuracoes da escala salvas!', 'success');
+  return payload;
+}
+
+async function generateEscala() {
+  const saved = await saveEscalaSettings();
+  if (!saved) {
+    return;
+  }
+  const settings = getEscalaSettings();
+  const mes = parseInt(document.getElementById('escalaMes').value, 10);
+  const ano = parseInt(document.getElementById('escalaAno').value, 10);
+  const equipe = funcionarios.filter(f => f.ativo !== false)
+    .map((funcionario, index) => ({ funcionario, regra: getEscalaRule(funcionario.id), index }))
+    .filter(item => item.regra.participaEscala !== false);
+  if (equipe.length === 0) {
+    toast('Nenhum funcionario ativo participa da escala', 'error');
+    return;
+  }
+  const resultadoEquipe = equipe.map(item => buildEscalaFuncionario(item.funcionario, item.regra, settings, mes, ano, item.index, equipe.length));
+  escalaGerada = {
+    competencia: `${ano}-${String(mes).padStart(2, '0')}`,
+    settings,
+    equipe: resultadoEquipe,
+    alertas: collectEscalaAlertas(resultadoEquipe, settings, mes, ano),
+    geradoEm: new Date().toISOString()
+  };
+  const previewSelect = document.getElementById('escalaPreviewFuncionario');
+  previewSelect.innerHTML = '<option value="">Selecione...</option>' + resultadoEquipe.map(item => `<option value="${item.funcionario.id}">${item.funcionario.nome}</option>`).join('');
+  previewSelect.value = resultadoEquipe[0]?.funcionario.id || '';
+  renderEscalaResultado();
+  try {
+    await fsAdd('monthlyScales', {
+      competencia: escalaGerada.competencia,
+      geradoEm: escalaGerada.geradoEm,
+      resumo: resultadoEquipe.map(item => ({
+        funcionarioId: item.funcionario.id,
+        funcionarioNome: item.funcionario.nome,
+        horasMes: item.totalHorasMes,
+        horasExtrasMes: item.totalExtrasMes,
+        diasEscalados: item.diasEscalados
+      })),
+      alertas: escalaGerada.alertas
+    });
+  } catch (e) {
+    console.warn('Falha ao salvar historico da escala', e);
+  }
+  toast('Escala mensal gerada!', 'success');
+}
+
+function buildEscalaFuncionario(funcionario, regra, settings, mes, ano, index, totalEquipe) {
+  const dias = [];
+  const diasFuncionamento = settings.diasFuncionamento || [];
+  const jornadaPadraoMin = Math.round((settings.jornadaDiaria || 8) * 60);
+  const intervaloMin = parseInt(settings.intervalo, 10) || 0;
+  const cargaSemanalMin = Math.round((parseFloat(regra.cargaSemanalIndividual) || settings.cargaSemanal) * 60);
+  const limiteExtraMin = Math.round(((regra.podeHoraExtra ? (regra.limiteExtraIndividual ?? settings.limiteExtra) : 0) || 0) * 60);
+  const aberturaMin = timeToMinutes(settings.abertura);
+  const fechamentoMin = timeToMinutes(settings.fechamento);
+  const janelaEmpresaMin = Math.max(jornadaPadraoMin, fechamentoMin - aberturaMin - intervaloMin);
+  const totaisSemana = {};
+  for (let dia = 1; dia <= daysInMonth(mes, ano); dia++) {
+    const data = new Date(ano, mes - 1, dia);
+    const diaSemana = data.getDay();
+    if (!diasFuncionamento.includes(diaSemana)) continue;
+    if (String(diaSemana) === String(regra.folgaFixa)) continue;
+    if ((regra.diasIndisponiveis || []).includes(diaSemana)) continue;
+    const weekKey = getWeekKey(data);
+    const usadoSemana = totaisSemana[weekKey] || 0;
+    let restanteSemana = Math.max(0, cargaSemanalMin - usadoSemana);
+    if (restanteSemana <= 0) continue;
+    let minutosTrabalho = Math.min(jornadaPadraoMin, restanteSemana);
+    const lacunaCobertura = Math.max(0, janelaEmpresaMin - jornadaPadraoMin);
+    if (regra.podeHoraExtra && (settings.prioridade === 'cobertura' || totalEquipe <= settings.coberturaMinima)) {
+      minutosTrabalho += Math.min(limiteExtraMin, lacunaCobertura, Math.max(0, restanteSemana - minutosTrabalho + limiteExtraMin));
+    }
+    minutosTrabalho = Math.min(minutosTrabalho, janelaEmpresaMin);
+    if (minutosTrabalho < 240 && dias.length > 0) continue;
+    const horario = suggestHorario(regra, settings, minutosTrabalho, intervaloMin, index, totalEquipe);
+    totaisSemana[weekKey] = (totaisSemana[weekKey] || 0) + minutosTrabalho;
+    dias.push({
+      data: toInputDate(data),
+      diaSemana,
+      entrada: horario.entrada,
+      saidaIntervalo: horario.saidaIntervalo,
+      retornoIntervalo: horario.retornoIntervalo,
+      saidaFinal: horario.saidaFinal,
+      horasPrevistas: roundToOne(minutosTrabalho / 60),
+      horaExtraPrevista: roundToOne(Math.max(0, minutosTrabalho - jornadaPadraoMin) / 60),
+      observacao: ''
+    });
+  }
+  return {
+    funcionario,
+    regra,
+    dias,
+    diasEscalados: dias.length,
+    totalHorasMes: roundToOne(dias.reduce((sum, item) => sum + item.horasPrevistas, 0)),
+    totalExtrasMes: roundToOne(dias.reduce((sum, item) => sum + item.horaExtraPrevista, 0))
+  };
+}
+
+function collectEscalaAlertas(resultadoEquipe, settings, mes, ano) {
+  const alertas = [];
+  const coberturaMinima = parseInt(settings.coberturaMinima, 10) || 1;
+  const diasFuncionamento = settings.diasFuncionamento || [];
+  const coberturaDia = {};
+  resultadoEquipe.forEach(item => {
+    if (item.dias.length === 0) {
+      alertas.push(`Sem escala gerada para ${item.funcionario.nome}. Revise folga fixa, indisponibilidades ou carga semanal.`);
+    }
+    item.dias.forEach(dia => {
+      coberturaDia[dia.data] = (coberturaDia[dia.data] || 0) + 1;
+      if (dia.horaExtraPrevista > 0 && !item.regra.podeHoraExtra) {
+        alertas.push(`${item.funcionario.nome} recebeu hora extra em ${fmtData(dia.data)} sem permissao.`);
+      }
+    });
+  });
+  for (let dia = 1; dia <= daysInMonth(mes, ano); dia++) {
+    const data = new Date(ano, mes - 1, dia);
+    if (!diasFuncionamento.includes(data.getDay())) continue;
+    const chave = toInputDate(data);
+    if ((coberturaDia[chave] || 0) < coberturaMinima) {
+      alertas.push(`Cobertura abaixo do minimo em ${fmtData(chave)}.`);
+    }
+  }
+  return alertas;
+}
+
+function renderEscalaResultado() {
+  const resumoEl = document.getElementById('escalaResumo');
+  const alertasEl = document.getElementById('escalaAlertas');
+  const previewEl = document.getElementById('escalaPreview');
+  if (!resumoEl || !alertasEl || !previewEl) return;
+  if (!escalaGerada) {
+    resumoEl.innerHTML = '';
+    alertasEl.innerHTML = '';
+    previewEl.innerHTML = '';
+    return;
+  }
+  const horasEquipe = roundToOne(escalaGerada.equipe.reduce((sum, item) => sum + item.totalHorasMes, 0));
+  const extrasEquipe = roundToOne(escalaGerada.equipe.reduce((sum, item) => sum + item.totalExtrasMes, 0));
+  resumoEl.innerHTML = `
+    <div class="section-card">
+      <div class="section-card-title">Resumo da competencia</div>
+      <div class="escala-summary-grid">
+        <div class="escala-summary-card"><div class="label">Competencia</div><div class="value">${escalaGerada.competencia}</div></div>
+        <div class="escala-summary-card"><div class="label">Funcionarios escalados</div><div class="value">${escalaGerada.equipe.length}</div></div>
+        <div class="escala-summary-card"><div class="label">Horas previstas</div><div class="value">${horasEquipe}h</div></div>
+        <div class="escala-summary-card"><div class="label">Horas extras previstas</div><div class="value">${extrasEquipe}h</div></div>
+      </div>
+      <div style="margin-top:18px;overflow:auto">
+        <table>
+          <thead><tr><th>Funcionario</th><th>Dias</th><th>Horas</th><th>Extras</th><th>Turno</th></tr></thead>
+          <tbody>${escalaGerada.equipe.map(item => `
+            <tr>
+              <td>${item.funcionario.nome}</td>
+              <td>${item.diasEscalados}</td>
+              <td>${item.totalHorasMes}h</td>
+              <td>${item.totalExtrasMes}h</td>
+              <td>${labelTurno(item.regra.preferenciaTurno)}</td>
+            </tr>
+          `).join('')}</tbody>
+        </table>
+      </div>
+    </div>`;
+  alertasEl.innerHTML = escalaGerada.alertas.length > 0
+    ? `<div class="section-card"><div class="section-card-title">Alertas</div>${escalaGerada.alertas.map(alerta => `<div class="escala-alert"><strong>Atencao:</strong> ${alerta}</div>`).join('')}</div>`
+    : `<div class="section-card"><div class="section-card-title">Alertas</div><div class="empty-state"><div class="icon">OK</div><h3>Nenhum alerta critico</h3><p>A escala foi montada dentro dos limites configurados.</p></div></div>`;
+  renderEscalaPreview();
+}
+
+function renderEscalaPreview() {
+  const previewEl = document.getElementById('escalaPreview');
+  const select = document.getElementById('escalaPreviewFuncionario');
+  if (!previewEl) return;
+  if (!escalaGerada || !select?.value) {
+    previewEl.innerHTML = '';
+    return;
+  }
+  const item = escalaGerada.equipe.find(entry => entry.funcionario.id === select.value);
+  if (!item) {
+    previewEl.innerHTML = '';
+    return;
+  }
+  previewEl.innerHTML = `
+    <div class="section-card">
+      <div class="section-card-title">Folha individual</div>
+      <div class="escala-preview-sheet" id="escalaPrintableArea">
+        <div class="escala-preview-head">
+          <div>
+            <div class="escala-preview-title">Folha de horarios previstos</div>
+            <div class="escala-preview-sub">${currentOrg?.nome || 'Empresa'} • ${item.funcionario.nome} • ${item.funcionario.cargo || 'Funcionario'}</div>
+          </div>
+          <div class="escala-preview-meta">
+            <div><strong>Competencia:</strong> ${monthNameFromPeriod(escalaGerada.competencia)}</div>
+            <div><strong>Total previsto:</strong> ${item.totalHorasMes}h</div>
+            <div><strong>Hora extra prevista:</strong> ${item.totalExtrasMes}h</div>
+          </div>
+        </div>
+        <table class="escala-preview-table">
+          <thead><tr><th>Data</th><th>Dia</th><th>Entrada</th><th>Saida intervalo</th><th>Retorno</th><th>Saida final</th><th>Horas</th><th>Obs.</th></tr></thead>
+          <tbody>${item.dias.map(dia => `
+            <tr>
+              <td>${fmtData(dia.data)}</td>
+              <td>${dayNameShort(dia.diaSemana)}</td>
+              <td>${dia.entrada}</td>
+              <td>${dia.saidaIntervalo}</td>
+              <td>${dia.retornoIntervalo}</td>
+              <td>${dia.saidaFinal}</td>
+              <td>${dia.horasPrevistas}h</td>
+              <td>${dia.observacao || ''}</td>
+            </tr>
+          `).join('')}</tbody>
+        </table>
+        <div class="escala-preview-sign">
+          <div class="escala-preview-sign-line">Assinatura do funcionario</div>
+          <div class="escala-preview-sign-line">Responsavel / gestor</div>
+        </div>
+      </div>
+    </div>`;
+}
+
+function printEscalaPreview() {
+  const select = document.getElementById('escalaPreviewFuncionario');
+  if (!escalaGerada || !select?.value) {
+    toast('Gere a escala e escolha um funcionario para imprimir', 'error');
+    return;
+  }
+  const area = document.getElementById('escalaPrintableArea');
+  if (!area) return;
+  const popup = window.open('', '_blank', 'width=980,height=720');
+  popup.document.write(`<!DOCTYPE html><html><head><title>Folha de horarios</title><style>body{font-family:Arial,sans-serif;padding:24px;background:#fff;color:#111}table{width:100%;border-collapse:collapse}th,td{border:1px solid #cbd5e1;padding:8px;font-size:12px;text-align:left}.escala-preview-head{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:20px}.escala-preview-title{font-size:22px;font-weight:700}.escala-preview-sub,.escala-preview-meta{font-size:13px;color:#475569}.escala-preview-sign{margin-top:28px;display:flex;justify-content:space-between;gap:24px}.escala-preview-sign-line{flex:1;padding-top:14px;border-top:1px solid #94a3b8;text-align:center;font-size:12px}</style></head><body>${area.innerHTML}</body></html>`);
+  popup.document.close();
+  popup.focus();
+  popup.print();
+}
+
+function downloadEscalaPdf() {
+  const select = document.getElementById('escalaPreviewFuncionario');
+  if (!escalaGerada || !select?.value) {
+    toast('Gere a escala e escolha um funcionario para exportar', 'error');
+    return;
+  }
+  const item = escalaGerada.equipe.find(entry => entry.funcionario.id === select.value);
+  if (!item) return;
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(16);
+  doc.text('Folha de horarios previstos', 14, 16);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+  doc.text(`Empresa: ${currentOrg?.nome || 'Empresa'}`, 14, 24);
+  doc.text(`Funcionario: ${item.funcionario.nome}`, 14, 30);
+  doc.text(`Competencia: ${monthNameFromPeriod(escalaGerada.competencia)}`, 14, 36);
+  doc.text(`Total previsto: ${item.totalHorasMes}h`, 14, 42);
+  doc.text(`Hora extra prevista: ${item.totalExtrasMes}h`, 14, 48);
+  doc.autoTable({
+    startY: 54,
+    head: [['Data', 'Dia', 'Entrada', 'Saida int.', 'Retorno', 'Saida', 'Horas']],
+    body: item.dias.map(dia => [fmtData(dia.data), dayNameShort(dia.diaSemana), dia.entrada, dia.saidaIntervalo, dia.retornoIntervalo, dia.saidaFinal, `${dia.horasPrevistas}h`]),
+    styles: { fontSize: 8, cellPadding: 2.4 },
+    headStyles: { fillColor: [15, 23, 42] }
+  });
+  doc.save(`Escala_${sanitizeFileName(item.funcionario.nome)}_${escalaGerada.competencia}.pdf`);
+}
+
+function suggestHorario(regra, settings, minutosTrabalho, intervaloMin, index, totalEquipe) {
+  const aberturaMin = timeToMinutes(settings.abertura);
+  const fechamentoMin = timeToMinutes(settings.fechamento);
+  const duracaoPresencial = minutosTrabalho + intervaloMin;
+  const maxInicio = Math.max(aberturaMin, fechamentoMin - duracaoPresencial);
+  let entradaMin = aberturaMin;
+  if (regra.entradaPreferida) {
+    entradaMin = clamp(timeToMinutes(regra.entradaPreferida), aberturaMin, maxInicio);
+  } else if (regra.preferenciaTurno === 'tarde') {
+    entradaMin = clamp(aberturaMin + 120, aberturaMin, maxInicio);
+  } else if (regra.preferenciaTurno === 'noite') {
+    entradaMin = clamp(fechamentoMin - duracaoPresencial, aberturaMin, maxInicio);
+  } else {
+    const espaco = Math.max(0, maxInicio - aberturaMin);
+    const passo = totalEquipe > 1 ? Math.floor(espaco / Math.max(1, totalEquipe - 1)) : 0;
+    entradaMin = clamp(aberturaMin + (passo * index), aberturaMin, maxInicio);
+  }
+  const saidaIntervaloMin = entradaMin + Math.max(180, Math.floor(minutosTrabalho / 2));
+  const retornoMin = saidaIntervaloMin + intervaloMin;
+  const saidaFinalMin = retornoMin + Math.max(0, minutosTrabalho - (saidaIntervaloMin - entradaMin));
+  return {
+    entrada: minutesToTime(entradaMin),
+    saidaIntervalo: minutesToTime(saidaIntervaloMin),
+    retornoIntervalo: minutesToTime(retornoMin),
+    saidaFinal: minutesToTime(Math.min(saidaFinalMin, fechamentoMin))
+  };
+}
+
+function getSelectedValues(selectId) {
+  const el = document.getElementById(selectId);
+  return el ? Array.from(el.selectedOptions).map(opt => opt.value) : [];
+}
+
+function labelTurno(turno) {
+  return ({ manha: 'Manha', tarde: 'Tarde', noite: 'Noite', indiferente: 'Indiferente' })[turno] || 'Indiferente';
+}
+
+function labelDiaSemana(dia) {
+  if (dia === '' || dia === null || typeof dia === 'undefined') return 'Nenhuma';
+  return ['Domingo', 'Segunda', 'Terca', 'Quarta', 'Quinta', 'Sexta', 'Sabado'][parseInt(dia, 10)] || 'Nenhuma';
+}
+
+function dayNameShort(index) {
+  return ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab'][index] || '—';
+}
+
+function daysInMonth(month, year) {
+  return new Date(year, month, 0).getDate();
+}
+
+function getWeekKey(date) {
+  const tmp = new Date(date);
+  tmp.setHours(0, 0, 0, 0);
+  tmp.setDate(tmp.getDate() - tmp.getDay() + 1);
+  return `${tmp.getFullYear()}-${String(tmp.getMonth() + 1).padStart(2, '0')}-${String(tmp.getDate()).padStart(2, '0')}`;
+}
+
+function toInputDate(date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
+function timeToMinutes(value) {
+  const [h, m] = String(value || '00:00').split(':').map(Number);
+  return (h * 60) + m;
+}
+
+function minutesToTime(value) {
+  const safe = ((value % 1440) + 1440) % 1440;
+  return `${String(Math.floor(safe / 60)).padStart(2, '0')}:${String(safe % 60).padStart(2, '0')}`;
+}
+
+function clamp(value, min, max) {
+  return Math.min(Math.max(value, min), max);
+}
+
+function roundToOne(value) {
+  return Math.round((value || 0) * 10) / 10;
+}
+
+function monthNameFromPeriod(periodo) {
+  const [ano, mes] = String(periodo).split('-');
+  const meses = ['Janeiro', 'Fevereiro', 'Marco', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+  return `${meses[(parseInt(mes, 10) || 1) - 1]} / ${ano}`;
+}
+
+function sanitizeFileName(text) {
+  return String(text || 'arquivo').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9_-]+/g, '_');
+}
+
 function populateSelects() {
   const opts = funcionarios.map(f => `<option value="${f.id}">${f.nome}</option>`).join('');
   ['empFuncionario','valeFuncionario'].forEach(id => {
@@ -3507,6 +4507,323 @@ function renderAdicionaisGrupo() {
 function preencherAdicionaisGrupo(lista) {
   adicionaisGrupo = lista || [];
   renderAdicionaisGrupo();
+}
+
+
+// =====================================================
+// ALERTAS DASHBOARD — vales e parcelas vencendo
+// =====================================================
+function renderAlertasDashboard() {
+  const container = document.getElementById('dashAlertas');
+  if (!container) return;
+  const hoje = new Date();
+  hoje.setHours(0,0,0,0);
+  const em3dias = new Date(hoje); em3dias.setDate(hoje.getDate() + 3);
+
+  const alertas = [];
+
+  // Vales pendentes vencidos ou vencendo
+  vales.filter(v => v.status !== 'descontado').forEach(v => {
+    if (!v.data) return;
+    const d = new Date(v.data + 'T00:00:00');
+    const func = funcionarios.find(f => f.id === v.funcionarioId);
+    const nome = func?.nome || 'Funcionário';
+    const diasDiff = Math.floor((d - hoje) / 86400000);
+    if (diasDiff < 0) alertas.push({ tipo: 'red', msg: `Vale de ${nome} (R$ ${fmtMoney(v.valor)}) está em atraso há ${Math.abs(diasDiff)} dia(s)` });
+    else if (diasDiff <= 3) alertas.push({ tipo: 'yellow', msg: `Vale de ${nome} (R$ ${fmtMoney(v.valor)}) vence em ${diasDiff === 0 ? 'hoje' : diasDiff + ' dia(s)'}` });
+  });
+
+  // Parcelas de empréstimos
+  const mesAtual = hoje.getMonth() + 1;
+  const anoAtual = hoje.getFullYear();
+  emprestimos.filter(e => e.status === 'ativo' || !e.status).forEach(e => {
+    const func = funcionarios.find(f => f.id === e.funcionarioId);
+    const nome = func?.nome || 'Funcionário';
+    const restante = (e.total || 0) - (e.pago || 0);
+    if (restante > 0 && restante <= e.valorParcela) {
+      alertas.push({ tipo: 'green', msg: `Última parcela de ${nome} — ${e.descricao} (R$ ${fmtMoney(restante)})` });
+    }
+  });
+
+  if (alertas.length === 0) { container.innerHTML = ''; return; }
+
+  container.innerHTML = `<div class="section-card" style="margin-bottom:0">
+    <div class="section-card-title">⚠️ Alertas</div>
+    ${alertas.map(a => `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
+      <span style="width:10px;height:10px;border-radius:50%;background:var(--${a.tipo});flex-shrink:0"></span>
+      <span style="font-size:0.85rem">${a.msg}</span>
+    </div>`).join('')}
+  </div>`;
+}
+
+// =====================================================
+// HISTÓRICO DE FOLHAS
+// =====================================================
+async function salvarHistoricoFolha(mesRef, dados) {
+  // dados = { funcionarios: [{nome, totalProventos, totalDescontos, liquido}] }
+  const totalBruto = dados.reduce((s, d) => s + (d.totalProventos || 0), 0);
+  const totalDesc = dados.reduce((s, d) => s + (d.totalDescontos || 0), 0);
+  const totalLiq = dados.reduce((s, d) => s + (d.liquido || 0), 0);
+  const payload = {
+    mesRef, geradoEm: new Date().toISOString(),
+    qtdFuncionarios: dados.length,
+    totalBruto, totalDescontos: totalDesc, totalLiquido: totalLiq,
+    snapshot: dados
+  };
+  const existing = getCol('historicoFolhas').getAll().find(h => h.mesRef === mesRef);
+  if (existing) {
+    await fsUpdate('historicoFolhas', existing.id, payload);
+  } else {
+    await fsAdd('historicoFolhas', payload);
+  }
+  renderHistoricoFolhas();
+}
+
+async function renderHistoricoFolhas() {
+  const lista = getCol('historicoFolhas').getAll().sort((a,b) => b.mesRef?.localeCompare(a.mesRef));
+  const tbody = document.getElementById('tabelaHistoricoFolhas');
+  if (!tbody) return;
+  if (lista.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="icon">📁</div><h3>Nenhuma folha salva</h3></div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = lista.map(h => `<tr>
+    <td><strong>${h.mesRef || '—'}</strong></td>
+    <td>${h.qtdFuncionarios || 0}</td>
+    <td class="mono" style="color:var(--green)">R$ ${fmtMoney(h.totalBruto)}</td>
+    <td class="mono" style="color:var(--red)">R$ ${fmtMoney(h.totalDescontos)}</td>
+    <td class="mono" style="color:var(--accent2)">R$ ${fmtMoney(h.totalLiquido)}</td>
+    <td style="font-size:0.78rem;color:var(--text3)">${h.geradoEm ? new Date(h.geradoEm).toLocaleDateString('pt-BR') : '—'}</td>
+    <td><button class="btn btn-outline btn-sm" onclick="verDetalhesHistorico('${h.id}')">👁️ Ver</button></td>
+  </tr>`).join('');
+}
+
+function verDetalhesHistorico(id) {
+  const h = getCol('historicoFolhas').getAll().find(x => x.id === id);
+  if (!h || !h.snapshot) { toast('Sem detalhes salvos', 'info'); return; }
+  const rows = h.snapshot.map(d => `<tr>
+    <td>${d.nome}</td>
+    <td class="mono">R$ ${fmtMoney(d.totalProventos)}</td>
+    <td class="mono" style="color:var(--red)">R$ ${fmtMoney(d.totalDescontos)}</td>
+    <td class="mono" style="color:var(--accent2)"><strong>R$ ${fmtMoney(d.liquido)}</strong></td>
+  </tr>`).join('');
+  document.getElementById('folhaDetalheTitulo').textContent = `Histórico — ${h.mesRef}`;
+  document.getElementById('folhaDetalheBody').innerHTML = `
+    <table><thead><tr><th>Funcionário</th><th>Bruto</th><th>Descontos</th><th>Líquido</th></tr></thead>
+    <tbody>${rows}</tbody></table>`;
+  document.querySelector('#modal-folha-detalhe .modal-footer').innerHTML =
+    `<button class="btn btn-outline btn-sm" onclick="closeModal('modal-folha-detalhe')">Fechar</button>`;
+  openModal('modal-folha-detalhe');
+}
+
+// =====================================================
+// RELATÓRIO CONSOLIDADO
+// =====================================================
+function gerarRelatorio() {
+  const mes = parseInt(document.getElementById('relMes').value);
+  const ano = parseInt(document.getElementById('relAno').value);
+  const grupoFiltro = document.getElementById('relGrupo').value;
+  const mesRef = `${String(mes).padStart(2,'0')}/${ano}`;
+
+  // Populate grupo select
+  const relGrupoSel = document.getElementById('relGrupo');
+  if (relGrupoSel.options.length <= 1) {
+    grupos.forEach(g => {
+      const opt = document.createElement('option');
+      opt.value = g.id; opt.textContent = g.nome;
+      relGrupoSel.appendChild(opt);
+    });
+  }
+
+  const ativos = funcionarios.filter(f => {
+    if (f.ativo === false) return false;
+    if (grupoFiltro && f.grupoId !== grupoFiltro) return false;
+    return true;
+  });
+
+  if (ativos.length === 0) {
+    document.getElementById('relatorioContent').innerHTML = `<div class="empty-state"><div class="icon">👥</div><h3>Nenhum funcionário</h3></div>`;
+    return;
+  }
+
+  const valesMes = vales.filter(v => {
+    if (!v.data) return false;
+    const d = new Date(v.data + 'T00:00:00');
+    return d.getMonth()+1 === mes && d.getFullYear() === ano && v.status !== 'descontado';
+  });
+  const empAtivos = emprestimos.filter(e => e.status === 'ativo' || !e.status);
+
+  let totalBruto = 0, totalDesc = 0, totalLiq = 0;
+
+  const rows = ativos.map(f => {
+    const grupo = f.grupoId ? grupos.find(g => g.id === f.grupoId) : null;
+    const salario = grupo ? grupo.salario : (f.salario || 0);
+    const inss = grupo ? grupo.inss : (f.inss || 0);
+    const valeQ = grupo ? (grupo.valeQuinzena || 0) : 0;
+    const empF = empAtivos.filter(e => e.funcionarioId === f.id).reduce((s,e) => s + e.valorParcela, 0);
+    const valesF = valesMes.filter(v => v.funcionarioId === f.id).reduce((s,v) => s + v.valor, 0);
+    const bruto = salario;
+    const descontos = inss + valeQ + empF + valesF;
+    const liq = bruto - descontos;
+    totalBruto += bruto; totalDesc += descontos; totalLiq += liq;
+    const alerta = liq < 0 ? '⚠️' : '';
+    return `<tr ${liq < 0 ? 'style="background:rgba(239,68,68,0.07)"' : ''}>
+      <td><strong>${f.nome}</strong></td>
+      <td>${f.cargo || '—'}</td>
+      <td class="mono">R$ ${fmtMoney(bruto)}</td>
+      <td class="mono" style="color:var(--red)">R$ ${fmtMoney(descontos)}</td>
+      <td class="mono" style="color:${liq < 0 ? 'var(--red)' : 'var(--accent2)'}"><strong>${alerta} R$ ${fmtMoney(liq)}</strong></td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('relatorioContent').innerHTML = `
+    <div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap">
+      <div class="stat-card" style="flex:1"><div class="stat-label">Total Bruto</div><div class="stat-value green" style="font-size:1.3rem">R$ ${fmtMoney(totalBruto)}</div></div>
+      <div class="stat-card" style="flex:1"><div class="stat-label">Total Descontos</div><div class="stat-value red" style="font-size:1.3rem">R$ ${fmtMoney(totalDesc)}</div></div>
+      <div class="stat-card" style="flex:1"><div class="stat-label">Total Líquido</div><div class="stat-value accent" style="font-size:1.3rem">R$ ${fmtMoney(totalLiq)}</div></div>
+    </div>
+    <div class="table-wrap">
+      <div class="table-header">
+        <div class="table-title">Relatório ${mesRef}</div>
+        <button class="btn btn-outline btn-sm" onclick="exportRelatorioExcel()">📊 Excel</button>
+      </div>
+      <table><thead><tr><th>Funcionário</th><th>Cargo</th><th>Bruto</th><th>Descontos</th><th>Líquido</th></tr></thead>
+      <tbody>${rows}</tbody>
+      <tfoot><tr style="background:var(--bg2)">
+        <td colspan="2"><strong>TOTAL</strong></td>
+        <td class="mono"><strong>R$ ${fmtMoney(totalBruto)}</strong></td>
+        <td class="mono" style="color:var(--red)"><strong>R$ ${fmtMoney(totalDesc)}</strong></td>
+        <td class="mono" style="color:var(--accent2)"><strong>R$ ${fmtMoney(totalLiq)}</strong></td>
+      </tr></tfoot></table>
+    </div>`;
+}
+
+// =====================================================
+// EXCEL EXPORTS
+// =====================================================
+function exportFuncionariosExcel() {
+  if (typeof XLSX === 'undefined') { toast('Biblioteca Excel não carregada', 'error'); return; }
+  const data = funcionarios.map(f => {
+    const grupo = grupos.find(g => g.id === f.grupoId);
+    return {
+      'Nome': f.nome || '',
+      'CPF': f.cpf || '',
+      'Cargo': f.cargo || '',
+      'Grupo Salarial': grupo?.nome || 'Manual',
+      'Salário Base': f.salario || 0,
+      'Valor Hora Extra': f.horaExtra || 0,
+      'INSS': f.inss || 0,
+      'Status': f.ativo !== false ? 'Ativo' : 'Inativo'
+    };
+  });
+  const ws = XLSX.utils.json_to_sheet(data);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Funcionários');
+  XLSX.writeFile(wb, 'Funcionarios_CadernoGestor.xlsx');
+  toast('Excel exportado!', 'success');
+}
+
+function exportRelatorioExcel() {
+  if (typeof XLSX === 'undefined') { toast('Biblioteca Excel não carregada', 'error'); return; }
+  const mes = parseInt(document.getElementById('relMes')?.value || new Date().getMonth()+1);
+  const ano = parseInt(document.getElementById('relAno')?.value || new Date().getFullYear());
+  const mesRef = `${String(mes).padStart(2,'0')}/${ano}`;
+
+  const valesMes = vales.filter(v => {
+    if (!v.data) return false;
+    const d = new Date(v.data + 'T00:00:00');
+    return d.getMonth()+1 === mes && d.getFullYear() === ano && v.status !== 'descontado';
+  });
+  const empAtivos = emprestimos.filter(e => e.status === 'ativo' || !e.status);
+
+  const data = funcionarios.filter(f => f.ativo !== false).map(f => {
+    const grupo = f.grupoId ? grupos.find(g => g.id === f.grupoId) : null;
+    const salario = grupo ? grupo.salario : (f.salario || 0);
+    const inss = grupo ? grupo.inss : (f.inss || 0);
+    const valeQ = grupo ? (grupo.valeQuinzena || 0) : 0;
+    const empF = empAtivos.filter(e => e.funcionarioId === f.id).reduce((s,e) => s + e.valorParcela, 0);
+    const valesF = valesMes.filter(v => v.funcionarioId === f.id).reduce((s,v) => s + v.valor, 0);
+    const descontos = inss + valeQ + empF + valesF;
+    return {
+      'Funcionário': f.nome,
+      'Cargo': f.cargo || '',
+      'Salário Bruto': salario,
+      'INSS': inss,
+      'Vale Quinzena': valeQ,
+      'Parcelas Empréstimos': empF,
+      'Vales do Mês': valesF,
+      'Total Descontos': descontos,
+      'Líquido': salario - descontos
+    };
+  });
+
+  const ws = XLSX.utils.json_to_sheet(data);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, `Relatório ${mesRef}`);
+  XLSX.writeFile(wb, `Relatorio_${mesRef.replace('/','_')}_CadernoGestor.xlsx`);
+  toast('Excel exportado!', 'success');
+}
+
+// =====================================================
+// VALIDAÇÕES
+// =====================================================
+function validarCpf(cpf) {
+  cpf = cpf.replace(/[^\d]/g,'');
+  if (cpf.length !== 11 || /^(\d)\1+$/.test(cpf)) return false;
+  let sum = 0;
+  for (let i=0; i<9; i++) sum += parseInt(cpf[i]) * (10-i);
+  let r = (sum * 10) % 11;
+  if (r === 10 || r === 11) r = 0;
+  if (r !== parseInt(cpf[9])) return false;
+  sum = 0;
+  for (let i=0; i<10; i++) sum += parseInt(cpf[i]) * (11-i);
+  r = (sum * 10) % 11;
+  if (r === 10 || r === 11) r = 0;
+  return r === parseInt(cpf[10]);
+}
+
+function verificarCpfDuplicado(cpf, excludeId='') {
+  const limpo = cpf.replace(/[^\d]/g,'');
+  if (!limpo) return false;
+  return funcionarios.some(f => f.id !== excludeId && f.cpf?.replace(/[^\d]/g,'') === limpo);
+}
+
+function alertaDescontoMaiorSalario(salario, totalDescontos, nome) {
+  if (totalDescontos > salario) {
+    toast(`⚠️ ${nome}: desconto (R$ ${fmtMoney(totalDescontos)}) maior que salário (R$ ${fmtMoney(salario)})!`, 'error');
+    return true;
+  }
+  return false;
+}
+
+// =====================================================
+// FIRESTORE SECURITY RULES (para exibir na tela)
+// =====================================================
+function mostrarRegrasFirestore() {
+  const regras = `rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /orgs/{orgId} {
+      allow read, write: if request.auth != null
+        && exists(/databases/$(database)/documents/orgs/$(orgId))
+        && request.auth.uid in get(/databases/$(database)/documents/orgs/$(orgId)).data.membroIds;
+
+      match /{collection}/{docId} {
+        allow read, write: if request.auth != null
+          && request.auth.uid in get(/databases/$(database)/documents/orgs/$(orgId)).data.membroIds;
+      }
+    }
+  }
+}`;
+  document.getElementById('folhaDetalheTitulo').textContent = 'Regras de Segurança — Firestore';
+  document.getElementById('folhaDetalheBody').innerHTML = `
+    <p style="color:var(--text3);font-size:0.85rem;margin-bottom:12px">Cole estas regras no Firebase Console → Firestore → Rules:</p>
+    <pre style="background:var(--bg2);padding:16px;border-radius:8px;font-size:0.78rem;overflow-x:auto;color:var(--text)">\${regras}</pre>
+    <p style="color:var(--yellow);font-size:0.82rem;margin-top:12px">⚠️ Você também precisa adicionar o campo <strong>membroIds</strong> (array de UIDs) em cada organização no Firestore.</p>`;
+  document.querySelector('#modal-folha-detalhe .modal-footer').innerHTML =
+    `<button class="btn btn-outline btn-sm" onclick="closeModal('modal-folha-detalhe')">Fechar</button>
+     <button class="btn btn-primary btn-sm" onclick="navigator.clipboard.writeText(document.querySelector('pre').textContent).then(()=>toast('Copiado!','success'))">📋 Copiar</button>`;
+  openModal('modal-folha-detalhe');
 }
 
 // Service worker for PWA
