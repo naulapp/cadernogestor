@@ -1733,21 +1733,27 @@ tr:hover td { background: rgba(108,99,255,0.04); }
             <div class="page-title" id="fichaTitulo">Ficha do Funcionário</div>
             <div class="page-sub" id="fichaSubtitulo"></div>
           </div>
-          <button class="btn btn-outline btn-sm" onclick="navigate('funcionarios')">← Voltar</button>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-outline btn-sm" id="fichaVoltarBtn" onclick="navigate('funcionarios')">← Voltar</button>
+          </div>
         </div>
 
         <!-- Saldo devedor -->
-        <div class="cards-grid" id="fichaCards" style="margin-bottom:20px"></div>
+        <div class="cards-grid" id="fichaCards" style="margin-bottom:16px"></div>
 
         <!-- Empréstimos -->
         <div class="section-card" style="margin-bottom:16px">
-          <div class="section-card-title">💰 EMPRÉSTIMOS ATIVOS</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+            <div class="section-card-title" style="margin:0">💰 EMPRÉSTIMOS</div>
+          </div>
           <div id="fichaEmprestimos"></div>
         </div>
 
         <!-- Vales -->
         <div class="section-card" style="margin-bottom:16px">
-          <div class="section-card-title">🎫 VALES</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+            <div class="section-card-title" style="margin:0">🎫 VALES PENDENTES</div>
+          </div>
           <div id="fichaVales"></div>
         </div>
 
@@ -3556,12 +3562,8 @@ async function loadFolha() {
     return;
   }
 
-  // Buscar vales e empréstimos do mês
-  const valesMes = vales.filter(v => {
-    if (!v.data) return false;
-    const d = new Date(v.data + 'T00:00:00');
-    return d.getMonth() + 1 === mes && d.getFullYear() === ano && v.status !== 'descontado';
-  });
+  // Buscar vales pendentes (todos, não só do mês — gestor decide quais descontar)
+  const valesMes = vales.filter(v => v.status !== 'descontado');
   const empAtivos = emprestimos.filter(e => e.status === 'ativo' || !e.status);
 
   folhaDetalhe = {};
@@ -3620,63 +3622,65 @@ async function loadFolha() {
     ${cards}`;
 }
 
+function calcFolhaTotais(d) {
+  const horasExtrasValor = (d.horasExtras||0) * (d.horaExtraVal||0);
+  const insalubridade = (d.salario||0) * ((d.insalPct||0) / 100);
+  const reflexoDsr = d.horasExtras > 0 ? (d.reflexoDsr || calcReflexoDsr(d.salario, d.horasExtras, d.horaExtraVal)) : 0;
+  let salarioBase = d.salario||0;
+  if (d.diasTrabalhados > 0 && d.diasTrabalhados < 30) salarioBase = (d.salario/30)*d.diasTrabalhados;
+  // Adicionais do funcionário
+  const adics = (d.funcionario?.adicionais || []);
+  const totalAdics = adics.reduce((s,a) => {
+    const val = a.isValorFixo ? (a.valor||0) : (salarioBase*(a.pct||0)/100);
+    return s + val;
+  }, 0);
+  const totalProventos = salarioBase + horasExtrasValor + totalAdics + reflexoDsr + (d.premioDesempenho||0) +
+    (d.outrosProventos||[]).reduce((s,o) => s+(o.valor||0), 0);
+  // Só descontos MARCADOS
+  const empSel = (d.descontoEmprestimos||[]).filter(e=>e.selecionado!==false);
+  const valSel = (d.descontoVales||[]).filter(v=>v.selecionado!==false);
+  let totalDescontos = (d.inssValor||0) +
+    empSel.reduce((s,e)=>s+(e.valorPagar||e.valor||0),0) +
+    valSel.reduce((s,v)=>s+(v.valorPagar||v.valor||0),0) +
+    (d.outrosDescontos||[]).reduce((s,o)=>s+(o.valor||0),0);
+  if (d.faltas>0) totalDescontos += calcFaltas(d.salario,d.faltas,reflexoDsr);
+  return { salarioBase, horasExtrasValor, insalubridade, reflexoDsr, totalAdics, totalProventos, totalDescontos, liquido: totalProventos-totalDescontos };
+}
+
 function buildFolhaCard(f, d) {
-  const horasExtrasValor = d.horasExtras * d.horaExtraVal;
-  const insalubridade = d.salario * (d.insalPct / 100);
-  let reflexoDsr = 0;
-  if (d.horasExtras > 0) {
-    reflexoDsr = d.reflexoDsr || calcReflexoDsr(d.salario, d.horasExtras, d.horaExtraVal);
-  }
+  const calc = calcFolhaTotais(d);
+  const alertaDesc = calc.liquido < 0 ? 'style="border-color:var(--red)"' : '';
 
-  let salarioBase = d.salario;
-  if (d.diasTrabalhados > 0 && d.diasTrabalhados < 30) {
-    salarioBase = (d.salario / 30) * d.diasTrabalhados;
-  }
-
-  const totalProventos = salarioBase + horasExtrasValor + (d.insalPct > 0 ? insalubridade : 0) + reflexoDsr + (d.premioDesempenho||0) +
-    (d.outrosProventos||[]).reduce((s,o) => s + (o.valor||0), 0);
-
-  let totalDescontos = (d.inssValor||0) + (d.valeQuinzena||0) +
-    d.descontoEmprestimos.reduce((s,e) => s + e.valor, 0) +
-    d.descontoVales.reduce((s,v) => s + v.valor, 0) +
-    (d.outrosDescontos||[]).reduce((s,o) => s + (o.valor||0), 0);
-
-  if (d.faltas > 0) {
-    const descFalta = calcFaltas(d.salario, d.faltas, reflexoDsr);
-    totalDescontos += descFalta;
-  }
-
-  const liquido = totalProventos - totalDescontos;
-
-  return `<div class="folha-card" id="fc-${f.id}">
+  return `<div class="folha-card" id="fc-${f.id}" ${alertaDesc}>
     <div class="folha-card-header">
       <div>
         <div class="folha-employee-name">${f.nome}</div>
-        <div class="folha-employee-role">${f.cargo || '—'} • CPF: ${f.cpf || '—'}</div>
+        <div class="folha-employee-role">${f.cargo||'—'} • CPF: ${f.cpf||'—'}</div>
       </div>
       <div style="display:flex;gap:8px">
-        <button class="btn btn-outline btn-sm" onclick="openFolhaDetalhe('${f.id}')">✏️ Editar</button>
+        <button class="btn btn-outline btn-sm" onclick="abrirFolhaFuncionario('${f.id}')">📋 Abrir ficha</button>
         <button class="btn btn-primary btn-sm" onclick="gerarPdfFuncionario('${f.id}')">📄 PDF</button>
       </div>
     </div>
     <div class="folha-values">
       <div class="folha-value-item">
         <div class="folha-value-label">Salário bruto</div>
-        <div class="folha-value-num pos">R$ ${fmtMoney(totalProventos)}</div>
+        <div class="folha-value-num pos">R$ ${fmtMoney(calc.totalProventos)}</div>
       </div>
       <div class="folha-value-item">
-        <div class="folha-value-label">Descontos</div>
-        <div class="folha-value-num neg">- R$ ${fmtMoney(totalDescontos)}</div>
+        <div class="folha-value-label">Descontos selecionados</div>
+        <div class="folha-value-num neg">- R$ ${fmtMoney(calc.totalDescontos)}</div>
       </div>
       <div class="folha-value-item">
         <div class="folha-value-label">Líquido a receber</div>
-        <div class="folha-value-num total">R$ ${fmtMoney(liquido)}</div>
+        <div class="folha-value-num total" style="${calc.liquido<0?'color:var(--red)':''}">R$ ${fmtMoney(calc.liquido)}</div>
       </div>
       <div class="folha-value-item">
         <div class="folha-value-label">Horas extras</div>
-        <div class="folha-value-num">${d.horasExtras}h</div>
+        <div class="folha-value-num">${d.horasExtras||0}h</div>
       </div>
     </div>
+    ${calc.liquido<0?'<div style="color:var(--red);font-size:0.78rem;padding:4px 0">⚠️ Descontos maiores que o salário</div>':''}
   </div>`;
 }
 
@@ -3699,6 +3703,236 @@ function openFolhaDetalhe(funcId) {
   document.getElementById('folhaDetalheBody').innerHTML = buildFolhaDetalheForm(funcId, d);
   folhaAtualId = funcId;
   openModal('modal-folha-detalhe');
+}
+
+// Abrir ficha na FOLHA DE PAGAMENTO — com checkboxes de desconto
+function abrirFolhaFuncionario(funcId) {
+  const d = folhaDetalhe[funcId];
+  if (!d) { toast('Carregue a folha primeiro', 'error'); return; }
+  const f = d.funcionario;
+
+  // Inicializar selecionado se não existe
+  d.descontoEmprestimos.forEach(e => { if (e.selecionado===undefined) e.selecionado=true; if (e.valorPagar===undefined) e.valorPagar=e.valor; });
+  d.descontoVales.forEach(v => { if (v.selecionado===undefined) v.selecionado=true; if (v.valorPagar===undefined) v.valorPagar=v.valor; });
+
+  const calc = calcFolhaTotais(d);
+  const empAtivos = emprestimos.filter(e => (e.status==='ativo'||!e.status) && e.funcionarioId===funcId);
+
+  document.getElementById('folhaDetalheTitulo').textContent = `Folha — ${f.nome}`;
+  document.getElementById('folhaDetalheBody').innerHTML = `
+    <!-- PROVENTOS -->
+    <div class="section-card-title">PROVENTOS</div>
+    <div class="form-grid form-grid-3" style="margin-bottom:12px">
+      <div class="form-group">
+        <label class="form-label">Dias trabalhados (0=mês completo)</label>
+        <input type="number" class="form-input" id="fd-dias" value="${d.diasTrabalhados||0}" min="0" max="31">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Horas extras</label>
+        <input type="number" class="form-input" id="fd-horas" value="${d.horasExtras||0}" step="0.01">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Valor hora extra (R$)</label>
+        <input type="number" class="form-input" id="fd-valhoraextra" value="${d.horaExtraVal||0}" step="0.01">
+      </div>
+      <div class="form-group">
+        <label class="form-label">INSS (R$)</label>
+        <input type="number" class="form-input" id="fd-inss" value="${d.inssValor||0}" step="0.01">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Prêmio desempenho (R$)</label>
+        <input type="number" class="form-input" id="fd-premio" value="${d.premioDesempenho||0}" step="0.01">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Faltas</label>
+        <input type="number" class="form-input" id="fd-faltas" value="${d.faltas||0}" min="0">
+      </div>
+    </div>
+    <div id="fd-extra-proventos" style="margin-bottom:8px">
+      ${(d.outrosProventos||[]).map((o,i) => `
+        <div style="display:flex;gap:8px;margin-bottom:6px">
+          <input type="text" class="form-input" value="${o.descricao||''}" placeholder="Descrição" style="flex:2"
+            oninput="folhaDetalhe['${funcId}'].outrosProventos[${i}].descricao=this.value">
+          <input type="number" class="form-input" value="${o.valor||0}" step="0.01" style="flex:1"
+            oninput="folhaDetalhe['${funcId}'].outrosProventos[${i}].valor=parseFloat(this.value)||0;recalcFolhaCard('${funcId}')">
+          <button class="btn-icon" onclick="removerExtraProvento('${funcId}',${i})">🗑️</button>
+        </div>`).join('')}
+    </div>
+    <button class="btn btn-outline btn-sm" onclick="adicionarExtraProvento('${funcId}')">➕ Outro provento</button>
+
+    <!-- DESCONTOS OBRIGATÓRIOS -->
+    <div class="section-card-title" style="margin-top:16px">DESCONTOS — SELECIONE O QUE DESCONTAR NESTE MÊS</div>
+    <p style="color:var(--text3);font-size:0.78rem;margin-bottom:10px">✅ = será incluído no PDF e baixado automaticamente ao confirmar</p>
+
+    ${d.descontoEmprestimos.length > 0 ? `
+    <div style="font-size:0.8rem;font-weight:600;color:var(--text2);margin-bottom:6px">EMPRÉSTIMOS:</div>
+    ${d.descontoEmprestimos.map((e,i) => {
+      const emp = emprestimos.find(x=>x.id===e.id);
+      const restante = emp ? ((emp.total||0)-(emp.pago||0)) : e.valor;
+      return `<div style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--bg2);border-radius:8px;margin-bottom:6px;flex-wrap:wrap">
+        <input type="checkbox" id="emp_sel_${e.id}" ${e.selecionado!==false?'checked':''}
+          onchange="folhaDetalhe['${funcId}'].descontoEmprestimos[${i}].selecionado=this.checked;recalcFolhaCard('${funcId}')">
+        <div style="flex:1;min-width:200px">
+          <div style="font-size:0.85rem;font-weight:600">${e.numero}ª PARCELA — ${e.label.toUpperCase()}</div>
+          <div style="font-size:0.75rem;color:var(--text3)">Restante: R$ ${fmtMoney(restante)} • ${e.numero}/${e.total||'?'} parcelas</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <label style="font-size:0.78rem;color:var(--text3)">Valor:</label>
+          <input type="number" class="form-input" value="${e.valorPagar||e.valor}" step="0.01"
+            style="width:100px;font-family:var(--mono)"
+            oninput="folhaDetalhe['${funcId}'].descontoEmprestimos[${i}].valorPagar=parseFloat(this.value)||0;recalcFolhaCard('${funcId}')">
+        </div>
+      </div>`;
+    }).join('')}` : ''}
+
+    ${d.descontoVales.length > 0 ? `
+    <div style="font-size:0.8rem;font-weight:600;color:var(--text2);margin-bottom:6px;margin-top:10px">VALES:</div>
+    ${d.descontoVales.map((v,i) => {
+      const valeObj = vales.find(x=>x.id===v.id);
+      const abatido = valeObj?.abatimentos?.reduce((s,a)=>s+a.valor,0)||0;
+      const restante = (v.valor||0) - abatido;
+      return `<div style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--bg2);border-radius:8px;margin-bottom:6px;flex-wrap:wrap">
+        <input type="checkbox" id="val_sel_${v.id}" ${v.selecionado!==false?'checked':''}
+          onchange="folhaDetalhe['${funcId}'].descontoVales[${i}].selecionado=this.checked;recalcFolhaCard('${funcId}')">
+        <div style="flex:1;min-width:200px">
+          <div style="font-size:0.85rem;font-weight:600">${(v.label||'Vale').toUpperCase()}${v.data?' — '+fmtData(v.data):''}</div>
+          <div style="font-size:0.75rem;color:var(--text3)">Original: R$ ${fmtMoney(v.valor)}${abatido>0?' • Já abatido: R$ '+fmtMoney(abatido)+' • Restante: R$ '+fmtMoney(restante):''}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <label style="font-size:0.78rem;color:var(--text3)">Pagar:</label>
+          <input type="number" class="form-input" value="${v.valorPagar||restante}" step="0.01"
+            max="${restante}" style="width:100px;font-family:var(--mono)"
+            oninput="folhaDetalhe['${funcId}'].descontoVales[${i}].valorPagar=Math.min(parseFloat(this.value)||0,${restante});this.value=folhaDetalhe['${funcId}'].descontoVales[${i}].valorPagar;recalcFolhaCard('${funcId}')">
+        </div>
+      </div>`;
+    }).join('')}` : '<p style="color:var(--text3);font-size:0.82rem">Nenhum vale pendente neste mês.</p>'}
+
+    <!-- OUTROS DESCONTOS -->
+    <div id="fd-extra-descontos" style="margin-top:8px">
+      ${(d.outrosDescontos||[]).map((o,i) => `
+        <div style="display:flex;gap:8px;margin-bottom:6px">
+          <input type="text" class="form-input" value="${o.descricao||''}" placeholder="Descrição" style="flex:2"
+            oninput="folhaDetalhe['${funcId}'].outrosDescontos[${i}].descricao=this.value">
+          <input type="number" class="form-input" value="${o.valor||0}" step="0.01" style="flex:1"
+            oninput="folhaDetalhe['${funcId}'].outrosDescontos[${i}].valor=parseFloat(this.value)||0;recalcFolhaCard('${funcId}')">
+          <button class="btn-icon" onclick="removerExtraDesconto('${funcId}',${i})">🗑️</button>
+        </div>`).join('')}
+    </div>
+    <button class="btn btn-outline btn-sm" onclick="adicionarExtraDesconto('${funcId}')">➕ Outro desconto</button>
+
+    <!-- RESUMO -->
+    <div style="background:var(--bg2);border-radius:10px;padding:14px;margin-top:16px">
+      <div id="fd-resumo-${funcId}">
+        ${buildResumoFolha(funcId)}
+      </div>
+    </div>
+  `;
+
+  folhaAtualId = funcId;
+  // Atualizar footer do modal
+  document.querySelector('#modal-folha-detalhe .modal-footer').innerHTML = `
+    <button class="btn btn-outline btn-sm" onclick="closeModal('modal-folha-detalhe')">Fechar</button>
+    <button class="btn btn-success btn-sm" onclick="salvarFolhaDetalhe()">💾 Salvar</button>
+    <button class="btn btn-primary btn-sm" onclick="gerarPdfEQuitarFolha('${funcId}')">📄 PDF + Quitar selecionados</button>
+  `;
+  openModal('modal-folha-detalhe');
+}
+
+function buildResumoFolha(funcId) {
+  const d = folhaDetalhe[funcId];
+  if (!d) return '';
+  const calc = calcFolhaTotais(d);
+  return `
+    <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>Salário bruto</span><span style="font-family:var(--mono)">R$ ${fmtMoney(calc.totalProventos)}</span></div>
+    <div style="display:flex;justify-content:space-between;margin-bottom:4px;color:var(--red)"><span>Total descontos selecionados</span><span style="font-family:var(--mono)">- R$ ${fmtMoney(calc.totalDescontos)}</span></div>
+    <div style="display:flex;justify-content:space-between;padding-top:8px;border-top:1px solid var(--border);font-size:1.05rem;font-weight:700;color:${calc.liquido<0?'var(--red)':'var(--accent2)'}">
+      <span>LÍQUIDO A RECEBER</span><span style="font-family:var(--mono)">R$ ${fmtMoney(calc.liquido)}</span>
+    </div>
+    ${calc.liquido<0?'<div style="color:var(--red);font-size:0.78rem;margin-top:6px">⚠️ Descontos maiores que o salário. Revise os itens selecionados.</div>':''}
+  `;
+}
+
+function recalcFolhaCard(funcId) {
+  const resumoEl = document.getElementById(`fd-resumo-${funcId}`);
+  if (resumoEl) resumoEl.innerHTML = buildResumoFolha(funcId);
+  // Update card summary
+  const card = document.getElementById(`fc-${funcId}`);
+  const d = folhaDetalhe[funcId];
+  if (card && d) {
+    const calc = calcFolhaTotais(d);
+    const descEl = card.querySelector('.folha-value-num.neg');
+    const liqEl = card.querySelector('.folha-value-num.total');
+    if (descEl) descEl.textContent = `- R$ ${fmtMoney(calc.totalDescontos)}`;
+    if (liqEl) liqEl.textContent = `R$ ${fmtMoney(calc.liquido)}`;
+  }
+}
+
+function adicionarExtraProvento(funcId) {
+  if (!folhaDetalhe[funcId].outrosProventos) folhaDetalhe[funcId].outrosProventos = [];
+  folhaDetalhe[funcId].outrosProventos.push({ descricao: '', valor: 0 });
+  abrirFolhaFuncionario(funcId);
+}
+
+function removerExtraProvento(funcId, idx) {
+  folhaDetalhe[funcId].outrosProventos.splice(idx, 1);
+  abrirFolhaFuncionario(funcId);
+}
+
+function adicionarExtraDesconto(funcId) {
+  if (!folhaDetalhe[funcId].outrosDescontos) folhaDetalhe[funcId].outrosDescontos = [];
+  folhaDetalhe[funcId].outrosDescontos.push({ descricao: '', valor: 0 });
+  abrirFolhaFuncionario(funcId);
+}
+
+function removerExtraDesconto(funcId, idx) {
+  folhaDetalhe[funcId].outrosDescontos.splice(idx, 1);
+  abrirFolhaFuncionario(funcId);
+}
+
+async function gerarPdfEQuitarFolha(funcId) {
+  salvarFolhaDetalhe();
+  // Gerar PDF
+  gerarPdfFuncionario(funcId);
+  // Quitar itens selecionados
+  const d = folhaDetalhe[funcId];
+  if (!d) return;
+  let baixados = 0;
+
+  // Empréstimos selecionados
+  for (const e of d.descontoEmprestimos.filter(x=>x.selecionado!==false)) {
+    const empObj = emprestimos.find(x=>x.id===e.id);
+    if (!empObj) continue;
+    const valorPago = e.valorPagar||e.valor;
+    const novoPago = (empObj.pago||0) + valorPago;
+    const novoRestante = (empObj.total||0) - novoPago;
+    const novasParcelas = (empObj.parcelasPagas||0) + 1;
+    const status = novoRestante <= 0.01 ? 'quitado' : 'ativo';
+    await fsUpdate('emprestimos', e.id, { pago: novoPago, parcelasPagas: novasParcelas, status });
+    const idx = emprestimos.findIndex(x=>x.id===e.id);
+    if (idx>=0) Object.assign(emprestimos[idx], { pago: novoPago, parcelasPagas: novasParcelas, status });
+    baixados++;
+  }
+
+  // Vales selecionados
+  for (const v of d.descontoVales.filter(x=>x.selecionado!==false)) {
+    const valeObj = vales.find(x=>x.id===v.id);
+    if (!valeObj) continue;
+    const valorPago = v.valorPagar||v.valor;
+    const abatimentos = valeObj.abatimentos||[];
+    abatimentos.push({ valor: valorPago, data: new Date().toISOString().slice(0,10), tipo: 'folha' });
+    const totalAbatido = abatimentos.reduce((s,a)=>s+a.valor,0);
+    const status = totalAbatido >= (valeObj.valor||0) ? 'descontado' : 'pendente';
+    await fsUpdate('vales', v.id, { abatimentos, status });
+    const idx = vales.findIndex(x=>x.id===v.id);
+    if (idx>=0) Object.assign(vales[idx], { abatimentos, status });
+    baixados++;
+  }
+
+  closeModal('modal-folha-detalhe');
+  renderEmprestimos();
+  renderVales();
+  renderDashboard();
+  toast(`PDF gerado + ${baixados} item(ns) baixado(s)!`, 'success');
 }
 
 function buildFolhaDetalheForm(funcId, d) {
@@ -3770,27 +4004,24 @@ function salvarFolhaDetalhe() {
   const id = folhaAtualId;
   if (!id || !folhaDetalhe[id]) return;
   const d = folhaDetalhe[id];
-  d.salario = parseFloat(document.getElementById('fd-salario').value) || d.salario;
-  d.diasTrabalhados = parseInt(document.getElementById('fd-dias').value) || 0;
-  d.horasExtras = parseFloat(document.getElementById('fd-horas').value) || 0;
-  d.horaExtraVal = parseFloat(document.getElementById('fd-valhoraextra').value) || d.horaExtraVal;
-  d.insalPct = parseFloat(document.getElementById('fd-insalubridade').value) || 0;
-  d.premioDesempenho = parseFloat(document.getElementById('fd-premio').value) || 0;
-  d.inssValor = parseFloat(document.getElementById('fd-inss').value) || 0;
-  d.valeQuinzena = parseFloat(document.getElementById('fd-valequinzena').value) || 0;
-  d.faltas = parseInt(document.getElementById('fd-faltas').value) || 0;
 
-  document.querySelectorAll('.fd-emp-val').forEach(el => {
-    const idx = parseInt(el.dataset.idx);
-    d.descontoEmprestimos[idx].valor = parseFloat(el.value) || 0;
-  });
-  document.querySelectorAll('.fd-vale-val').forEach(el => {
-    const idx = parseInt(el.dataset.idx);
-    d.descontoVales[idx].valor = parseFloat(el.value) || 0;
-  });
+  const getVal = (elId, fallback=0) => {
+    const el = document.getElementById(elId);
+    return el ? (parseFloat(el.value)||fallback) : fallback;
+  };
+  const getInt = (elId, fallback=0) => {
+    const el = document.getElementById(elId);
+    return el ? (parseInt(el.value)||fallback) : fallback;
+  };
+
+  d.diasTrabalhados = getInt('fd-dias', 0);
+  d.horasExtras = getVal('fd-horas', 0);
+  d.horaExtraVal = getVal('fd-valhoraextra', d.horaExtraVal);
+  d.inssValor = getVal('fd-inss', d.inssValor);
+  d.premioDesempenho = getVal('fd-premio', 0);
+  d.faltas = getInt('fd-faltas', 0);
 
   folhaDetalhe[id] = d;
-  // Re-render card
   const card = document.getElementById('fc-' + id);
   if (card) card.outerHTML = buildFolhaCard(d.funcionario, d);
 
@@ -5668,64 +5899,99 @@ function renderGrupoFuncionariosCheck(grupoId) {
 // =====================================================
 // FICHA DO FUNCIONÁRIO
 // =====================================================
-function abrirFichaFuncionario(funcId) {
+let fichaFuncAtual = null;
+
+function abrirFichaFuncionario(funcId, voltarPara='funcionarios') {
+  const f = funcionarios.find(fn => fn.id === funcId);
+  if (!f) return;
+  fichaFuncAtual = funcId;
+
+  document.getElementById('fichaVoltarBtn').onclick = () => navigate(voltarPara);
+  document.getElementById('fichaTitulo').textContent = f.nome;
+  document.getElementById('fichaSubtitulo').textContent = (f.cargo||'') + (f.grupoId ? ' • ' + (grupos.find(g=>g.id===f.grupoId)?.nome||'') : '');
+
+  renderFichaConteudo(funcId);
+  navigate('ficha-funcionario');
+}
+
+function renderFichaConteudo(funcId) {
   const f = funcionarios.find(fn => fn.id === funcId);
   if (!f) return;
 
-  document.getElementById('fichaTitulo').textContent = f.nome;
-  document.getElementById('fichaSubtitulo').textContent = (f.cargo || '') + (f.grupoId ? ' • ' + (grupos.find(g=>g.id===f.grupoId)?.nome||'') : '');
-
-  // Saldo devedor total
   const empAtivos = emprestimos.filter(e => (e.status==='ativo'||!e.status) && e.funcionarioId===funcId);
-  const totalEmp = empAtivos.reduce((s,e) => s + ((e.total||0)-(e.pago||0)), 0);
+  const totalEmp = empAtivos.reduce((s,e) => s+((e.total||0)-(e.pago||0)), 0);
   const valesPend = vales.filter(v => v.funcionarioId===funcId && v.status!=='descontado');
-  const totalVales = valesPend.reduce((s,v) => s + (v.valor||0), 0);
+  const totalVales = valesPend.reduce((s,v) => {
+    const abatido = (v.abatimentos||[]).reduce((s2,a)=>s2+a.valor,0);
+    return s + Math.max(0,(v.valor||0)-abatido);
+  }, 0);
   const totalDev = totalEmp + totalVales;
 
   document.getElementById('fichaCards').innerHTML = `
-    <div class="stat-card"><div class="stat-label">Empréstimos em aberto</div><div class="stat-value red" style="font-size:1.3rem">R$ ${fmtMoney(totalEmp)}</div></div>
-    <div class="stat-card"><div class="stat-label">Vales pendentes</div><div class="stat-value yellow" style="font-size:1.3rem">R$ ${fmtMoney(totalVales)}</div></div>
-    <div class="stat-card"><div class="stat-label">SALDO DEVEDOR TOTAL</div><div class="stat-value ${totalDev>0?'red':'green'}" style="font-size:1.4rem">R$ ${fmtMoney(totalDev)}</div></div>
-    <div class="stat-card"><div class="stat-label">Salário base</div><div class="stat-value accent" style="font-size:1.3rem">R$ ${fmtMoney(f.salario||0)}</div></div>
+    <div class="stat-card"><div class="stat-label">Empréstimos em aberto</div><div class="stat-value red" style="font-size:1.2rem">R$ ${fmtMoney(totalEmp)}</div></div>
+    <div class="stat-card"><div class="stat-label">Vales pendentes</div><div class="stat-value yellow" style="font-size:1.2rem">R$ ${fmtMoney(totalVales)}</div></div>
+    <div class="stat-card"><div class="stat-label">SALDO DEVEDOR</div><div class="stat-value ${totalDev>0?'red':'green'}" style="font-size:1.3rem">R$ ${fmtMoney(totalDev)}</div></div>
+    <div class="stat-card"><div class="stat-label">Salário base</div><div class="stat-value accent" style="font-size:1.2rem">R$ ${fmtMoney(f.salario||0)}</div></div>
   `;
 
-  // Empréstimos
+  // EMPRÉSTIMOS — com botão de detalhe e pagamento
   const empEl = document.getElementById('fichaEmprestimos');
   if (empAtivos.length === 0) {
     empEl.innerHTML = '<p style="color:var(--text3);font-size:0.85rem">Nenhum empréstimo ativo.</p>';
   } else {
-    empEl.innerHTML = `<table><thead><tr><th>Descrição</th><th>Total</th><th>Parcela</th><th>Pago</th><th>Restante</th><th>Status</th></tr></thead>
-      <tbody>${empAtivos.map(e => {
-        const rest = (e.total||0)-(e.pago||0);
-        const pct = e.total>0 ? Math.min(100,(e.pago||0)/e.total*100) : 0;
-        return `<tr>
-          <td>${e.descricao}</td>
-          <td class="mono">R$ ${fmtMoney(e.total)}</td>
-          <td class="mono">R$ ${fmtMoney(e.valorParcela)}</td>
-          <td><div style="font-family:var(--mono)">${e.parcelasPagas||0}/${e.parcelas}</div>
-              <div class="progress-bar" style="width:80px"><div class="progress-fill" style="width:${pct}%"></div></div></td>
-          <td class="mono" style="color:var(--red)">R$ ${fmtMoney(rest)}</td>
-          <td><span class="badge ${rest<=0?'badge-green':'badge-yellow'}">${rest<=0?'Quitado':'Ativo'}</span></td>
-        </tr>`;
-      }).join('')}</tbody></table>`;
+    empEl.innerHTML = empAtivos.map(e => {
+      const rest = (e.total||0)-(e.pago||0);
+      const pct = e.total>0 ? Math.min(100,(e.pago||0)/e.total*100) : 0;
+      const parcelaAtual = (e.parcelasPagas||0)+1;
+      return `<div style="background:var(--bg2);border-radius:10px;padding:14px;margin-bottom:10px">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap">
+          <div style="flex:1">
+            <div style="font-weight:600;font-size:0.95rem">${e.descricao}</div>
+            <div style="font-size:0.78rem;color:var(--text3);margin-top:2px">
+              Parcela ${parcelaAtual}/${e.parcelas} • Valor: R$ ${fmtMoney(e.valorParcela)}/parcela
+            </div>
+            <div style="margin-top:8px;display:flex;gap:16px;flex-wrap:wrap">
+              <div><div style="font-size:0.72rem;color:var(--text3)">Total</div><div style="font-family:var(--mono)">R$ ${fmtMoney(e.total)}</div></div>
+              <div><div style="font-size:0.72rem;color:var(--text3)">Pago</div><div style="font-family:var(--mono);color:var(--green)">R$ ${fmtMoney(e.pago||0)}</div></div>
+              <div><div style="font-size:0.72rem;color:var(--text3)">Restante</div><div style="font-family:var(--mono);color:var(--red)">R$ ${fmtMoney(rest)}</div></div>
+            </div>
+            <div class="progress-bar" style="margin-top:8px"><div class="progress-fill" style="width:${pct}%"></div></div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <button class="btn btn-outline btn-sm" onclick="fichaRegistrarPagamentoEmp('${e.id}','${funcId}')">💳 Registrar pagamento</button>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
   }
 
-  // Vales
-  const valesFunc = vales.filter(v => v.funcionarioId===funcId).sort((a,b) => (b.data||'').localeCompare(a.data||''));
+  // VALES — com abatimento parcial
+  const valesFunc = vales.filter(v => v.funcionarioId===funcId).sort((a,b)=>(b.data||'').localeCompare(a.data||''));
   const valesEl = document.getElementById('fichaVales');
-  if (valesFunc.length === 0) {
-    valesEl.innerHTML = '<p style="color:var(--text3);font-size:0.85rem">Nenhum vale registrado.</p>';
+  if (valesFunc.filter(v=>v.status!=='descontado').length === 0) {
+    valesEl.innerHTML = '<p style="color:var(--text3);font-size:0.85rem">Nenhum vale pendente.</p>';
   } else {
-    valesEl.innerHTML = `<table><thead><tr><th>Data</th><th>Descrição</th><th>Valor</th><th>Status</th></tr></thead>
-      <tbody>${valesFunc.map(v => `<tr>
-        <td>${v.data?fmtData(v.data):'—'}</td>
-        <td>${v.descricao||'Vale'}</td>
-        <td class="mono" style="color:${v.status==='descontado'?'var(--text3)':'var(--red)'}">R$ ${fmtMoney(v.valor)}</td>
-        <td><span class="badge ${v.status==='descontado'?'badge-green':'badge-yellow'}">${v.status==='descontado'?'Descontado':'Pendente'}</span></td>
-      </tr>`).join('')}</tbody></table>`;
+    valesEl.innerHTML = valesFunc.filter(v=>v.status!=='descontado').map(v => {
+      const abatido = (v.abatimentos||[]).reduce((s,a)=>s+a.valor,0);
+      const restante = Math.max(0,(v.valor||0)-abatido);
+      return `<div style="background:var(--bg2);border-radius:10px;padding:14px;margin-bottom:10px">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap">
+          <div style="flex:1">
+            <div style="font-weight:600;font-size:0.9rem">${v.descricao||'Vale'}${v.data?' — '+fmtData(v.data):''}</div>
+            <div style="margin-top:6px;display:flex;gap:16px;flex-wrap:wrap">
+              <div><div style="font-size:0.72rem;color:var(--text3)">Original</div><div style="font-family:var(--mono)">R$ ${fmtMoney(v.valor)}</div></div>
+              ${abatido>0?`<div><div style="font-size:0.72rem;color:var(--text3)">Abatido</div><div style="font-family:var(--mono);color:var(--green)">R$ ${fmtMoney(abatido)}</div></div>`:''}
+              <div><div style="font-size:0.72rem;color:var(--text3)">Restante</div><div style="font-family:var(--mono);color:var(--red)">R$ ${fmtMoney(restante)}</div></div>
+            </div>
+            ${(v.abatimentos||[]).length>0?`<div style="font-size:0.72rem;color:var(--text3);margin-top:4px">Histórico: ${v.abatimentos.map(a=>`R$ ${fmtMoney(a.valor)} em ${fmtData(a.data)}`).join(' • ')}</div>`:''}
+          </div>
+          <button class="btn btn-outline btn-sm" onclick="fichaAbaterVale('${v.id}','${funcId}')">💸 Registrar pagamento</button>
+        </div>
+      </div>`;
+    }).join('');
   }
 
-  // Histórico folhas
+  // HISTÓRICO FOLHAS
   const histEl = document.getElementById('fichaHistoricoFolhas');
   const historicoFolhas = getCol('historicoFolhas').getAll();
   const folhasFunc = historicoFolhas.filter(h => h.snapshot?.some(s => s.nome===f.nome));
@@ -5735,16 +6001,73 @@ function abrirFichaFuncionario(funcId) {
     histEl.innerHTML = `<table><thead><tr><th>Competência</th><th>Bruto</th><th>Descontos</th><th>Líquido</th></tr></thead>
       <tbody>${folhasFunc.map(h => {
         const snap = h.snapshot?.find(s => s.nome===f.nome);
-        return snap ? `<tr>
+        return snap?`<tr>
           <td><strong>${h.mesRef}</strong></td>
           <td class="mono">R$ ${fmtMoney(snap.totalProventos)}</td>
           <td class="mono" style="color:var(--red)">R$ ${fmtMoney(snap.totalDescontos)}</td>
           <td class="mono" style="color:var(--accent2)"><strong>R$ ${fmtMoney(snap.liquido)}</strong></td>
-        </tr>` : '';
+        </tr>`:'';
       }).join('')}</tbody></table>`;
   }
+}
 
-  navigate('ficha-funcionario');
+// Registrar pagamento de empréstimo pela ficha
+async function fichaRegistrarPagamentoEmp(empId, funcId) {
+  await registrarPagamentoMelhorado(empId);
+  // Após fechar modal de confirmação, re-renderizar ficha
+  setTimeout(() => renderFichaConteudo(funcId), 500);
+}
+
+// Abater vale pela ficha (integral ou parcial)
+async function fichaAbaterVale(valeId, funcId) {
+  const v = vales.find(x=>x.id===valeId);
+  if (!v) return;
+  const abatido = (v.abatimentos||[]).reduce((s,a)=>s+a.valor,0);
+  const restante = Math.max(0,(v.valor||0)-abatido);
+
+  document.getElementById('confirmarTitulo').textContent = `Pagamento de vale — ${v.descricao||'Vale'}`;
+  document.getElementById('confirmarMsg').innerHTML = `
+    <div style="margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>Valor original:</span><strong>R$ ${fmtMoney(v.valor)}</strong></div>
+      ${abatido>0?`<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>Já pago:</span><strong style="color:var(--green)">R$ ${fmtMoney(abatido)}</strong></div>`:''}
+      <div style="display:flex;justify-content:space-between"><span>Restante:</span><strong style="color:var(--red)">R$ ${fmtMoney(restante)}</strong></div>
+    </div>
+    <label style="font-size:0.82rem;color:var(--text2)">Valor a pagar agora (pode ser parcial):</label>
+    <input type="number" id="valeAbateInput" class="form-input" value="${restante.toFixed(2)}" max="${restante}" step="0.01" style="margin-top:6px">
+    <div id="valeAbateInfo" style="font-size:0.78rem;color:var(--text3);margin-top:6px"></div>
+  `;
+
+  setTimeout(() => {
+    const inp = document.getElementById('valeAbateInput');
+    if (!inp) return;
+    inp.addEventListener('input', () => {
+      const val = parseFloat(inp.value)||0;
+      const el = document.getElementById('valeAbateInfo');
+      if (!el) return;
+      if (val >= restante) { el.textContent = '✅ Vale será quitado completamente'; el.style.color='var(--green)'; }
+      else if (val > 0) { el.textContent = `Restará R$ ${fmtMoney(restante-val)} após este pagamento`; el.style.color='var(--yellow)'; }
+    });
+  }, 100);
+
+  document.getElementById('modal-confirmar').classList.add('active');
+  _confirmarResolve = async (ok) => {
+    document.getElementById('modal-confirmar').classList.remove('active');
+    _confirmarResolve = null;
+    if (!ok) return;
+    const inp2 = document.getElementById('valeAbateInput');
+    const valor = Math.min(parseFloat(inp2?.value)||0, restante);
+    if (!valor) return;
+    const novosAbatimentos = [...(v.abatimentos||[]), { valor, data: new Date().toISOString().slice(0,10), tipo: 'avulso' }];
+    const totalAbatido2 = novosAbatimentos.reduce((s,a)=>s+a.valor,0);
+    const novoStatus = totalAbatido2 >= (v.valor||0) ? 'descontado' : 'pendente';
+    await fsUpdate('vales', valeId, { abatimentos: novosAbatimentos, status: novoStatus });
+    const idx = vales.findIndex(x=>x.id===valeId);
+    if (idx>=0) Object.assign(vales[idx], { abatimentos: novosAbatimentos, status: novoStatus });
+    renderFichaConteudo(funcId);
+    renderVales();
+    renderDashboard();
+    toast(`R$ ${fmtMoney(valor)} abatido do vale!`, 'success');
+  };
 }
 
 // =====================================================
