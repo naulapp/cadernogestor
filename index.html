@@ -1947,10 +1947,15 @@ tr:hover td { background: rgba(108,99,255,0.04); }
           </div>
         </div>
 
-        <div class="section-card-title" style="margin-top:4px">HORA EXTRA</div>
+        <div class="section-card-title" style="margin-top:4px">ADICIONAIS / BENEFÍCIOS</div>
+        <p style="color:var(--text3);font-size:0.75rem;margin-bottom:8px">Adicionais que incidem na hora extra aumentam o valor calculado. Configure antes de calcular a hora extra.</p>
+        <div id="funcAdicionais"></div>
+        <button type="button" class="btn btn-outline btn-sm" onclick="addAdicionalFunc()" style="width:fit-content">➕ Adicionar adicional</button>
+
+        <div class="section-card-title" style="margin-top:8px">HORA EXTRA</div>
         <div class="form-grid form-grid-3">
           <div class="form-group">
-            <label class="form-label">Adicional (%)</label>
+            <label class="form-label">Adicional hora extra (%)</label>
             <input type="number" class="form-input" id="funcHoraExtraPct" value="50" step="1">
           </div>
           <div class="form-group">
@@ -1962,10 +1967,7 @@ tr:hover td { background: rgba(108,99,255,0.04); }
               onclick="calcFuncHoraExtra()">🔄 Calcular</button>
           </div>
         </div>
-
-        <div class="section-card-title" style="margin-top:4px">ADICIONAIS / BENEFÍCIOS</div>
-        <div id="funcAdicionais"></div>
-        <button type="button" class="btn btn-outline btn-sm" onclick="addAdicionalFunc()" style="width:fit-content">➕ Adicionar</button>
+        <p style="color:var(--text3);font-size:0.75rem;margin-top:-8px">O cálculo considera adicionais habituais que incidem na hora extra (ex: insalubridade).</p>
 
         <div class="section-card-title" style="margin-top:4px">INSS</div>
         <div class="form-grid form-grid-2">
@@ -1991,6 +1993,14 @@ tr:hover td { background: rgba(108,99,255,0.04); }
         <div class="form-group">
           <label class="form-label">Vale quinzena (R$)</label>
           <input type="number" class="form-input" id="funcValeQuinzena" placeholder="700.00" step="0.01">
+          <div style="font-size:0.73rem;color:var(--text3);margin-top:3px">Valor adiantado na quinzena, descontado na folha mensal</div>
+        </div>
+
+        <div class="section-card-title" style="margin-top:4px">OBSERVAÇÕES INTERNAS</div>
+        <div class="form-group">
+          <textarea class="form-input" id="funcObservacoes" rows="3"
+            placeholder="Observações internas (não aparecem no contracheque)..."
+            style="resize:vertical;font-family:var(--font)"></textarea>
         </div>
 
       </div>
@@ -2117,6 +2127,11 @@ tr:hover td { background: rgba(108,99,255,0.04); }
           </div>
         </div>
 
+        <div class="section-card-title" style="margin-top:8px">ADICIONAIS / BENEFÍCIOS</div>
+        <p style="color:var(--text3);font-size:0.75rem;margin-bottom:8px">Configure os adicionais antes de calcular a hora extra. Os que incidem na hora extra aumentam o valor calculado.</p>
+        <div id="grupoAdicionais"></div>
+        <button class="btn btn-outline btn-sm" onclick="addAdicionalGrupo()" style="width:fit-content">➕ Adicionar adicional</button>
+
         <div class="section-card-title" style="margin-top:8px">HORA EXTRA</div>
         <div class="form-grid form-grid-3">
           <div class="form-group">
@@ -2131,11 +2146,7 @@ tr:hover td { background: rgba(108,99,255,0.04); }
             <button class="btn btn-outline btn-sm" style="width:100%;height:42px" onclick="calcGrupoHoraExtra()">🔄 Calcular</button>
           </div>
         </div>
-        <p style="color:var(--text3);font-size:0.75rem;margin-top:-8px">Fórmula: (Salário ÷ Carga mensal) × (1 + adicional%)</p>
-
-        <div class="section-card-title" style="margin-top:8px">ADICIONAIS / BENEFÍCIOS</div>
-        <div id="grupoAdicionais"></div>
-        <button class="btn btn-outline btn-sm" onclick="addAdicionalGrupo()" style="width:fit-content">➕ Adicionar</button>
+        <p style="color:var(--text3);font-size:0.75rem;margin-top:-8px">Fórmula considera adicionais habituais que incidem na hora extra.</p>
 
         <div class="section-card-title" style="margin-top:8px">INSS</div>
         <div class="form-grid form-grid-2">
@@ -2902,7 +2913,7 @@ function renderFuncionarios(filter='') {
   tbody.innerHTML = list.map(f => {
     const grupo = grupos.find(g => g.id === f.grupoId);
     return `<tr>
-      <td><strong>${f.nome}</strong></td>
+      <td><strong>${f.nome}</strong>${f.observacoes ? ` <span title="${f.observacoes}" style="cursor:help;color:var(--text3);font-size:0.8rem">📝</span>` : ''}</td>
       <td style="font-family:var(--mono);font-size:0.78rem">${f.cpf || '—'}</td>
       <td>${f.cargo || '—'}</td>
       <td>${grupo ? `<span class="badge badge-accent">${grupo.nome}</span>` : '<span class="badge badge-gray">Manual</span>'}</td>
@@ -2947,6 +2958,7 @@ async function salvarFuncionario() {
     inss: parseFloat(document.getElementById('funcInss').value) || 0,
     inssPct: parseFloat(document.getElementById('funcInssPct')?.value) || 0,
     valeQuinzena: parseFloat(document.getElementById('funcValeQuinzena').value) || 0,
+    observacoes: document.getElementById('funcObservacoes')?.value || '',
     ativo: true
   };
 
@@ -3004,6 +3016,8 @@ function editarFuncionario(id) {
   document.getElementById('funcInss').value = f.inss || '';
   document.getElementById('funcInssPct').value = f.inssPct || '';
   document.getElementById('funcValeQuinzena').value = f.valeQuinzena || '';
+  const obsEl = document.getElementById('funcObservacoes');
+  if (obsEl) obsEl.value = f.observacoes || '';
   adicionaisFunc = f.adicionais ? JSON.parse(JSON.stringify(f.adicionais)) : [];
   toggleFuncInssType();
   renderAdicionaisFunc();
@@ -3029,6 +3043,8 @@ function limparFormFuncionario() {
   document.getElementById('funcHoraExtraPct').value = '50';
   document.getElementById('funcInssType').value = 'valor';
   document.getElementById('grupoHerancaInfo').style.display = 'none';
+  const obsEl2 = document.getElementById('funcObservacoes');
+  if (obsEl2) obsEl2.value = '';
   adicionaisFunc = [];
   renderAdicionaisFunc();
   toggleFuncInssType();
@@ -4141,7 +4157,7 @@ function renderEscalaFuncionarios() {
   tbody.innerHTML = ativos.map(f => {
     const rule = getEscalaRule(f.id);
     return `<tr>
-      <td><strong>${f.nome}</strong></td>
+      <td><strong>${f.nome}</strong>${f.observacoes ? ` <span title="${f.observacoes}" style="cursor:help;color:var(--text3);font-size:0.8rem">📝</span>` : ''}</td>
       <td>${f.cargo || '—'}</td>
       <td><span class="badge ${rule.participaEscala !== false ? 'badge-green' : 'badge-gray'}">${rule.participaEscala !== false ? 'Sim' : 'Nao'}</span></td>
       <td><span class="badge ${rule.podeHoraExtra ? 'badge-accent' : 'badge-gray'}">${rule.podeHoraExtra ? 'Permitida' : 'Bloqueada'}</span></td>
@@ -4689,11 +4705,18 @@ function calcGrupoHoraExtra() {
   const salario = parseFloat(document.getElementById('grupoSalario').value) || 0;
   const mensal = parseFloat(document.getElementById('grupoCargaMensal').value) || 220;
   const adicPct = parseFloat(document.getElementById('grupoHoraExtraPct').value) || 50;
-  if (salario && mensal) {
-    const horaBase = salario / mensal;
-    const horaExtra = horaBase * (1 + adicPct / 100);
-    document.getElementById('grupoHoraExtra').value = horaExtra.toFixed(2);
-  }
+  if (!salario || !mensal) return;
+  // Soma adicionais habituais que incidem na hora extra
+  const baseAdicionais = adicionaisGrupo
+    .filter(a => a.incideHoraExtra && !a.isValorFixo)
+    .reduce((s, a) => s + (salario * (a.pct||0) / 100), 0);
+  const baseFixos = adicionaisGrupo
+    .filter(a => a.incideHoraExtra && a.isValorFixo)
+    .reduce((s, a) => s + (a.valor||0), 0);
+  const baseTotal = salario + baseAdicionais + baseFixos;
+  const horaBase = baseTotal / mensal;
+  const horaExtra = horaBase * (1 + adicPct / 100);
+  document.getElementById('grupoHoraExtra').value = horaExtra.toFixed(2);
 }
 
 function toggleInssType() {
@@ -4702,9 +4725,8 @@ function toggleInssType() {
   document.getElementById('grupoInssPctGroup').style.display = tipo === 'pct' ? '' : 'none';
 }
 
-function addAdicionalGrupo(nome='', tipo='insalubridade', valor='', pct='') {
-  const idx = adicionaisGrupo.length;
-  adicionaisGrupo.push({ nome, tipo, valor, pct });
+function addAdicionalGrupo() {
+  adicionaisGrupo.push({ nome: adicionaisNomes[0]||'Insalubridade', isValorFixo:false, pct:0, valor:0, incideHoraExtra:false, incideInss:false });
   renderAdicionaisGrupo();
 }
 
@@ -4713,34 +4735,83 @@ function removeAdicionalGrupo(idx) {
   renderAdicionaisGrupo();
 }
 
+// Lista de nomes de adicionais pré-cadastrados
+let adicionaisNomes = JSON.parse(localStorage.getItem('cgAdicionaisNomes') || 'null') ||
+  ['Insalubridade','Periculosidade','Adicional Noturno','Hora Extra 50%','Hora Extra 100%','Adicional de Função'];
+
+function salvarAdicionaisNomes() {
+  localStorage.setItem('cgAdicionaisNomes', JSON.stringify(adicionaisNomes));
+}
+
+function renderAdicional(lista, idx, onRemove, onUpdate) {
+  const a = lista[idx];
+  const isValor = a.isValorFixo;
+  return `
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:8px">
+      <div style="display:grid;grid-template-columns:2fr 1fr auto;gap:8px;align-items:flex-end;margin-bottom:8px">
+        <div class="form-group" style="margin:0">
+          <label class="form-label">NOME / TIPO DO ADICIONAL</label>
+          <div style="display:flex;gap:6px">
+            <select class="form-input" style="flex:1"
+              onchange="if(this.value==='__novo__'){cadastrarNovoAdicional(this,'${onUpdate}',${idx});}else{${onUpdate}[${idx}].nome=this.value;}">
+              ${adicionaisNomes.map(n => `<option value="${n}" ${a.nome===n?'selected':''}>${n}</option>`).join('')}
+              <option value="__novo__">+ Cadastrar novo...</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group" style="margin:0">
+          <label class="form-label">${isValor?'VALOR (R$)':'PERCENTUAL (%)'}</label>
+          <input type="number" class="form-input"
+            value="${isValor?(a.valor||''):(a.pct||'')}"
+            placeholder="${isValor?'200.00':'20'}"
+            step="${isValor?'0.01':'1'}"
+            oninput="${onUpdate}[${idx}].${isValor?'valor':'pct'}=parseFloat(this.value)||0">
+        </div>
+        <button class="btn-icon" onclick="${onRemove}(${idx})" style="height:42px;margin-bottom:0">🗑️</button>
+      </div>
+      <div style="display:flex;gap:16px;flex-wrap:wrap">
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.8rem">
+          <input type="checkbox" ${isValor?'':'style="display:none"'}
+            onchange="${onUpdate}[${idx}].isValorFixo=this.checked;renderAdicionais${onUpdate==='adicionaisGrupo'?'Grupo':'Func'}()">
+          <span style="color:var(--text3)">Valor fixo (R$)</span>
+          <input type="checkbox" ${isValor?'checked':''}
+            onchange="${onUpdate}[${idx}].isValorFixo=this.checked;renderAdicionais${onUpdate==='adicionaisGrupo'?'Grupo':'Func'}()">
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.8rem">
+          <input type="checkbox" ${a.incideHoraExtra?'checked':''}
+            onchange="${onUpdate}[${idx}].incideHoraExtra=this.checked">
+          <span>Incide na hora extra</span>
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.8rem">
+          <input type="checkbox" ${a.incideInss?'checked':''}
+            onchange="${onUpdate}[${idx}].incideInss=this.checked">
+          <span>Incide no INSS</span>
+        </label>
+      </div>
+    </div>`;
+}
+
+function cadastrarNovoAdicional(selectEl, listName, idx) {
+  const nome = prompt('Nome do novo adicional:');
+  if (!nome || !nome.trim()) { selectEl.value = adicionaisNomes[0] || ''; return; }
+  const nomeFmt = nome.trim();
+  if (!adicionaisNomes.includes(nomeFmt)) {
+    adicionaisNomes.push(nomeFmt);
+    salvarAdicionaisNomes();
+  }
+  if (listName === 'adicionaisGrupo') {
+    adicionaisGrupo[idx].nome = nomeFmt;
+    renderAdicionaisGrupo();
+  } else {
+    adicionaisFunc[idx].nome = nomeFmt;
+    renderAdicionaisFunc();
+  }
+}
+
 function renderAdicionaisGrupo() {
   const c = document.getElementById('grupoAdicionais');
   if (!c) return;
-  c.innerHTML = adicionaisGrupo.map((a, i) => `
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:8px;align-items:flex-end;margin-bottom:8px">
-      <div class="form-group" style="margin:0">
-        <label class="form-label">Nome</label>
-        <input type="text" class="form-input" value="${a.nome}" placeholder="Ex: Insalubridade"
-          oninput="adicionaisGrupo[${i}].nome=this.value">
-      </div>
-      <div class="form-group" style="margin:0">
-        <label class="form-label">Tipo</label>
-        <select class="form-input" onchange="adicionaisGrupo[${i}].tipo=this.value;renderAdicionaisGrupo()">
-          <option value="insalubridade" ${a.tipo==='insalubridade'?'selected':''}>Insalubridade %</option>
-          <option value="periculosidade" ${a.tipo==='periculosidade'?'selected':''}>Periculosidade %</option>
-          <option value="noturno" ${a.tipo==='noturno'?'selected':''}>Adicional Noturno %</option>
-          <option value="valor" ${a.tipo==='valor'?'selected':''}>Valor fixo (R$)</option>
-          <option value="outro_pct" ${a.tipo==='outro_pct'?'selected':''}>Outro %</option>
-        </select>
-      </div>
-      <div class="form-group" style="margin:0">
-        <label class="form-label">${a.tipo==='valor'?'Valor (R$)':'Percentual (%)'}</label>
-        <input type="number" class="form-input" value="${a.tipo==='valor'?a.valor:a.pct}"
-          placeholder="${a.tipo==='valor'?'200.00':'20'}" step="${a.tipo==='valor'?'0.01':'1'}"
-          oninput="adicionaisGrupo[${i}].${a.tipo==='valor'?'valor':'pct'}=parseFloat(this.value)||0">
-      </div>
-      <button class="btn-icon" onclick="removeAdicionalGrupo(${i})" style="margin-bottom:0;height:42px">🗑️</button>
-    </div>`).join('');
+  c.innerHTML = adicionaisGrupo.map((a, i) => renderAdicional(adicionaisGrupo, i, 'removeAdicionalGrupo', 'adicionaisGrupo')).join('');
 }
 
 function preencherAdicionaisGrupo(lista) {
@@ -4907,7 +4978,7 @@ function gerarRelatorio() {
     totalBruto += bruto; totalDesc += descontos; totalLiq += liq;
     const alerta = liq < 0 ? '⚠️' : '';
     return `<tr ${liq < 0 ? 'style="background:rgba(239,68,68,0.07)"' : ''}>
-      <td><strong>${f.nome}</strong></td>
+      <td><strong>${f.nome}</strong>${f.observacoes ? ` <span title="${f.observacoes}" style="cursor:help;color:var(--text3);font-size:0.8rem">📝</span>` : ''}</td>
       <td>${f.cargo || '—'}</td>
       <td class="mono">R$ ${fmtMoney(bruto)}</td>
       <td class="mono" style="color:var(--red)">R$ ${fmtMoney(descontos)}</td>
@@ -5357,14 +5428,21 @@ function calcFuncHoraExtra() {
   const salario = parseFloat(document.getElementById('funcSalario').value) || 0;
   const mensal = parseFloat(document.getElementById('funcCargaMensal').value) || 220;
   const pct = parseFloat(document.getElementById('funcHoraExtraPct').value) || 50;
-  if (salario && mensal) {
-    const val = (salario / mensal) * (1 + pct / 100);
-    document.getElementById('funcHoraExtra').value = val.toFixed(2);
-  }
+  if (!salario || !mensal) return;
+  // Soma adicionais habituais que incidem na hora extra
+  const baseAdicionais = adicionaisFunc
+    .filter(a => a.incideHoraExtra && !a.isValorFixo)
+    .reduce((s, a) => s + (salario * (a.pct||0) / 100), 0);
+  const baseFixos = adicionaisFunc
+    .filter(a => a.incideHoraExtra && a.isValorFixo)
+    .reduce((s, a) => s + (a.valor||0), 0);
+  const baseTotal = salario + baseAdicionais + baseFixos;
+  const horaBase = baseTotal / mensal;
+  document.getElementById('funcHoraExtra').value = (horaBase * (1 + pct / 100)).toFixed(2);
 }
 
-function addAdicionalFunc(nome='', tipo='insalubridade', valor=0, pct=0) {
-  adicionaisFunc.push({ nome, tipo, valor, pct });
+function addAdicionalFunc() {
+  adicionaisFunc.push({ nome: adicionaisNomes[0]||'Insalubridade', isValorFixo:false, pct:0, valor:0, incideHoraExtra:false, incideInss:false });
   renderAdicionaisFunc();
 }
 
@@ -5376,31 +5454,7 @@ function removeAdicionalFunc(idx) {
 function renderAdicionaisFunc() {
   const c = document.getElementById('funcAdicionais');
   if (!c) return;
-  c.innerHTML = adicionaisFunc.map((a, i) => `
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:8px;align-items:flex-end;margin-bottom:8px">
-      <div class="form-group" style="margin:0">
-        <label class="form-label">Nome</label>
-        <input type="text" class="form-input" value="${a.nome}" placeholder="Ex: Insalubridade"
-          oninput="adicionaisFunc[${i}].nome=this.value">
-      </div>
-      <div class="form-group" style="margin:0">
-        <label class="form-label">Tipo</label>
-        <select class="form-input" onchange="adicionaisFunc[${i}].tipo=this.value;renderAdicionaisFunc()">
-          <option value="insalubridade" ${a.tipo==='insalubridade'?'selected':''}>Insalubridade %</option>
-          <option value="periculosidade" ${a.tipo==='periculosidade'?'selected':''}>Periculosidade %</option>
-          <option value="noturno" ${a.tipo==='noturno'?'selected':''}>Adicional Noturno %</option>
-          <option value="valor" ${a.tipo==='valor'?'selected':''}>Valor fixo (R$)</option>
-          <option value="outro_pct" ${a.tipo==='outro_pct'?'selected':''}>Outro %</option>
-        </select>
-      </div>
-      <div class="form-group" style="margin:0">
-        <label class="form-label">${a.tipo==='valor'?'Valor (R$)':'Percentual (%)'}</label>
-        <input type="number" class="form-input" value="${a.tipo==='valor'?a.valor:a.pct}"
-          placeholder="${a.tipo==='valor'?'200.00':'20'}" step="${a.tipo==='valor'?'0.01':'1'}"
-          oninput="adicionaisFunc[${i}].${a.tipo==='valor'?'valor':'pct'}=parseFloat(this.value)||0">
-      </div>
-      <button class="btn-icon" onclick="removeAdicionalFunc(${i})" style="height:42px">🗑️</button>
-    </div>`).join('');
+  c.innerHTML = adicionaisFunc.map((a, i) => renderAdicional(adicionaisFunc, i, 'removeAdicionalFunc', 'adicionaisFunc')).join('');
 }
 
 // =====================================================
