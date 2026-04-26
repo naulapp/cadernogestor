@@ -1898,49 +1898,101 @@ tr:hover td { background: rgba(108,99,255,0.04); }
     </div>
     <div class="modal-body">
       <input type="hidden" id="funcId">
-      <div class="form-grid form-grid-2">
-        <div class="form-group" style="grid-column:1/-1">
-          <label class="form-label">Nome completo *</label>
-          <input type="text" class="form-input" id="funcNome" placeholder="Nome completo">
-        </div>
-        <div class="form-group">
-          <label class="form-label">CPF</label>
-          <input type="text" class="form-input" id="funcCpf" placeholder="000.000.000-00" oninput="maskCpf(this)">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Cargo</label>
-          <div style="display:flex;gap:8px">
-            <select class="form-input" id="funcCargo" style="flex:1" onchange="onCargoChange(this)">
-              <option value="">Selecione ou cadastre...</option>
-            </select>
-            <button type="button" class="btn btn-outline btn-sm" onclick="cadastrarNovoCargo()" title="Cadastrar novo cargo" style="white-space:nowrap;padding:0 12px">+ Cargo</button>
+      <div class="form-grid">
+
+        <div class="section-card-title" style="margin-top:0">DADOS PESSOAIS</div>
+        <div class="form-grid form-grid-2">
+          <div class="form-group" style="grid-column:1/-1">
+            <label class="form-label">Nome completo *</label>
+            <input type="text" class="form-input" id="funcNome" placeholder="Nome completo">
+          </div>
+          <div class="form-group">
+            <label class="form-label">CPF</label>
+            <input type="text" class="form-input" id="funcCpf" placeholder="000.000.000-00" oninput="maskCpf(this)">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Cargo</label>
+            <div style="display:flex;gap:8px">
+              <select class="form-input" id="funcCargo" style="flex:1" onchange="onCargoChange(this)">
+                <option value="">Selecione ou cadastre...</option>
+              </select>
+              <button type="button" class="btn btn-outline btn-sm" onclick="cadastrarNovoCargo()" style="white-space:nowrap;padding:0 12px">+ Cargo</button>
+            </div>
           </div>
         </div>
+
+        <div class="section-card-title" style="margin-top:4px">GRUPO SALARIAL</div>
         <div class="form-group">
-          <label class="form-label">Grupo salarial</label>
           <select class="form-input" id="funcGrupo" onchange="onGrupoFuncChange(this.value)">
             <option value="">Nenhum (manual)</option>
           </select>
           <div id="grupoHerancaInfo" style="font-size:0.75rem;color:var(--accent2);margin-top:4px;display:none">
-            ✅ Valores herdados do grupo (salário, hora extra, INSS)
+            ✅ Valores herdados do grupo
           </div>
         </div>
-        <div class="form-group">
-          <label class="form-label">Salário base (R$)</label>
-          <input type="number" class="form-input" id="funcSalario" placeholder="1621.00" step="0.01">
+
+        <div class="section-card-title" style="margin-top:4px">SALÁRIO E CARGA HORÁRIA</div>
+        <div class="form-grid form-grid-3">
+          <div class="form-group">
+            <label class="form-label">Salário base (R$)</label>
+            <input type="number" class="form-input" id="funcSalario" placeholder="1621.00" step="0.01">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Carga semanal (h)</label>
+            <input type="number" class="form-input" id="funcCargaSemanal" value="44" step="1">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Carga mensal (h)</label>
+            <input type="number" class="form-input" id="funcCargaMensal" value="220" step="1">
+          </div>
         </div>
-        <div class="form-group">
-          <label class="form-label">Valor hora extra (R$)</label>
-          <input type="number" class="form-input" id="funcHoraExtra" placeholder="13.26" step="0.01">
+
+        <div class="section-card-title" style="margin-top:4px">HORA EXTRA</div>
+        <div class="form-grid form-grid-3">
+          <div class="form-group">
+            <label class="form-label">Adicional (%)</label>
+            <input type="number" class="form-input" id="funcHoraExtraPct" value="50" step="1">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Valor hora extra (R$)</label>
+            <input type="number" class="form-input" id="funcHoraExtra" placeholder="13.26" step="0.01">
+          </div>
+          <div class="form-group" style="display:flex;align-items:flex-end">
+            <button type="button" class="btn btn-outline btn-sm" style="width:100%;height:42px"
+              onclick="calcFuncHoraExtra()">🔄 Calcular</button>
+          </div>
         </div>
-        <div class="form-group">
-          <label class="form-label">% Insalubridade</label>
-          <input type="number" class="form-input" id="funcInsalubridade" placeholder="20" step="1">
+
+        <div class="section-card-title" style="margin-top:4px">ADICIONAIS / BENEFÍCIOS</div>
+        <div id="funcAdicionais"></div>
+        <button type="button" class="btn btn-outline btn-sm" onclick="addAdicionalFunc()" style="width:fit-content">➕ Adicionar</button>
+
+        <div class="section-card-title" style="margin-top:4px">INSS</div>
+        <div class="form-grid form-grid-2">
+          <div class="form-group">
+            <label class="form-label">Tipo</label>
+            <select class="form-input" id="funcInssType" onchange="toggleFuncInssType()">
+              <option value="valor">Valor fixo (R$)</option>
+              <option value="pct">Percentual (%)</option>
+            </select>
+          </div>
+          <div class="form-group" id="funcInssValorGroup">
+            <label class="form-label">INSS (R$)</label>
+            <input type="number" class="form-input" id="funcInss" placeholder="207.00" step="0.01">
+          </div>
+          <div class="form-group" id="funcInssPctGroup" style="display:none">
+            <label class="form-label">Alíquota (%)</label>
+            <input type="number" class="form-input" id="funcInssPct" placeholder="7.5" step="0.01">
+          </div>
         </div>
+        <p style="color:var(--text3);font-size:0.75rem;margin-top:-8px">⚠️ INSS incide sobre: salário + horas extras + adicionais habituais. Tabela 2024: 7,5% a 14%.</p>
+
+        <div class="section-card-title" style="margin-top:4px">DESCONTOS PADRÃO</div>
         <div class="form-group">
-          <label class="form-label">INSS (R$)</label>
-          <input type="number" class="form-input" id="funcInss" placeholder="207.00" step="0.01">
+          <label class="form-label">Vale quinzena (R$)</label>
+          <input type="number" class="form-input" id="funcValeQuinzena" placeholder="700.00" step="0.01">
         </div>
+
       </div>
     </div>
     <div class="modal-footer">
@@ -2110,6 +2162,10 @@ tr:hover td { background: rgba(108,99,255,0.04); }
           <label class="form-label">Vale quinzena padrão (R$)</label>
           <input type="number" class="form-input" id="grupoValeQuinzena" placeholder="700.00" step="0.01">
         </div>
+
+        <div class="section-card-title" style="margin-top:8px">FUNCIONÁRIOS NESTE GRUPO</div>
+        <p style="color:var(--text3);font-size:0.78rem;margin-bottom:8px">Selecione quais funcionários pertencem a este grupo. Ao salvar, todos serão atualizados automaticamente.</p>
+        <div id="grupoFuncionariosCheck" style="max-height:200px;overflow-y:auto;background:var(--bg2);border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:6px"></div>
 
       </div>
     </div>
@@ -2653,19 +2709,21 @@ async function fsGetAll(col) {
 }
 
 async function fsAdd(col, data) {
+  const clean = sanitizeData({...data, criadoEm: new Date().toISOString()});
   if (db && currentOrg) {
-    const ref = await db.collection('orgs').doc(currentOrg.id).collection(col).add({...data, criadoEm: new Date().toISOString()});
-    return { id: ref.id, ...data };
+    const ref = await db.collection('orgs').doc(currentOrg.id).collection(col).add(clean);
+    return { id: ref.id, ...clean };
   }
-  return getCol(col).add({...data, criadoEm: new Date().toISOString()});
+  return getCol(col).add(clean);
 }
 
 async function fsUpdate(col, id, data) {
+  const clean = sanitizeData(data);
   if (db && currentOrg) {
-    await db.collection('orgs').doc(currentOrg.id).collection(col).doc(id).update(data);
+    await db.collection('orgs').doc(currentOrg.id).collection(col).doc(id).update(clean);
     return;
   }
-  getCol(col).update(id, data);
+  getCol(col).update(id, clean);
 }
 
 async function fsDelete(col, id) {
@@ -2774,7 +2832,8 @@ function openModal(id) {
   // populate selects when opening
   if (id === 'modal-emprestimo' || id === 'modal-vale') populateSelects();
   if (id === 'modal-lancamento') populateLancPar();
-  if (id === 'modal-funcionario') { populateGrupoSelect(); loadCargos(); }
+  if (id === 'modal-funcionario') { populateGrupoSelect(); loadCargos(); adicionaisFunc = []; renderAdicionaisFunc(); toggleFuncInssType(); }
+  if (id === 'modal-grupo') { setTimeout(() => renderGrupoFuncionariosCheck(document.getElementById('grupoId').value), 50); }
 }
 
 function closeModal(id) { document.getElementById(id).classList.remove('active'); }
@@ -2879,9 +2938,15 @@ async function salvarFuncionario() {
     cargo: document.getElementById('funcCargo').value,
     grupoId: document.getElementById('funcGrupo').value || null,
     salario: parseFloat(document.getElementById('funcSalario').value) || 0,
+    cargaSemanal: parseFloat(document.getElementById('funcCargaSemanal').value) || 44,
+    cargaMensal: parseFloat(document.getElementById('funcCargaMensal').value) || 220,
+    horaExtraPct: parseFloat(document.getElementById('funcHoraExtraPct').value) || 50,
     horaExtra: parseFloat(document.getElementById('funcHoraExtra').value) || 0,
-    insalubridade: parseFloat(document.getElementById('funcInsalubridade').value) || 0,
+    adicionais: JSON.parse(JSON.stringify(adicionaisFunc || [])),
+    inssType: document.getElementById('funcInssType').value || 'valor',
     inss: parseFloat(document.getElementById('funcInss').value) || 0,
+    inssPct: parseFloat(document.getElementById('funcInssPct')?.value) || 0,
+    valeQuinzena: parseFloat(document.getElementById('funcValeQuinzena').value) || 0,
     ativo: true
   };
 
@@ -2931,9 +2996,17 @@ function editarFuncionario(id) {
   document.getElementById('funcCpf').value = f.cpf || '';
   document.getElementById('funcGrupo').value = f.grupoId || '';
   document.getElementById('funcSalario').value = f.salario || '';
+  document.getElementById('funcCargaSemanal').value = f.cargaSemanal || 44;
+  document.getElementById('funcCargaMensal').value = f.cargaMensal || 220;
+  document.getElementById('funcHoraExtraPct').value = f.horaExtraPct || 50;
   document.getElementById('funcHoraExtra').value = f.horaExtra || '';
-  document.getElementById('funcInsalubridade').value = f.insalubridade || '';
+  document.getElementById('funcInssType').value = f.inssType || 'valor';
   document.getElementById('funcInss').value = f.inss || '';
+  document.getElementById('funcInssPct').value = f.inssPct || '';
+  document.getElementById('funcValeQuinzena').value = f.valeQuinzena || '';
+  adicionaisFunc = f.adicionais ? JSON.parse(JSON.stringify(f.adicionais)) : [];
+  toggleFuncInssType();
+  renderAdicionaisFunc();
   openModal('modal-funcionario');
 }
 
@@ -2947,9 +3020,18 @@ async function excluirFuncionario(id) {
 }
 
 function limparFormFuncionario() {
-  ['funcId','funcNome','funcCpf','funcCargo','funcSalario','funcHoraExtra','funcInsalubridade','funcInss']
-    .forEach(id => document.getElementById(id).value = '');
+  ['funcId','funcNome','funcCpf','funcSalario','funcHoraExtra','funcInss','funcInssPct','funcValeQuinzena']
+    .forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
+  document.getElementById('funcCargo').value = '';
   document.getElementById('funcGrupo').value = '';
+  document.getElementById('funcCargaSemanal').value = '44';
+  document.getElementById('funcCargaMensal').value = '220';
+  document.getElementById('funcHoraExtraPct').value = '50';
+  document.getElementById('funcInssType').value = 'valor';
+  document.getElementById('grupoHerancaInfo').style.display = 'none';
+  adicionaisFunc = [];
+  renderAdicionaisFunc();
+  toggleFuncInssType();
 }
 
 // =====================================================
@@ -3013,9 +3095,22 @@ async function salvarGrupo() {
     grupoIdFinal = novo.id; // ID real do novo grupo
   }
 
-  // Atualizar TODOS os funcionários vinculados a este grupo
+  // Usar checkboxes para definir quais funcionários estão no grupo
   if (grupoIdFinal) {
-    const vinculados = funcionarios.filter(f => f.grupoId === grupoIdFinal);
+    // Funcionários selecionados via checkbox
+    const selecionados = funcionarios.filter(f => {
+      const cb = document.getElementById('gfc_' + f.id);
+      return cb && cb.checked;
+    }).map(f => f.id);
+    // Remover grupo de quem foi desmarcado
+    const antigos = funcionarios.filter(f => f.grupoId === grupoIdFinal && !selecionados.includes(f.id));
+    for (const f of antigos) {
+      await fsUpdate('funcionarios', f.id, { grupoId: null });
+      const fi = funcionarios.findIndex(fn => fn.id === f.id);
+      if (fi >= 0) funcionarios[fi].grupoId = null;
+    }
+    // Vincular selecionados
+    const vinculados = funcionarios.filter(f => selecionados.includes(f.id));
     const atualizacao = {
       salario: data.salario,
       horaExtra: data.horaExtra,
@@ -5209,22 +5304,124 @@ function exportarBackup() {
 // Auto-preenche campos do funcionário ao selecionar grupo
 function onGrupoFuncChange(grupoId) {
   const info = document.getElementById('grupoHerancaInfo');
-  if (!grupoId) {
-    if (info) info.style.display = 'none';
-    return;
-  }
+  if (!grupoId) { if (info) info.style.display = 'none'; return; }
   const grupo = grupos.find(g => g.id === grupoId);
   if (!grupo) return;
-  // Preencher campos automaticamente
+  // Preencher TODOS os campos do grupo
   if (grupo.salario) document.getElementById('funcSalario').value = grupo.salario;
+  if (grupo.cargaSemanal) document.getElementById('funcCargaSemanal').value = grupo.cargaSemanal;
+  if (grupo.cargaMensal) document.getElementById('funcCargaMensal').value = grupo.cargaMensal;
+  if (grupo.horaExtraPct) document.getElementById('funcHoraExtraPct').value = grupo.horaExtraPct;
   if (grupo.horaExtra) document.getElementById('funcHoraExtra').value = grupo.horaExtra;
+  if (grupo.inssType) { document.getElementById('funcInssType').value = grupo.inssType; toggleFuncInssType(); }
   if (grupo.inss) document.getElementById('funcInss').value = grupo.inss;
-  if (grupo.insalubridade || grupo.adicionais?.find(a => a.tipo === 'insalubridade')) {
-    const insal = grupo.adicionais?.find(a => a.tipo === 'insalubridade');
-    if (insal) document.getElementById('funcInsalubridade').value = insal.pct || 20;
-  }
+  if (grupo.inssPct) document.getElementById('funcInssPct').value = grupo.inssPct;
+  if (grupo.valeQuinzena) document.getElementById('funcValeQuinzena').value = grupo.valeQuinzena;
+  adicionaisFunc = grupo.adicionais ? JSON.parse(JSON.stringify(grupo.adicionais)) : [];
+  renderAdicionaisFunc();
   if (info) info.style.display = 'block';
   toast(`Valores herdados do grupo "${grupo.nome}"`, 'info');
+}
+
+
+// =====================================================
+// SANITIZE DATA — remove undefined/NaN antes do Firebase
+// =====================================================
+function sanitizeData(obj) {
+  const clean = {};
+  for (const [k, v] of Object.entries(obj)) {
+    if (v === undefined) continue; // ignora undefined
+    if (typeof v === 'number' && isNaN(v)) { clean[k] = 0; continue; }
+    if (Array.isArray(v)) { clean[k] = v.map(i => typeof i === 'object' && i !== null ? sanitizeData(i) : i); continue; }
+    if (typeof v === 'object' && v !== null) { clean[k] = sanitizeData(v); continue; }
+    clean[k] = v;
+  }
+  return clean;
+}
+
+
+// =====================================================
+// FUNCIONÁRIO — ADICIONAIS E HELPERS
+// =====================================================
+let adicionaisFunc = [];
+
+function toggleFuncInssType() {
+  const tipo = document.getElementById('funcInssType')?.value;
+  const vg = document.getElementById('funcInssValorGroup');
+  const pg = document.getElementById('funcInssPctGroup');
+  if (vg) vg.style.display = tipo === 'valor' ? '' : 'none';
+  if (pg) pg.style.display = tipo === 'pct' ? '' : 'none';
+}
+
+function calcFuncHoraExtra() {
+  const salario = parseFloat(document.getElementById('funcSalario').value) || 0;
+  const mensal = parseFloat(document.getElementById('funcCargaMensal').value) || 220;
+  const pct = parseFloat(document.getElementById('funcHoraExtraPct').value) || 50;
+  if (salario && mensal) {
+    const val = (salario / mensal) * (1 + pct / 100);
+    document.getElementById('funcHoraExtra').value = val.toFixed(2);
+  }
+}
+
+function addAdicionalFunc(nome='', tipo='insalubridade', valor=0, pct=0) {
+  adicionaisFunc.push({ nome, tipo, valor, pct });
+  renderAdicionaisFunc();
+}
+
+function removeAdicionalFunc(idx) {
+  adicionaisFunc.splice(idx, 1);
+  renderAdicionaisFunc();
+}
+
+function renderAdicionaisFunc() {
+  const c = document.getElementById('funcAdicionais');
+  if (!c) return;
+  c.innerHTML = adicionaisFunc.map((a, i) => `
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:8px;align-items:flex-end;margin-bottom:8px">
+      <div class="form-group" style="margin:0">
+        <label class="form-label">Nome</label>
+        <input type="text" class="form-input" value="${a.nome}" placeholder="Ex: Insalubridade"
+          oninput="adicionaisFunc[${i}].nome=this.value">
+      </div>
+      <div class="form-group" style="margin:0">
+        <label class="form-label">Tipo</label>
+        <select class="form-input" onchange="adicionaisFunc[${i}].tipo=this.value;renderAdicionaisFunc()">
+          <option value="insalubridade" ${a.tipo==='insalubridade'?'selected':''}>Insalubridade %</option>
+          <option value="periculosidade" ${a.tipo==='periculosidade'?'selected':''}>Periculosidade %</option>
+          <option value="noturno" ${a.tipo==='noturno'?'selected':''}>Adicional Noturno %</option>
+          <option value="valor" ${a.tipo==='valor'?'selected':''}>Valor fixo (R$)</option>
+          <option value="outro_pct" ${a.tipo==='outro_pct'?'selected':''}>Outro %</option>
+        </select>
+      </div>
+      <div class="form-group" style="margin:0">
+        <label class="form-label">${a.tipo==='valor'?'Valor (R$)':'Percentual (%)'}</label>
+        <input type="number" class="form-input" value="${a.tipo==='valor'?a.valor:a.pct}"
+          placeholder="${a.tipo==='valor'?'200.00':'20'}" step="${a.tipo==='valor'?'0.01':'1'}"
+          oninput="adicionaisFunc[${i}].${a.tipo==='valor'?'valor':'pct'}=parseFloat(this.value)||0">
+      </div>
+      <button class="btn-icon" onclick="removeAdicionalFunc(${i})" style="height:42px">🗑️</button>
+    </div>`).join('');
+}
+
+// =====================================================
+// GRUPO — SELECIONAR FUNCIONÁRIOS VINCULADOS
+// =====================================================
+function renderGrupoFuncionariosCheck(grupoId) {
+  const container = document.getElementById('grupoFuncionariosCheck');
+  if (!container) return;
+  if (funcionarios.length === 0) {
+    container.innerHTML = '<p style="color:var(--text3);font-size:0.82rem">Nenhum funcionário cadastrado ainda.</p>';
+    return;
+  }
+  container.innerHTML = funcionarios.filter(f => f.ativo !== false).map(f => `
+    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:4px 0">
+      <input type="checkbox" id="gfc_${f.id}" ${f.grupoId === grupoId ? 'checked' : ''}
+        style="width:16px;height:16px;cursor:pointer">
+      <span style="font-size:0.85rem">${f.nome}</span>
+      ${f.grupoId && f.grupoId !== grupoId
+        ? `<span style="font-size:0.72rem;color:var(--yellow)">(em outro grupo)</span>`
+        : ''}
+    </label>`).join('');
 }
 
 // Service worker for PWA
