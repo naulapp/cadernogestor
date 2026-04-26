@@ -1453,34 +1453,45 @@ tr:hover td { background: rgba(108,99,255,0.04); }
         <div class="page-header">
           <div>
             <div class="page-title">Folha de Pagamento</div>
-            <div class="page-sub">Gere e exporte contracheques</div>
+            <div class="page-sub">Selecione o período e gere os contracheques</div>
           </div>
-          <div style="display:flex;gap:10px">
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
             <button class="btn btn-outline btn-sm" onclick="navigate('historico-folha')">📁 Histórico</button>
-            <button class="btn btn-primary btn-sm" onclick="gerarNovaFolha()">📋 Gerar folha do mês</button>
+            <button class="btn btn-outline btn-sm" onclick="gerarTodosPDFs()">📄 PDF Todos</button>
+            <button class="btn btn-primary btn-sm" onclick="gerarNovaFolha()">📋 Gerar folha</button>
           </div>
         </div>
 
-        <!-- Selector mes/ano -->
-        <div class="section-card" style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap">
-          <div class="form-group" style="margin:0;flex:1;min-width:140px">
-            <label class="form-label">Mês referência</label>
-            <select class="form-input" id="folhaMes">
-              <option value="1">Janeiro</option><option value="2">Fevereiro</option>
-              <option value="3">Março</option><option value="4">Abril</option>
-              <option value="5">Maio</option><option value="6">Junho</option>
-              <option value="7">Julho</option><option value="8">Agosto</option>
-              <option value="9">Setembro</option><option value="10">Outubro</option>
-              <option value="11">Novembro</option><option value="12">Dezembro</option>
-            </select>
+        <!-- PASSO 1: Período -->
+        <div class="section-card" style="margin-bottom:16px">
+          <div class="section-card-title">① PERÍODO DE REFERÊNCIA</div>
+          <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap">
+            <div class="form-group" style="margin:0;flex:1;min-width:140px">
+              <label class="form-label">Mês</label>
+              <select class="form-input" id="folhaMes">
+                <option value="1">Janeiro</option><option value="2">Fevereiro</option>
+                <option value="3">Março</option><option value="4">Abril</option>
+                <option value="5">Maio</option><option value="6">Junho</option>
+                <option value="7">Julho</option><option value="8">Agosto</option>
+                <option value="9">Setembro</option><option value="10">Outubro</option>
+                <option value="11">Novembro</option><option value="12">Dezembro</option>
+              </select>
+            </div>
+            <div class="form-group" style="margin:0;flex:1;min-width:100px">
+              <label class="form-label">Ano</label>
+              <input type="number" class="form-input" id="folhaAno" value="2026">
+            </div>
+            <button class="btn btn-primary" onclick="loadFolha()" style="height:42px;white-space:nowrap">
+              📋 Carregar funcionários
+            </button>
           </div>
-          <div class="form-group" style="margin:0;flex:1;min-width:100px">
-            <label class="form-label">Ano</label>
-            <input type="number" class="form-input" id="folhaAno" value="2026">
-          </div>
-          <button class="btn btn-primary" onclick="loadFolha()" style="height:42px">Carregar</button>
         </div>
 
+        <!-- PASSO 2: Fichas dos funcionários -->
+        <div id="folhaInfo" style="display:none" class="section-card" style="margin-bottom:12px">
+          <div class="section-card-title">② FICHAS DOS FUNCIONÁRIOS</div>
+          <p style="color:var(--text3);font-size:0.82rem">Clique em ✏️ para editar a folha individual. Selecione quais descontos aplicar neste mês.</p>
+        </div>
         <div id="folhaList"></div>
       </div>
 
@@ -1627,7 +1638,7 @@ tr:hover td { background: rgba(108,99,255,0.04); }
             <div class="page-title">Empréstimos</div>
             <div class="page-sub">Parcelados descontados na folha</div>
           </div>
-          <button class="btn btn-primary btn-sm" onclick="openModal('modal-emprestimo')">➕ Novo empréstimo</button>
+          <div style="display:flex;gap:8px"><button class="btn btn-primary btn-sm" onclick="openEmprestimoModal()">➕ Novo empréstimo</button></div>
         </div>
 
         <div class="table-wrap">
@@ -1660,21 +1671,41 @@ tr:hover td { background: rgba(108,99,255,0.04); }
         <div class="page-header">
           <div>
             <div class="page-title">Vales</div>
-            <div class="page-sub">Descontados integralmente na folha</div>
+            <div class="page-sub">Registro e controle de vales</div>
           </div>
-          <button class="btn btn-primary btn-sm" onclick="openModal('modal-vale')">➕ Registrar vale</button>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-outline btn-sm" onclick="openModal('modal-vale-lote')">📋 Lançar em lote</button>
+            <button class="btn btn-primary btn-sm" onclick="openModal('modal-vale')">➕ Registrar vale</button>
+          </div>
+        </div>
+
+        <!-- Filtros -->
+        <div class="section-card" style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-bottom:12px">
+          <div class="form-group" style="margin:0;flex:1;min-width:140px">
+            <label class="form-label">Funcionário</label>
+            <select class="form-input" id="valesFiltroFunc" onchange="renderVales()">
+              <option value="">Todos</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin:0;flex:1;min-width:120px">
+            <label class="form-label">Status</label>
+            <select class="form-input" id="valesFiltro" onchange="renderVales()">
+              <option value="pendente">Pendentes</option>
+              <option value="todos">Todos</option>
+              <option value="descontado">Descontados</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin:0;flex:1;min-width:120px">
+            <label class="form-label">Mês</label>
+            <input type="month" class="form-input" id="valesFiltroMes" onchange="renderVales()">
+          </div>
+          <button class="btn btn-outline btn-sm" onclick="limparFiltrosVales()" style="height:42px">Limpar</button>
         </div>
 
         <div class="table-wrap">
           <div class="table-header">
-            <div class="table-title">Vales</div>
-            <div style="display:flex;gap:8px;align-items:center">
-              <select class="form-input" id="valesFiltro" onchange="renderVales()" style="width:auto;font-size:0.8rem;padding:6px 10px">
-                <option value="pendente">Pendentes</option>
-                <option value="todos">Todos</option>
-                <option value="descontado">Descontados</option>
-              </select>
-            </div>
+            <div class="table-title" id="valesTituloTabela">Vales</div>
+            <div style="font-size:0.82rem;color:var(--text3)" id="valesTotalFiltro"></div>
           </div>
           <table>
             <thead>
@@ -1683,14 +1714,47 @@ tr:hover td { background: rgba(108,99,255,0.04); }
                 <th>Data</th>
                 <th>Descrição</th>
                 <th>Valor</th>
+                <th>Parcelas</th>
                 <th>Status</th>
                 <th></th>
               </tr>
             </thead>
             <tbody id="tabelaVales">
-              <tr><td colspan="6"><div class="empty-state"><div class="icon">🎫</div><h3>Nenhum vale</h3></div></td></tr>
+              <tr><td colspan="7"><div class="empty-state"><div class="icon">🎫</div><h3>Nenhum vale</h3></div></td></tr>
             </tbody>
           </table>
+        </div>
+      </div>
+
+      <!-- ===== FICHA DO FUNCIONÁRIO ===== -->
+      <div class="page" id="page-ficha-funcionario">
+        <div class="page-header">
+          <div>
+            <div class="page-title" id="fichaTitulo">Ficha do Funcionário</div>
+            <div class="page-sub" id="fichaSubtitulo"></div>
+          </div>
+          <button class="btn btn-outline btn-sm" onclick="navigate('funcionarios')">← Voltar</button>
+        </div>
+
+        <!-- Saldo devedor -->
+        <div class="cards-grid" id="fichaCards" style="margin-bottom:20px"></div>
+
+        <!-- Empréstimos -->
+        <div class="section-card" style="margin-bottom:16px">
+          <div class="section-card-title">💰 EMPRÉSTIMOS ATIVOS</div>
+          <div id="fichaEmprestimos"></div>
+        </div>
+
+        <!-- Vales -->
+        <div class="section-card" style="margin-bottom:16px">
+          <div class="section-card-title">🎫 VALES</div>
+          <div id="fichaVales"></div>
+        </div>
+
+        <!-- Histórico de folhas -->
+        <div class="section-card">
+          <div class="section-card-title">📋 HISTÓRICO DE FOLHAS</div>
+          <div id="fichaHistoricoFolhas"></div>
         </div>
       </div>
 
@@ -2003,10 +2067,16 @@ tr:hover td { background: rgba(108,99,255,0.04); }
             style="resize:vertical;font-family:var(--font)"></textarea>
         </div>
 
+        <div class="section-card-title" style="margin-top:4px">RESUMO SALARIAL</div>
+        <div id="funcResumoSalarial" style="background:var(--bg2);border-radius:10px;padding:14px;font-size:0.85rem">
+          <p style="color:var(--text3)">Preencha os campos acima para ver o resumo.</p>
+        </div>
+
       </div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-outline btn-sm" onclick="closeModal('modal-funcionario')">Cancelar</button>
+      <button class="btn btn-success btn-sm" onclick="atualizarResumoFunc()">🔄 Calcular resumo</button>
       <button class="btn btn-primary btn-sm" onclick="salvarFuncionario()">Salvar</button>
     </div>
   </div>
@@ -2191,10 +2261,11 @@ tr:hover td { background: rgba(108,99,255,0.04); }
 <div class="modal-overlay" id="modal-emprestimo">
   <div class="modal">
     <div class="modal-header">
-      <div class="modal-title">Novo Empréstimo</div>
+      <div class="modal-title" id="empTituloModal">Novo Empréstimo</div>
       <div class="modal-close" onclick="closeModal('modal-emprestimo')">✕</div>
     </div>
     <div class="modal-body">
+      <input type="hidden" id="empId">
       <div class="form-grid">
         <div class="form-group">
           <label class="form-label">Funcionário *</label>
@@ -2232,6 +2303,11 @@ tr:hover td { background: rgba(108,99,255,0.04); }
           </div>
         </div>
         <div id="empResumoParcelamento" style="font-size:0.82rem;color:var(--text3);margin-top:-8px"></div>
+        <div id="empSimulacao" style="display:none;background:var(--bg2);border-radius:8px;padding:12px;font-size:0.82rem">
+          <div style="font-weight:600;margin-bottom:6px;color:var(--text2)">📊 Simulação automática:</div>
+          <div id="empSimIgual" style="margin-bottom:4px"></div>
+          <div id="empSimUltima"></div>
+        </div>
         <div class="form-group">
           <label class="form-label">Data início</label>
           <input type="date" class="form-input" id="empDataInicio">
@@ -2249,10 +2325,11 @@ tr:hover td { background: rgba(108,99,255,0.04); }
 <div class="modal-overlay" id="modal-vale">
   <div class="modal">
     <div class="modal-header">
-      <div class="modal-title">Registrar Vale</div>
+      <div class="modal-title" id="valeTituloModal">Registrar Vale</div>
       <div class="modal-close" onclick="closeModal('modal-vale')">✕</div>
     </div>
     <div class="modal-body">
+      <input type="hidden" id="valeId">
       <div class="form-grid">
         <div class="form-group">
           <label class="form-label">Funcionário *</label>
@@ -2265,25 +2342,77 @@ tr:hover td { background: rgba(108,99,255,0.04); }
           </div>
           <div class="form-group">
             <label class="form-label">Valor (R$)</label>
-            <input type="number" class="form-input" id="valeValor" placeholder="100.00" step="0.01">
+            <input type="number" class="form-input" id="valeValor" placeholder="100.00" step="0.01" oninput="calcValeParc()">
           </div>
         </div>
         <div class="form-group">
           <label class="form-label">Descrição</label>
-          <input type="text" class="form-input" id="valeDescricao" placeholder="Ex: Vale alimentação">
+          <input type="text" class="form-input" id="valeDescricao" placeholder="Ex: Vale alimentação, Vale quinzena">
         </div>
         <div class="form-group">
           <label class="form-label">Tipo de desconto</label>
-          <select class="form-input" id="valeTipo">
+          <select class="form-input" id="valeTipo" onchange="toggleValeParcelas()">
             <option value="integral">Integral (desconta tudo de uma vez)</option>
-            <option value="parcela">Parcela de empréstimo</option>
+            <option value="parcelado">Parcelado</option>
           </select>
+        </div>
+        <div id="valeParcGroup" style="display:none">
+          <div class="form-grid form-grid-2">
+            <div class="form-group">
+              <label class="form-label">Nº de parcelas</label>
+              <input type="number" class="form-input" id="valeNParcelas" min="2" placeholder="3" oninput="calcValeParc()">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Valor por parcela (R$)</label>
+              <input type="number" class="form-input" id="valeValorParc" placeholder="—" step="0.01" readonly
+                style="background:var(--bg3)">
+            </div>
+          </div>
         </div>
       </div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-outline btn-sm" onclick="closeModal('modal-vale')">Cancelar</button>
       <button class="btn btn-primary btn-sm" onclick="salvarVale()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL VALE EM LOTE -->
+<div class="modal-overlay" id="modal-vale-lote">
+  <div class="modal" style="max-width:620px">
+    <div class="modal-header">
+      <div class="modal-title">Lançar Vales em Lote</div>
+      <div class="modal-close" onclick="closeModal('modal-vale-lote')">✕</div>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-grid form-grid-2">
+          <div class="form-group">
+            <label class="form-label">Data</label>
+            <input type="date" class="form-input" id="lotevaleData">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Descrição padrão</label>
+            <input type="text" class="form-input" id="lotevaleDescricao" placeholder="Ex: Vale quinzena">
+          </div>
+        </div>
+        <div class="form-grid form-grid-2" style="align-items:flex-end">
+          <div class="form-group">
+            <label class="form-label">Valor padrão (R$)</label>
+            <input type="number" class="form-input" id="lotevaleValorPadrao" placeholder="700.00" step="0.01">
+          </div>
+          <button class="btn btn-outline btn-sm" onclick="aplicarValorPadrao()" style="height:42px">
+            Aplicar a todos
+          </button>
+        </div>
+        <div class="section-card-title">SELECIONAR FUNCIONÁRIOS</div>
+        <div id="lotevaleFuncionarios" style="max-height:300px;overflow-y:auto"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline btn-sm" onclick="closeModal('modal-vale-lote')">Cancelar</button>
+      <button class="btn btn-primary btn-sm" onclick="salvarValesLote()">💾 Lançar todos</button>
     </div>
   </div>
 </div>
@@ -2825,6 +2954,7 @@ function navigate(page) {
   if (p) p.classList.add('active');
   if (page === 'relatorio') populateRelatorioGrupos();
   if (page === 'historico-folha') renderHistoricoFolhas();
+  if (page === 'folha') { const d=new Date(); document.getElementById('folhaMes').value=d.getMonth()+1; document.getElementById('folhaAno').value=d.getFullYear(); }
   const n = document.getElementById('nav-' + page);
   if (n) n.classList.add('active');
   // Close dropdown
@@ -2844,6 +2974,8 @@ function openModal(id) {
   if (id === 'modal-emprestimo' || id === 'modal-vale') populateSelects();
   if (id === 'modal-lancamento') populateLancPar();
   if (id === 'modal-funcionario') { populateGrupoSelect(); loadCargos(); adicionaisFunc = []; renderAdicionaisFunc(); toggleFuncInssType(); }
+  if (id === 'modal-vale-lote') openValesLoteModal();
+  if (id === 'modal-vale') { document.getElementById('valeData').value = document.getElementById('valeData').value || new Date().toISOString().slice(0,10); }
   if (id === 'modal-grupo') { setTimeout(() => renderGrupoFuncionariosCheck(document.getElementById('grupoId').value), 50); }
 }
 
@@ -2913,7 +3045,7 @@ function renderFuncionarios(filter='') {
   tbody.innerHTML = list.map(f => {
     const grupo = grupos.find(g => g.id === f.grupoId);
     return `<tr>
-      <td><strong>${f.nome}</strong>${f.observacoes ? ` <span title="${f.observacoes}" style="cursor:help;color:var(--text3);font-size:0.8rem">📝</span>` : ''}</td>
+      <td><span style="cursor:pointer;color:var(--accent2);text-decoration:underline" onclick="abrirFichaFuncionario('${f.id}')" title="Ver ficha completa"><strong>${f.nome}</strong></span>${f.observacoes ? ` <span title="${f.observacoes}" style="cursor:help;color:var(--text3);font-size:0.8rem">📝</span>` : ''}</td>
       <td style="font-family:var(--mono);font-size:0.78rem">${f.cpf || '—'}</td>
       <td>${f.cargo || '—'}</td>
       <td>${grupo ? `<span class="badge badge-accent">${grupo.nome}</span>` : '<span class="badge badge-gray">Manual</span>'}</td>
@@ -3224,8 +3356,9 @@ function renderEmprestimos(filter='') {
       </td>
       <td><span class="badge ${status==='quitado'?'badge-green':'badge-yellow'}">${status==='quitado'?'Quitado':'Ativo'}</span></td>
       <td style="white-space:nowrap">
-        <button class="btn-icon" onclick="registrarPagamento('${e.id}')" title="Registrar pagamento">💳</button>
-        <button class="btn-icon" onclick="excluirEmprestimo('${e.id}')" title="Excluir" style="margin-left:4px">🗑️</button>
+        <button class="btn-icon" onclick="openEmprestimoModal('${e.id}')" title="Editar">✏️</button>
+        <button class="btn-icon" onclick="registrarPagamentoMelhorado('${e.id}')" title="Registrar parcela">💳</button>
+        <button class="btn-icon" onclick="excluirEmprestimo('${e.id}')" title="Excluir">🗑️</button>
       </td>
     </tr>`;
   }).join('');
@@ -3236,28 +3369,33 @@ function filterEmprestimos(v) { renderEmprestimos(v); }
 // calcParcela is defined later with full logic
 
 async function salvarEmprestimo() {
+  const id = document.getElementById('empId').value;
   const funcId = document.getElementById('empFuncionario').value;
   const descricao = document.getElementById('empDescricao').value.trim();
   if (!funcId || !descricao) { toast('Funcionário e descrição obrigatórios', 'error'); return; }
   const func = funcionarios.find(f => f.id === funcId);
   const data = {
-    funcionarioId: funcId,
-    funcionarioNome: func?.nome || '',
-    descricao,
+    funcionarioId: funcId, funcionarioNome: func?.nome||'', descricao,
     total: parseFloat(document.getElementById('empTotal').value) || 0,
     parcelas: parseInt(document.getElementById('empParcelas').value) || 1,
     tipoParcela: document.getElementById('empTipoParcela')?.value || 'igual',
     valorParcela: parseFloat(document.getElementById('empValorParcela').value) || 0,
     ultimaParcela: parseFloat(document.getElementById('empUltimaParcela')?.value) || 0,
     dataInicio: document.getElementById('empDataInicio').value || new Date().toISOString().slice(0,10),
-    pago: 0, parcelasPagas: 0, status: 'ativo'
   };
-  const novo = await fsAdd('emprestimos', data);
-  emprestimos.push(novo);
+  if (id) {
+    await fsUpdate('emprestimos', id, data);
+    const idx = emprestimos.findIndex(e=>e.id===id);
+    if (idx>=0) Object.assign(emprestimos[idx], data);
+    toast('Empréstimo atualizado!', 'success');
+  } else {
+    const novo = await fsAdd('emprestimos', {...data, pago:0, parcelasPagas:0, status:'ativo'});
+    emprestimos.push(novo);
+    toast('Empréstimo registrado!', 'success');
+  }
   closeModal('modal-emprestimo');
   renderEmprestimos();
   renderDashboard();
-  toast('Empréstimo registrado!', 'success');
 }
 
 async function registrarPagamento(id) {
@@ -3293,51 +3431,91 @@ async function excluirEmprestimo(id) {
 // =====================================================
 function renderVales() {
   const tbody = document.getElementById('tabelaVales');
-  const filtro = document.getElementById('valesFiltro')?.value || 'pendente';
+  const filtroStatus = document.getElementById('valesFiltro')?.value || 'pendente';
+  const filtroFunc = document.getElementById('valesFiltroFunc')?.value || '';
+  const filtroMes = document.getElementById('valesFiltroMes')?.value || '';
+
+  // Populate func filter
+  const funcSel = document.getElementById('valesFiltroFunc');
+  if (funcSel && funcSel.options.length <= 1) {
+    funcionarios.forEach(f => {
+      const opt = document.createElement('option');
+      opt.value = f.id; opt.textContent = f.nome;
+      funcSel.appendChild(opt);
+    });
+  }
+
   const lista = vales.filter(v => {
-    if (filtro === 'pendente') return v.status !== 'descontado';
-    if (filtro === 'descontado') return v.status === 'descontado';
-    return true; // todos
-  });
+    if (filtroStatus === 'pendente' && v.status === 'descontado') return false;
+    if (filtroStatus === 'descontado' && v.status !== 'descontado') return false;
+    if (filtroFunc && v.funcionarioId !== filtroFunc) return false;
+    if (filtroMes && v.data) {
+      const [ym] = filtroMes.split('-');
+      const [y2,m2] = filtroMes.split('-');
+      const d = new Date(v.data+'T00:00:00');
+      if (d.getFullYear() !== parseInt(y2) || d.getMonth()+1 !== parseInt(m2)) return false;
+    }
+    return true;
+  }).sort((a,b) => (b.data||'').localeCompare(a.data||''));
+
+  const totalFiltro = lista.reduce((s,v) => s + (v.valor||0), 0);
+  const el = document.getElementById('valesTotalFiltro');
+  if (el) el.textContent = lista.length > 0 ? `${lista.length} registro(s) — Total: R$ ${fmtMoney(totalFiltro)}` : '';
+
   if (lista.length === 0) {
-    const msg = filtro === 'pendente' ? 'Nenhum vale pendente' : filtro === 'descontado' ? 'Nenhum vale descontado' : 'Nenhum vale registrado';
-    tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><div class="icon">🎫</div><h3>${msg}</h3></div></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="icon">🎫</div><h3>Nenhum vale encontrado</h3></div></td></tr>`;
     return;
   }
   tbody.innerHTML = lista.map(v => {
     const func = funcionarios.find(f => f.id === v.funcionarioId);
+    const isPendente = v.status !== 'descontado';
+    const parcelasInfo = v.tipo==='parcelado' && v.nParcelas ? `${v.nParcelas}x R$ ${fmtMoney(v.valorParc||v.valor/v.nParcelas)}` : '—';
     return `<tr>
       <td><strong>${func?.nome || v.funcionarioNome || '—'}</strong></td>
-      <td style="font-family:var(--mono);font-size:0.82rem">${v.data ? fmtData(v.data) : '—'}</td>
-      <td>${v.descricao || 'Vale'}</td>
-      <td class="mono" style="color:var(--red)">R$ ${fmtMoney(v.valor)}</td>
-      <td><span class="badge badge-yellow">Pendente</span></td>
-      <td style="white-space:nowrap">
-        <button class="btn-icon" onclick="marcarValeDescontado('${v.id}')" title="Marcar como descontado">✅</button>
-        <button class="btn-icon" onclick="excluirVale('${v.id}')" title="Excluir" style="margin-left:4px">🗑️</button>
+      <td style="font-family:var(--mono);font-size:0.82rem">${v.data?fmtData(v.data):'—'}</td>
+      <td>${v.descricao||'Vale'}</td>
+      <td class="mono" style="color:${isPendente?'var(--red)':'var(--text3)'}">R$ ${fmtMoney(v.valor)}</td>
+      <td style="font-size:0.78rem">${parcelasInfo}</td>
+      <td><span class="badge ${isPendente?'badge-yellow':'badge-gray'}">${isPendente?'Pendente':'Descontado'}</span></td>
+      <td style="white-space:nowrap;display:flex;gap:4px">
+        <button class="btn-icon" onclick="editarVale('${v.id}')" title="Editar">✏️</button>
+        ${isPendente?`<button class="btn-icon" onclick="marcarValeDescontado('${v.id}')" title="Marcar descontado">✅</button>`:''}
+        <button class="btn-icon" onclick="excluirVale('${v.id}')" title="Excluir">🗑️</button>
       </td>
     </tr>`;
   }).join('');
 }
 
 async function salvarVale() {
+  const id = document.getElementById('valeId').value;
   const funcId = document.getElementById('valeFuncionario').value;
   if (!funcId) { toast('Selecione o funcionário', 'error'); return; }
   const func = funcionarios.find(f => f.id === funcId);
+  const tipo = document.getElementById('valeTipo').value;
+  const nParcelas = parseInt(document.getElementById('valeNParcelas')?.value) || 1;
+  const valor = parseFloat(document.getElementById('valeValor').value) || 0;
   const data = {
-    funcionarioId: funcId,
-    funcionarioNome: func?.nome || '',
+    funcionarioId: funcId, funcionarioNome: func?.nome||'',
     data: document.getElementById('valeData').value,
-    valor: parseFloat(document.getElementById('valeValor').value) || 0,
-    descricao: document.getElementById('valeDescricao').value,
-    tipo: document.getElementById('valeTipo').value,
+    valor, descricao: document.getElementById('valeDescricao').value,
+    tipo, nParcelas: tipo==='parcelado'?nParcelas:1,
+    valorParc: tipo==='parcelado'?valor/nParcelas:valor,
     status: 'pendente'
   };
-  const novo = await fsAdd('vales', data);
-  vales.push(novo);
+  if (id) {
+    await fsUpdate('vales', id, data);
+    const idx = vales.findIndex(v => v.id===id);
+    if (idx>=0) vales[idx] = {...vales[idx], ...data};
+    toast('Vale atualizado!', 'success');
+  } else {
+    const novo = await fsAdd('vales', data);
+    vales.push(novo);
+    toast('Vale registrado!', 'success');
+  }
+  document.getElementById('valeId').value = '';
+  document.getElementById('valeTituloModal').textContent = 'Registrar Vale';
   closeModal('modal-vale');
   renderVales();
-  toast('Vale registrado!', 'success');
 }
 
 async function marcarValeDescontado(id) {
@@ -3371,6 +3549,8 @@ async function loadFolha() {
   const mesRef = `${String(mes).padStart(2,'0')}/${ano}`;
   const ativos = funcionarios.filter(f => f.ativo !== false);
 
+  const infoEl = document.getElementById('folhaInfo');
+  if (infoEl) infoEl.style.display = 'block';
   if (ativos.length === 0) {
     document.getElementById('folhaList').innerHTML = `<div class="empty-state"><div class="icon">📋</div><h3>Nenhum funcionário ativo</h3><p>Cadastre funcionários primeiro</p></div>`;
     return;
@@ -3700,8 +3880,7 @@ function gerarPdfFolhaCompleto(doc, params, startY = 10, save = false) {
 
   // --- COMPOSIÇÃO SALARIAL ---
   doc.setFillColor(240,240,240);
-  doc.rect(lm, y, pw, 7, 'F');
-  doc.rect(lm, y, pw, 7);
+  doc.rect(lm, y, pw, 7, 'FD');
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(10);
   doc.text('COMPOSIÇÃO SALARIAL:', lm + pw/2, y + 5, { align: 'center' });
@@ -4157,7 +4336,7 @@ function renderEscalaFuncionarios() {
   tbody.innerHTML = ativos.map(f => {
     const rule = getEscalaRule(f.id);
     return `<tr>
-      <td><strong>${f.nome}</strong>${f.observacoes ? ` <span title="${f.observacoes}" style="cursor:help;color:var(--text3);font-size:0.8rem">📝</span>` : ''}</td>
+      <td><span style="cursor:pointer;color:var(--accent2);text-decoration:underline" onclick="abrirFichaFuncionario('${f.id}')" title="Ver ficha completa"><strong>${f.nome}</strong></span>${f.observacoes ? ` <span title="${f.observacoes}" style="cursor:help;color:var(--text3);font-size:0.8rem">📝</span>` : ''}</td>
       <td>${f.cargo || '—'}</td>
       <td><span class="badge ${rule.participaEscala !== false ? 'badge-green' : 'badge-gray'}">${rule.participaEscala !== false ? 'Sim' : 'Nao'}</span></td>
       <td><span class="badge ${rule.podeHoraExtra ? 'badge-accent' : 'badge-gray'}">${rule.podeHoraExtra ? 'Permitida' : 'Bloqueada'}</span></td>
@@ -4706,7 +4885,12 @@ function calcGrupoHoraExtra() {
   const mensal = parseFloat(document.getElementById('grupoCargaMensal').value) || 220;
   const adicPct = parseFloat(document.getElementById('grupoHoraExtraPct').value) || 50;
   if (!salario || !mensal) return;
-  // Soma adicionais habituais que incidem na hora extra
+  // Sincronizar estado dos checkboxes com o array
+  adicionaisGrupo.forEach((a, i) => {
+    const cb = document.getElementById(`chkHoraExtra_adicionaisGrupo_${i}`);
+    if (cb) a.incideHoraExtra = cb.checked;
+    const cbValor = document.querySelector(`#grupoAdicionais .form-group:nth-child(${i+1}) input[type=checkbox]`);
+  });
   const baseAdicionais = adicionaisGrupo
     .filter(a => a.incideHoraExtra && !a.isValorFixo)
     .reduce((s, a) => s + (salario * (a.pct||0) / 100), 0);
@@ -4715,8 +4899,7 @@ function calcGrupoHoraExtra() {
     .reduce((s, a) => s + (a.valor||0), 0);
   const baseTotal = salario + baseAdicionais + baseFixos;
   const horaBase = baseTotal / mensal;
-  const horaExtra = horaBase * (1 + adicPct / 100);
-  document.getElementById('grupoHoraExtra').value = horaExtra.toFixed(2);
+  document.getElementById('grupoHoraExtra').value = (horaBase * (1 + adicPct/100)).toFixed(2);
 }
 
 function toggleInssType() {
@@ -4771,15 +4954,13 @@ function renderAdicional(lista, idx, onRemove, onUpdate) {
       </div>
       <div style="display:flex;gap:16px;flex-wrap:wrap">
         <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.8rem">
-          <input type="checkbox" ${isValor?'':'style="display:none"'}
-            onchange="${onUpdate}[${idx}].isValorFixo=this.checked;renderAdicionais${onUpdate==='adicionaisGrupo'?'Grupo':'Func'}()">
-          <span style="color:var(--text3)">Valor fixo (R$)</span>
           <input type="checkbox" ${isValor?'checked':''}
             onchange="${onUpdate}[${idx}].isValorFixo=this.checked;renderAdicionais${onUpdate==='adicionaisGrupo'?'Grupo':'Func'}()">
+          <span>Valor fixo (R$)</span>
         </label>
         <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.8rem">
           <input type="checkbox" ${a.incideHoraExtra?'checked':''}
-            onchange="${onUpdate}[${idx}].incideHoraExtra=this.checked">
+            onchange="${onUpdate}[${idx}].incideHoraExtra=this.checked;" id="chkHoraExtra_${onUpdate}_${idx}">
           <span>Incide na hora extra</span>
         </label>
         <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.8rem">
@@ -4978,7 +5159,7 @@ function gerarRelatorio() {
     totalBruto += bruto; totalDesc += descontos; totalLiq += liq;
     const alerta = liq < 0 ? '⚠️' : '';
     return `<tr ${liq < 0 ? 'style="background:rgba(239,68,68,0.07)"' : ''}>
-      <td><strong>${f.nome}</strong>${f.observacoes ? ` <span title="${f.observacoes}" style="cursor:help;color:var(--text3);font-size:0.8rem">📝</span>` : ''}</td>
+      <td><span style="cursor:pointer;color:var(--accent2);text-decoration:underline" onclick="abrirFichaFuncionario('${f.id}')" title="Ver ficha completa"><strong>${f.nome}</strong></span>${f.observacoes ? ` <span title="${f.observacoes}" style="cursor:help;color:var(--text3);font-size:0.8rem">📝</span>` : ''}</td>
       <td>${f.cargo || '—'}</td>
       <td class="mono">R$ ${fmtMoney(bruto)}</td>
       <td class="mono" style="color:var(--red)">R$ ${fmtMoney(descontos)}</td>
@@ -5196,6 +5377,7 @@ function calcParcela() {
 
   if (!total || !n) return;
 
+  atualizarSimulacaoEmp();
   if (tipo === 'igual') {
     const val = Math.round((total / n) * 100) / 100;
     document.getElementById('empValorParcela').value = val.toFixed(2);
@@ -5429,7 +5611,11 @@ function calcFuncHoraExtra() {
   const mensal = parseFloat(document.getElementById('funcCargaMensal').value) || 220;
   const pct = parseFloat(document.getElementById('funcHoraExtraPct').value) || 50;
   if (!salario || !mensal) return;
-  // Soma adicionais habituais que incidem na hora extra
+  // Sincronizar checkboxes com array
+  adicionaisFunc.forEach((a, i) => {
+    const cb = document.getElementById(`chkHoraExtra_adicionaisFunc_${i}`);
+    if (cb) a.incideHoraExtra = cb.checked;
+  });
   const baseAdicionais = adicionaisFunc
     .filter(a => a.incideHoraExtra && !a.isValorFixo)
     .reduce((s, a) => s + (salario * (a.pct||0) / 100), 0);
@@ -5438,7 +5624,7 @@ function calcFuncHoraExtra() {
     .reduce((s, a) => s + (a.valor||0), 0);
   const baseTotal = salario + baseAdicionais + baseFixos;
   const horaBase = baseTotal / mensal;
-  document.getElementById('funcHoraExtra').value = (horaBase * (1 + pct / 100)).toFixed(2);
+  document.getElementById('funcHoraExtra').value = (horaBase * (1 + pct/100)).toFixed(2);
 }
 
 function addAdicionalFunc() {
@@ -5476,6 +5662,354 @@ function renderGrupoFuncionariosCheck(grupoId) {
         ? `<span style="font-size:0.72rem;color:var(--yellow)">(em outro grupo)</span>`
         : ''}
     </label>`).join('');
+}
+
+
+// =====================================================
+// FICHA DO FUNCIONÁRIO
+// =====================================================
+function abrirFichaFuncionario(funcId) {
+  const f = funcionarios.find(fn => fn.id === funcId);
+  if (!f) return;
+
+  document.getElementById('fichaTitulo').textContent = f.nome;
+  document.getElementById('fichaSubtitulo').textContent = (f.cargo || '') + (f.grupoId ? ' • ' + (grupos.find(g=>g.id===f.grupoId)?.nome||'') : '');
+
+  // Saldo devedor total
+  const empAtivos = emprestimos.filter(e => (e.status==='ativo'||!e.status) && e.funcionarioId===funcId);
+  const totalEmp = empAtivos.reduce((s,e) => s + ((e.total||0)-(e.pago||0)), 0);
+  const valesPend = vales.filter(v => v.funcionarioId===funcId && v.status!=='descontado');
+  const totalVales = valesPend.reduce((s,v) => s + (v.valor||0), 0);
+  const totalDev = totalEmp + totalVales;
+
+  document.getElementById('fichaCards').innerHTML = `
+    <div class="stat-card"><div class="stat-label">Empréstimos em aberto</div><div class="stat-value red" style="font-size:1.3rem">R$ ${fmtMoney(totalEmp)}</div></div>
+    <div class="stat-card"><div class="stat-label">Vales pendentes</div><div class="stat-value yellow" style="font-size:1.3rem">R$ ${fmtMoney(totalVales)}</div></div>
+    <div class="stat-card"><div class="stat-label">SALDO DEVEDOR TOTAL</div><div class="stat-value ${totalDev>0?'red':'green'}" style="font-size:1.4rem">R$ ${fmtMoney(totalDev)}</div></div>
+    <div class="stat-card"><div class="stat-label">Salário base</div><div class="stat-value accent" style="font-size:1.3rem">R$ ${fmtMoney(f.salario||0)}</div></div>
+  `;
+
+  // Empréstimos
+  const empEl = document.getElementById('fichaEmprestimos');
+  if (empAtivos.length === 0) {
+    empEl.innerHTML = '<p style="color:var(--text3);font-size:0.85rem">Nenhum empréstimo ativo.</p>';
+  } else {
+    empEl.innerHTML = `<table><thead><tr><th>Descrição</th><th>Total</th><th>Parcela</th><th>Pago</th><th>Restante</th><th>Status</th></tr></thead>
+      <tbody>${empAtivos.map(e => {
+        const rest = (e.total||0)-(e.pago||0);
+        const pct = e.total>0 ? Math.min(100,(e.pago||0)/e.total*100) : 0;
+        return `<tr>
+          <td>${e.descricao}</td>
+          <td class="mono">R$ ${fmtMoney(e.total)}</td>
+          <td class="mono">R$ ${fmtMoney(e.valorParcela)}</td>
+          <td><div style="font-family:var(--mono)">${e.parcelasPagas||0}/${e.parcelas}</div>
+              <div class="progress-bar" style="width:80px"><div class="progress-fill" style="width:${pct}%"></div></div></td>
+          <td class="mono" style="color:var(--red)">R$ ${fmtMoney(rest)}</td>
+          <td><span class="badge ${rest<=0?'badge-green':'badge-yellow'}">${rest<=0?'Quitado':'Ativo'}</span></td>
+        </tr>`;
+      }).join('')}</tbody></table>`;
+  }
+
+  // Vales
+  const valesFunc = vales.filter(v => v.funcionarioId===funcId).sort((a,b) => (b.data||'').localeCompare(a.data||''));
+  const valesEl = document.getElementById('fichaVales');
+  if (valesFunc.length === 0) {
+    valesEl.innerHTML = '<p style="color:var(--text3);font-size:0.85rem">Nenhum vale registrado.</p>';
+  } else {
+    valesEl.innerHTML = `<table><thead><tr><th>Data</th><th>Descrição</th><th>Valor</th><th>Status</th></tr></thead>
+      <tbody>${valesFunc.map(v => `<tr>
+        <td>${v.data?fmtData(v.data):'—'}</td>
+        <td>${v.descricao||'Vale'}</td>
+        <td class="mono" style="color:${v.status==='descontado'?'var(--text3)':'var(--red)'}">R$ ${fmtMoney(v.valor)}</td>
+        <td><span class="badge ${v.status==='descontado'?'badge-green':'badge-yellow'}">${v.status==='descontado'?'Descontado':'Pendente'}</span></td>
+      </tr>`).join('')}</tbody></table>`;
+  }
+
+  // Histórico folhas
+  const histEl = document.getElementById('fichaHistoricoFolhas');
+  const historicoFolhas = getCol('historicoFolhas').getAll();
+  const folhasFunc = historicoFolhas.filter(h => h.snapshot?.some(s => s.nome===f.nome));
+  if (folhasFunc.length === 0) {
+    histEl.innerHTML = '<p style="color:var(--text3);font-size:0.85rem">Nenhuma folha gerada ainda.</p>';
+  } else {
+    histEl.innerHTML = `<table><thead><tr><th>Competência</th><th>Bruto</th><th>Descontos</th><th>Líquido</th></tr></thead>
+      <tbody>${folhasFunc.map(h => {
+        const snap = h.snapshot?.find(s => s.nome===f.nome);
+        return snap ? `<tr>
+          <td><strong>${h.mesRef}</strong></td>
+          <td class="mono">R$ ${fmtMoney(snap.totalProventos)}</td>
+          <td class="mono" style="color:var(--red)">R$ ${fmtMoney(snap.totalDescontos)}</td>
+          <td class="mono" style="color:var(--accent2)"><strong>R$ ${fmtMoney(snap.liquido)}</strong></td>
+        </tr>` : '';
+      }).join('')}</tbody></table>`;
+  }
+
+  navigate('ficha-funcionario');
+}
+
+// =====================================================
+// RESUMO SALARIAL NO CADASTRO
+// =====================================================
+function atualizarResumoFunc() {
+  const salario = parseFloat(document.getElementById('funcSalario').value) || 0;
+  const mensal = parseFloat(document.getElementById('funcCargaMensal').value) || 220;
+  const pctHE = parseFloat(document.getElementById('funcHoraExtraPct').value) || 50;
+  const horaExtra = parseFloat(document.getElementById('funcHoraExtra').value) || 0;
+  const inss = parseFloat(document.getElementById('funcInss').value) || 0;
+  const valeQ = parseFloat(document.getElementById('funcValeQuinzena').value) || 0;
+
+  // Adicionais
+  let totalAdicionais = 0;
+  const linhasAdic = [];
+  adicionaisFunc.forEach(a => {
+    let val = 0;
+    if (a.isValorFixo) { val = a.valor||0; }
+    else { val = salario * (a.pct||0) / 100; }
+    totalAdicionais += val;
+    linhasAdic.push(`<div style="display:flex;justify-content:space-between"><span>${a.nome}</span><span style="font-family:var(--mono)">+ R$ ${fmtMoney(val)}</span></div>`);
+  });
+
+  const totalBruto = salario + totalAdicionais;
+  const el = document.getElementById('funcResumoSalarial');
+  if (!el) return;
+  el.innerHTML = `
+    <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>Salário base</span><span style="font-family:var(--mono)">R$ ${fmtMoney(salario)}</span></div>
+    ${linhasAdic.join('')}
+    <div style="display:flex;justify-content:space-between;margin-top:6px;padding-top:6px;border-top:1px solid var(--border);font-weight:700;color:var(--green)"><span>TOTAL BRUTO</span><span style="font-family:var(--mono)">R$ ${fmtMoney(totalBruto)}</span></div>
+    <div style="display:flex;justify-content:space-between;margin-top:4px;color:var(--text3);font-size:0.8rem"><span>Hora extra (${pctHE}%)</span><span style="font-family:var(--mono)">R$ ${fmtMoney(horaExtra)}/h</span></div>
+    <div style="display:flex;justify-content:space-between;margin-top:4px;color:var(--red);font-size:0.8rem"><span>INSS desconto</span><span style="font-family:var(--mono)">- R$ ${fmtMoney(inss)}</span></div>
+    ${valeQ>0?`<div style="display:flex;justify-content:space-between;margin-top:4px;color:var(--red);font-size:0.8rem"><span>Vale quinzena</span><span style="font-family:var(--mono)">- R$ ${fmtMoney(valeQ)}</span></div>`:''}
+    <div style="display:flex;justify-content:space-between;margin-top:6px;padding-top:6px;border-top:1px solid var(--border);font-weight:700;color:var(--accent2)"><span>LÍQUIDO ESTIMADO</span><span style="font-family:var(--mono)">R$ ${fmtMoney(totalBruto-inss-valeQ)}</span></div>
+  `;
+}
+
+// =====================================================
+// VALES — novas funções
+// =====================================================
+function toggleValeParcelas() {
+  const tipo = document.getElementById('valeTipo').value;
+  document.getElementById('valeParcGroup').style.display = tipo==='parcelado' ? '' : 'none';
+}
+
+function calcValeParc() {
+  const valor = parseFloat(document.getElementById('valeValor').value) || 0;
+  const n = parseInt(document.getElementById('valeNParcelas').value) || 0;
+  if (valor && n > 0) {
+    document.getElementById('valeValorParc').value = (valor/n).toFixed(2);
+  }
+}
+
+function limparFiltrosVales() {
+  document.getElementById('valesFiltroFunc').value = '';
+  document.getElementById('valesFiltro').value = 'pendente';
+  document.getElementById('valesFiltroMes').value = '';
+  renderVales();
+}
+
+function editarVale(id) {
+  const v = vales.find(x => x.id===id);
+  if (!v) return;
+  document.getElementById('valeId').value = v.id;
+  document.getElementById('valeTituloModal').textContent = 'Editar Vale';
+  document.getElementById('valeFuncionario').value = v.funcionarioId;
+  document.getElementById('valeData').value = v.data || '';
+  document.getElementById('valeValor').value = v.valor || '';
+  document.getElementById('valeDescricao').value = v.descricao || '';
+  document.getElementById('valeTipo').value = v.tipo || 'integral';
+  toggleValeParcelas();
+  if (v.nParcelas) {
+    document.getElementById('valeNParcelas').value = v.nParcelas;
+    document.getElementById('valeValorParc').value = v.valorParc || '';
+  }
+  openModal('modal-vale');
+}
+
+function openValesLoteModal() {
+  const container = document.getElementById('lotevaleFuncionarios');
+  const hoje = new Date().toISOString().slice(0,10);
+  document.getElementById('lotevaleData').value = hoje;
+  if (!container) return;
+  container.innerHTML = funcionarios.filter(f=>f.ativo!==false).map(f => `
+    <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
+      <input type="checkbox" id="lote_cb_${f.id}" checked style="width:16px;height:16px;flex-shrink:0">
+      <label for="lote_cb_${f.id}" style="flex:1;font-size:0.85rem;cursor:pointer">${f.nome}</label>
+      <input type="number" id="lote_val_${f.id}" placeholder="0.00" step="0.01"
+        style="width:100px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:6px;color:var(--text);font-size:0.82rem;text-align:right">
+    </div>`).join('');
+}
+
+function aplicarValorPadrao() {
+  const padrao = parseFloat(document.getElementById('lotevaleValorPadrao').value) || 0;
+  funcionarios.filter(f=>f.ativo!==false).forEach(f => {
+    const el = document.getElementById(`lote_val_${f.id}`);
+    if (el) el.value = padrao.toFixed(2);
+  });
+}
+
+async function salvarValesLote() {
+  const data = document.getElementById('lotevaleData').value;
+  const desc = document.getElementById('lotevaleDescricao').value || 'Vale';
+  const salvos = [];
+  for (const f of funcionarios.filter(fn=>fn.ativo!==false)) {
+    const cb = document.getElementById(`lote_cb_${f.id}`);
+    const valEl = document.getElementById(`lote_val_${f.id}`);
+    if (!cb?.checked || !valEl) continue;
+    const valor = parseFloat(valEl.value) || 0;
+    if (valor <= 0) continue;
+    const novo = await fsAdd('vales', {
+      funcionarioId: f.id, funcionarioNome: f.nome,
+      data, valor, descricao: desc, tipo: 'integral', status: 'pendente'
+    });
+    vales.push(novo);
+    salvos.push(f.nome);
+  }
+  closeModal('modal-vale-lote');
+  renderVales();
+  renderAlertasDashboard();
+  toast(`${salvos.length} vale(s) lançado(s)!`, 'success');
+}
+
+// =====================================================
+// EMPRÉSTIMOS — editar e registrar parcela melhorado
+// =====================================================
+function openEmprestimoModal(id) {
+  document.getElementById('empId').value = id || '';
+  document.getElementById('empTituloModal').textContent = id ? 'Editar Empréstimo' : 'Novo Empréstimo';
+  if (id) {
+    const e = emprestimos.find(x => x.id===id);
+    if (!e) return;
+    document.getElementById('empFuncionario').value = e.funcionarioId || '';
+    document.getElementById('empDescricao').value = e.descricao || '';
+    document.getElementById('empTotal').value = e.total || '';
+    document.getElementById('empParcelas').value = e.parcelas || '';
+    document.getElementById('empTipoParcela').value = e.tipoParcela || 'igual';
+    document.getElementById('empValorParcela').value = e.valorParcela || '';
+    document.getElementById('empUltimaParcela').value = e.ultimaParcela || '';
+    document.getElementById('empDataInicio').value = e.dataInicio || '';
+    calcParcela();
+  } else {
+    // Limpar
+    ['empId','empDescricao','empTotal','empParcelas','empValorParcela','empUltimaParcela'].forEach(id => {
+      const el = document.getElementById(id); if(el) el.value='';
+    });
+    document.getElementById('empTipoParcela').value = 'igual';
+    document.getElementById('empDataInicio').value = new Date().toISOString().slice(0,10);
+  }
+  openModal('modal-emprestimo');
+}
+
+async function registrarPagamentoMelhorado(id) {
+  const e = emprestimos.find(e => e.id===id);
+  if (!e) return;
+  const parcelaAtual = (e.parcelasPagas||0) + 1;
+  const totalParcelas = e.parcelas || 1;
+  const isUltima = parcelaAtual >= totalParcelas;
+  const restante = (e.total||0) - (e.pago||0);
+
+  // Valor sugerido para esta parcela
+  let sugerido = e.valorParcela || 0;
+  if (isUltima && e.tipoParcela==='ultima_diferente' && e.ultimaParcela) {
+    sugerido = e.ultimaParcela;
+  }
+  // Se for a última, sugerir o restante
+  if (isUltima) sugerido = Math.min(sugerido, restante);
+
+  // Modal de confirmação personalizado
+  document.getElementById('confirmarTitulo').textContent = `Parcela ${parcelaAtual}/${totalParcelas} — ${e.descricao}`;
+  document.getElementById('confirmarMsg').innerHTML = `
+    <div style="margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+        <span>Restante:</span><strong>R$ ${fmtMoney(restante)}</strong>
+      </div>
+      <div style="display:flex;justify-content:space-between">
+        <span>Parcela sugerida:</span><strong>R$ ${fmtMoney(sugerido)}</strong>
+      </div>
+    </div>
+    <label style="font-size:0.82rem;color:var(--text2)">Valor pago (editável):</label>
+    <input type="number" id="pagamentoValorInput" class="form-input" value="${sugerido.toFixed(2)}" step="0.01" style="margin-top:6px">
+    <div id="pagamentoInfo" style="font-size:0.78rem;color:var(--text3);margin-top:6px"></div>
+  `;
+
+  // Calcular info ao digitar
+  setTimeout(() => {
+    const inp = document.getElementById('pagamentoValorInput');
+    if (!inp) return;
+    const calcInfo = () => {
+      const val = parseFloat(inp.value) || 0;
+      const novoRestante = restante - val;
+      const el = document.getElementById('pagamentoInfo');
+      if (!el) return;
+      if (val > sugerido) {
+        const reduz = val - sugerido;
+        el.textContent = `Pagou R$ ${fmtMoney(reduz)} a mais → última parcela reduzida`;
+        el.style.color = 'var(--green)';
+      } else if (val < sugerido && val > 0) {
+        el.textContent = `Pagou menos → restante aumenta para R$ ${fmtMoney(novoRestante)}`;
+        el.style.color = 'var(--yellow)';
+      } else {
+        el.textContent = novoRestante <= 0 ? '✅ Empréstimo quitado!' : `Restante após pagamento: R$ ${fmtMoney(novoRestante)}`;
+        el.style.color = novoRestante <= 0 ? 'var(--green)' : 'var(--text3)';
+      }
+    };
+    inp.addEventListener('input', calcInfo);
+    calcInfo();
+  }, 100);
+
+  document.getElementById('modal-confirmar').classList.add('active');
+  _confirmarResolve = async (confirm) => {
+    document.getElementById('modal-confirmar').classList.remove('active');
+    _confirmarResolve = null;
+    if (!confirm) return;
+    const inp2 = document.getElementById('pagamentoValorInput');
+    const valor = parseFloat(inp2?.value) || sugerido;
+    if (!valor) return;
+
+    const novoPago = (e.pago||0) + valor;
+    const novoRestante2 = (e.total||0) - novoPago;
+    const novasParcelas = (e.parcelasPagas||0) + 1;
+    const status = novoRestante2 <= 0.01 ? 'quitado' : 'ativo';
+
+    // Ajustar última parcela se pagou diferente do previsto
+    const updates = { pago: novoPago, parcelasPagas: novasParcelas, status };
+    if (status === 'ativo' && e.tipoParcela === 'ultima_diferente') {
+      const parcelasRestantes = totalParcelas - novasParcelas;
+      if (parcelasRestantes === 1) {
+        updates.ultimaParcela = novoRestante2;
+      }
+    }
+
+    await fsUpdate('emprestimos', id, updates);
+    const idx = emprestimos.findIndex(e => e.id===id);
+    if (idx>=0) Object.assign(emprestimos[idx], updates);
+    renderEmprestimos();
+    renderDashboard();
+    toast(`Parcela ${novasParcelas} registrada! Restante: R$ ${fmtMoney(Math.max(0,novoRestante2))}`, 'success');
+  };
+}
+
+// =====================================================
+// SIMULAÇÃO AUTOMÁTICA NO MODAL EMPRÉSTIMO
+// =====================================================
+function atualizarSimulacaoEmp() {
+  const total = parseFloat(document.getElementById('empTotal').value) || 0;
+  const n = parseInt(document.getElementById('empParcelas').value) || 0;
+  if (!total || !n) { document.getElementById('empSimulacao').style.display='none'; return; }
+
+  const igualVal = Math.round(total/n*100)/100;
+  const igualTotal = igualVal * n;
+  const diff = Math.round((total - igualTotal)*100)/100;
+
+  // Opção 1: Iguais
+  document.getElementById('empSimIgual').innerHTML =
+    `<span style="color:var(--accent2)">Iguais:</span> ${n}x R$ ${fmtMoney(igualVal)}${Math.abs(diff)>0?' <span style="color:var(--text3)">(última R$ '+fmtMoney(igualVal+diff)+')</span>':''}`;
+
+  // Opção 2: Parcela padrão + última diferente
+  const padraoVal = Math.floor(total/n*100)/100;
+  const ultimaVal = Math.round((total - padraoVal*(n-1))*100)/100;
+  document.getElementById('empSimUltima').innerHTML =
+    `<span style="color:var(--yellow)">Com última diferente:</span> ${n-1}x R$ ${fmtMoney(padraoVal)} + 1x R$ ${fmtMoney(ultimaVal)}`;
+
+  document.getElementById('empSimulacao').style.display = '';
 }
 
 // Service worker for PWA
