@@ -1949,11 +1949,11 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
           <div class="form-grid form-grid-2">
             <div class="form-group">
               <label class="form-label">INSS padrão (R$)</label>
-              <input type="number" class="form-input" id="cfgInss" placeholder="207.00">
+              <input type="number" class="form-input" id="cfgInss" placeholder="207,00">
             </div>
             <div class="form-group">
               <label class="form-label">Vale quinzena padrão (R$)</label>
-              <input type="number" class="form-input" id="cfgVale" placeholder="700.00">
+              <input type="number" class="form-input" id="cfgVale" placeholder="700,00">
             </div>
           </div>
         </div>
@@ -2038,7 +2038,7 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
         <div class="form-grid form-grid-3">
           <div class="form-group">
             <label class="form-label">Salário base (R$)</label>
-            <input type="number" class="form-input" id="funcSalario" placeholder="1621.00" step="0.01">
+            <input type="number" class="form-input" id="funcSalario" placeholder="1.621,00" step="0.01">
           </div>
           <div class="form-group">
             <label class="form-label">Carga semanal (h)</label>
@@ -2063,7 +2063,7 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
           </div>
           <div class="form-group">
             <label class="form-label">Valor hora extra (R$)</label>
-            <input type="number" class="form-input" id="funcHoraExtra" placeholder="13.26" step="0.01">
+            <input type="number" class="form-input" id="funcHoraExtra" placeholder="13,26" step="0.01">
           </div>
           <div class="form-group" style="display:flex;align-items:flex-end">
             <button type="button" class="btn btn-outline btn-sm" style="width:100%;height:42px"
@@ -2083,11 +2083,11 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
           </div>
           <div class="form-group" id="funcInssValorGroup">
             <label class="form-label">INSS (R$)</label>
-            <input type="number" class="form-input" id="funcInss" placeholder="207.00" step="0.01">
+            <input type="number" class="form-input" id="funcInss" placeholder="207,00" step="0.01">
           </div>
           <div class="form-group" id="funcInssPctGroup" style="display:none">
             <label class="form-label">Alíquota (%)</label>
-            <input type="number" class="form-input" id="funcInssPct" placeholder="7.5" step="0.01">
+            <input type="number" class="form-input" id="funcInssPct" placeholder="7,5" step="0.01">
           </div>
         </div>
         <p style="color:var(--text3);font-size:0.75rem;margin-top:-8px">⚠️ INSS incide sobre: salário + horas extras + adicionais habituais. Tabela 2024: 7,5% a 14%.</p>
@@ -2095,7 +2095,7 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
         <div class="section-card-title" style="margin-top:4px">DESCONTOS PADRÃO</div>
         <div class="form-group">
           <label class="form-label">Vale quinzena (R$)</label>
-          <input type="number" class="form-input" id="funcValeQuinzena" placeholder="700.00" step="0.01">
+          <input type="number" class="form-input" id="funcValeQuinzena" placeholder="700,00" step="0.01">
           <div style="font-size:0.73rem;color:var(--text3);margin-top:3px">Valor adiantado na quinzena, descontado na folha mensal</div>
         </div>
 
@@ -2224,7 +2224,7 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
         <div class="form-grid form-grid-3">
           <div class="form-group">
             <label class="form-label">Salário base (R$)</label>
-            <input type="number" class="form-input" id="grupoSalario" placeholder="1621.00" step="0.01" oninput="calcGrupoHoraExtra()">
+            <input type="number" class="form-input" id="grupoSalario" placeholder="1.621,00" step="0.01" oninput="calcGrupoHoraExtra()">
           </div>
           <div class="form-group">
             <label class="form-label">Carga semanal (h)</label>
@@ -2249,7 +2249,7 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
           </div>
           <div class="form-group">
             <label class="form-label">Valor hora extra (R$)</label>
-            <input type="number" class="form-input" id="grupoHoraExtra" placeholder="13.26" step="0.01">
+            <input type="number" class="form-input" id="grupoHoraExtra" placeholder="13,26" step="0.01">
           </div>
           <div class="form-group" style="display:flex;align-items:flex-end">
             <button class="btn btn-outline btn-sm" style="width:100%;height:42px" onclick="calcGrupoHoraExtra()">🔄 Calcular</button>
@@ -2268,11 +2268,11 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
           </div>
           <div class="form-group" id="grupoInssValorGroup">
             <label class="form-label">INSS (R$)</label>
-            <input type="number" class="form-input" id="grupoInss" placeholder="207.00" step="0.01">
+            <input type="number" class="form-input" id="grupoInss" placeholder="207,00" step="0.01">
           </div>
           <div class="form-group" id="grupoInssPctGroup" style="display:none">
             <label class="form-label">Alíquota INSS (%)</label>
-            <input type="number" class="form-input" id="grupoInssPct" placeholder="7.5" step="0.01">
+            <input type="number" class="form-input" id="grupoInssPct" placeholder="7,5" step="0.01">
           </div>
         </div>
         <p style="color:var(--text3);font-size:0.75rem;margin-top:-8px">⚠️ O INSS incide sobre: salário + horas extras + adicionais habituais (exceto DSR). Tabela 2024: 7,5% a 14%.</p>
@@ -2280,7 +2280,7 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
         <div class="section-card-title" style="margin-top:8px">DESCONTOS PADRÃO</div>
         <div class="form-group">
           <label class="form-label">Vale quinzena padrão (R$)</label>
-          <input type="number" class="form-input" id="grupoValeQuinzena" placeholder="700.00" step="0.01">
+          <input type="number" class="form-input" id="grupoValeQuinzena" placeholder="700,00" step="0.01">
         </div>
 
         <div class="section-card-title" style="margin-top:8px">FUNCIONÁRIOS NESTE GRUPO</div>
@@ -2317,7 +2317,7 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
         <div class="form-grid form-grid-2">
           <div class="form-group">
             <label class="form-label">Valor total (R$)</label>
-            <input type="number" class="form-input" id="empTotal" placeholder="800.00" step="0.01" oninput="calcParcela()">
+            <input type="number" class="form-input" id="empTotal" placeholder="800,00" step="0.01" oninput="calcParcela()">
           </div>
           <div class="form-group">
             <label class="form-label">Nº de parcelas</label>
@@ -2334,11 +2334,11 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
         <div class="form-grid form-grid-2">
           <div class="form-group">
             <label class="form-label">Valor por parcela (R$)</label>
-            <input type="number" class="form-input" id="empValorParcela" placeholder="100.00" step="0.01" oninput="calcUltimaParcela()">
+            <input type="number" class="form-input" id="empValorParcela" placeholder="100,00" step="0.01" oninput="calcUltimaParcela()">
           </div>
           <div class="form-group" id="empUltimaParcelaGroup" style="display:none">
             <label class="form-label">Última parcela (R$)</label>
-            <input type="number" class="form-input" id="empUltimaParcela" placeholder="50.00" step="0.01">
+            <input type="number" class="form-input" id="empUltimaParcela" placeholder="50,00" step="0.01">
           </div>
         </div>
         <div id="empResumoParcelamento" style="font-size:0.82rem;color:var(--text3);margin-top:-8px"></div>
@@ -2381,7 +2381,7 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
           </div>
           <div class="form-group">
             <label class="form-label">Valor (R$)</label>
-            <input type="number" class="form-input" id="valeValor" placeholder="100.00" step="0.01" oninput="calcValeParc()">
+            <input type="number" class="form-input" id="valeValor" placeholder="100,00" step="0.01" oninput="calcValeParc()">
           </div>
         </div>
         <div class="form-group">
@@ -2439,7 +2439,7 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
         <div class="form-grid form-grid-2" style="align-items:flex-end">
           <div class="form-group">
             <label class="form-label">Valor padrão (R$)</label>
-            <input type="number" class="form-input" id="lotevaleValorPadrao" placeholder="700.00" step="0.01">
+            <input type="number" class="form-input" id="lotevaleValorPadrao" placeholder="700,00" step="0.01">
           </div>
           <button class="btn btn-outline btn-sm" onclick="aplicarValorPadrao()" style="height:42px">
             Aplicar a todos
@@ -2503,7 +2503,7 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
         <div class="form-grid form-grid-2">
           <div class="form-group">
             <label class="form-label">Valor (R$)</label>
-            <input type="number" class="form-input" id="lancValor" placeholder="200.00" step="0.01">
+            <input type="number" class="form-input" id="lancValor" placeholder="200,00" step="0.01">
           </div>
           <div class="form-group">
             <label class="form-label">Data</label>
@@ -3725,39 +3725,130 @@ function buildFolhaCard(f, d) {
   const calc = calcFolhaTotais(d);
   const alertaDesc = calc.liquido < 0 ? 'style="border-color:var(--red)"' : '';
 
+  // Resumo proventos
+  const provList = [];
+  if (calc.salarioBase > 0) provList.push(`Salário: R$ ${fmtMoney(calc.salarioBase)}`);
+  if (calc.horasExtrasValor > 0) provList.push(`H.Extra (${d.horasExtras||0}h): R$ ${fmtMoney(calc.horasExtrasValor)}`);
+  if (calc.totalAdics > 0) provList.push(`Adicionais: R$ ${fmtMoney(calc.totalAdics)}`);
+  if (calc.reflexoDsr > 0) provList.push(`DSR: R$ ${fmtMoney(calc.reflexoDsr)}`);
+  (d.outrosProventos||[]).filter(o=>o.valor>0).forEach(o => provList.push(`${o.descricao}: R$ ${fmtMoney(o.valor)}`));
+
+  // Resumo descontos
+  const descList = [];
+  if (d.inssValor > 0) descList.push(`INSS: R$ ${fmtMoney(d.inssValor)}`);
+  (d.descontoEmprestimos||[]).filter(e=>e.selecionado!==false).forEach(e => descList.push(`${e.label} (p.${e.numero}): R$ ${fmtMoney(e.valorPagar||e.valor)}`));
+  (d.descontoVales||[]).filter(v=>v.selecionado!==false).forEach(v => descList.push(`${v.label}: R$ ${fmtMoney(v.valorPagar||v.valor)}`));
+  (d.outrosDescontos||[]).filter(o=>o.valor>0).forEach(o => descList.push(`${o.descricao}: R$ ${fmtMoney(o.valor)}`));
+  if (d.faltas > 0) descList.push(`Faltas (${d.faltas}): R$ ${fmtMoney(calcFaltas(d.salario,d.faltas,calc.reflexoDsr))}`);
+
   return `<div class="folha-card" id="fc-${f.id}" ${alertaDesc}>
+    <!-- CABEÇALHO -->
     <div class="folha-card-header">
       <div style="display:flex;align-items:center;gap:10px">
-        <input type="checkbox" class="folha-func-cb" data-id="${f.id}" checked style="width:16px;height:16px">
+        <input type="checkbox" class="folha-func-cb" data-id="${f.id}" checked style="width:16px;height:16px;flex-shrink:0">
         <div>
           <div class="folha-employee-name">${f.nome}</div>
-          <div class="folha-employee-role">${f.cargo||'—'} • CPF: ${f.cpf||'—'}</div>
+          <div class="folha-employee-role">${f.cargo||f.grupoNome||'—'} • CPF: ${f.cpf||'—'}</div>
         </div>
       </div>
-      <div style="display:flex;gap:8px">
-        <button class="btn btn-outline btn-sm" onclick="abrirFolhaFuncionario('${f.id}')">📋 Detalhes</button>
-        <button class="btn btn-primary btn-sm" onclick="gerarPdfFuncionario('${f.id}')">📄 PDF</button>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button class="btn btn-outline btn-sm" onclick="toggleFolhaInline('${f.id}')">✏️ Editar</button>
+        <button class="btn btn-primary btn-sm" onclick="confirmarGerarPdf('${f.id}')">📄 PDF</button>
       </div>
     </div>
-    <div class="folha-values">
-      <div class="folha-value-item">
-        <div class="folha-value-label">Salário bruto</div>
-        <div class="folha-value-num pos">R$ ${fmtMoney(calc.totalProventos)}</div>
+
+    <!-- RESUMO PROVENTOS / DESCONTOS -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px">
+      <div style="background:rgba(46,158,79,0.08);border-radius:8px;padding:10px">
+        <div style="font-size:0.7rem;font-weight:700;color:var(--green);margin-bottom:6px">▲ PROVENTOS</div>
+        ${provList.length ? provList.map(p=>`<div style="font-size:0.78rem;display:flex;justify-content:space-between"><span>${p.split(':')[0]}</span><span style="font-family:var(--mono)">${p.split(':').slice(1).join(':')}</span></div>`).join('') : '<div style="font-size:0.78rem;color:var(--text3)">Nenhum</div>'}
+        <div style="border-top:1px solid var(--border);margin-top:6px;padding-top:6px;font-size:0.82rem;font-weight:700;color:var(--green);display:flex;justify-content:space-between">
+          <span>TOTAL</span><span style="font-family:var(--mono)">R$ ${fmtMoney(calc.totalProventos)}</span>
+        </div>
       </div>
-      <div class="folha-value-item">
-        <div class="folha-value-label">Descontos selecionados</div>
-        <div class="folha-value-num neg">- R$ ${fmtMoney(calc.totalDescontos)}</div>
-      </div>
-      <div class="folha-value-item">
-        <div class="folha-value-label">Líquido a receber</div>
-        <div class="folha-value-num total" style="${calc.liquido<0?'color:var(--red)':''}">R$ ${fmtMoney(calc.liquido)}</div>
-      </div>
-      <div class="folha-value-item">
-        <div class="folha-value-label">Horas extras</div>
-        <div class="folha-value-num">${d.horasExtras||0}h</div>
+      <div style="background:rgba(239,68,68,0.08);border-radius:8px;padding:10px">
+        <div style="font-size:0.7rem;font-weight:700;color:var(--red);margin-bottom:6px">▼ DESCONTOS</div>
+        ${descList.length ? descList.map(p=>`<div style="font-size:0.78rem;display:flex;justify-content:space-between"><span>${p.split(':')[0]}</span><span style="font-family:var(--mono)">${p.split(':').slice(1).join(':')}</span></div>`).join('') : '<div style="font-size:0.78rem;color:var(--text3)">Nenhum selecionado</div>'}
+        <div style="border-top:1px solid var(--border);margin-top:6px;padding-top:6px;font-size:0.82rem;font-weight:700;color:var(--red);display:flex;justify-content:space-between">
+          <span>TOTAL</span><span style="font-family:var(--mono)">R$ ${fmtMoney(calc.totalDescontos)}</span>
+        </div>
       </div>
     </div>
-    ${calc.liquido<0?'<div style="color:var(--red);font-size:0.78rem;padding:4px 0">⚠️ Descontos maiores que o salário</div>':''}
+
+    <!-- LÍQUIDO -->
+    <div style="margin-top:10px;padding:10px;background:var(--bg2);border-radius:8px;display:flex;justify-content:space-between;align-items:center">
+      <span style="font-weight:700">LÍQUIDO A RECEBER</span>
+      <span style="font-family:var(--mono);font-size:1.1rem;font-weight:700;color:${calc.liquido<0?'var(--red)':'var(--accent2)'}">R$ ${fmtMoney(calc.liquido)}</span>
+    </div>
+    ${calc.liquido<0?'<div style="color:var(--red);font-size:0.78rem;padding:4px 0">⚠️ Descontos maiores que o salário — revise os itens</div>':''}
+
+    <!-- ÁREA INLINE DE EDIÇÃO (oculta por padrão) -->
+    <div id="folha-inline-${f.id}" style="display:none;margin-top:12px;border-top:1px solid var(--border);padding-top:12px">
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-bottom:10px">
+        <div class="form-group" style="margin:0">
+          <label class="form-label">DIAS TRAB. (0=mês)</label>
+          <input type="number" class="form-input" value="${d.diasTrabalhados||0}" min="0" max="31"
+            onchange="folhaDetalhe['${f.id}'].diasTrabalhados=parseInt(this.value)||0;rebuildCard('${f.id}')">
+        </div>
+        <div class="form-group" style="margin:0">
+          <label class="form-label">HORAS EXTRAS</label>
+          <input type="number" class="form-input" value="${d.horasExtras||0}" step="0.01"
+            onchange="folhaDetalhe['${f.id}'].horasExtras=parseFloat(this.value)||0;rebuildCard('${f.id}')">
+        </div>
+        <div class="form-group" style="margin:0">
+          <label class="form-label">VLR HORA EXTRA</label>
+          <input type="number" class="form-input" value="${d.horaExtraVal||0}" step="0.01"
+            onchange="folhaDetalhe['${f.id}'].horaExtraVal=parseFloat(this.value)||0;rebuildCard('${f.id}')">
+        </div>
+        <div class="form-group" style="margin:0">
+          <label class="form-label">INSS (R$)</label>
+          <input type="number" class="form-input" value="${d.inssValor||0}" step="0.01"
+            onchange="folhaDetalhe['${f.id}'].inssValor=parseFloat(this.value)||0;rebuildCard('${f.id}')">
+        </div>
+        <div class="form-group" style="margin:0">
+          <label class="form-label">FALTAS</label>
+          <input type="number" class="form-input" value="${d.faltas||0}" min="0"
+            onchange="folhaDetalhe['${f.id}'].faltas=parseInt(this.value)||0;rebuildCard('${f.id}')">
+        </div>
+      </div>
+
+      <!-- Outros proventos inline -->
+      <div style="margin-bottom:8px">
+        ${(d.outrosProventos||[]).map((o,i)=>`
+        <div style="display:flex;gap:6px;margin-bottom:6px;align-items:center">
+          <select class="form-input" style="flex:2" onchange="folhaDetalhe['${f.id}'].outrosProventos[${i}].descricao=this.value;rebuildCard('${f.id}')">
+            ${proventosNomes.map(n=>`<option value="${n}" ${o.descricao===n?'selected':''}>${n}</option>`).join('')}
+          </select>
+          <input type="number" class="form-input" value="${o.valor||0}" step="0.01" style="flex:1"
+            onchange="folhaDetalhe['${f.id}'].outrosProventos[${i}].valor=parseFloat(this.value)||0;rebuildCard('${f.id}')">
+          <button class="btn-icon" onclick="folhaDetalhe['${f.id}'].outrosProventos.splice(${i},1);rebuildCard('${f.id}')">🗑️</button>
+        </div>`).join('')}
+        <button class="btn btn-outline btn-sm" onclick="addProventoInline('${f.id}')">➕ Provento</button>
+      </div>
+
+      <!-- Descontos selecionáveis inline -->
+      ${d.descontoEmprestimos.length>0?`
+      <div style="font-size:0.78rem;font-weight:600;color:var(--text2);margin-bottom:4px">EMPRÉSTIMOS:</div>
+      ${d.descontoEmprestimos.map((e,i)=>`
+      <label style="display:flex;align-items:center;gap:8px;padding:6px;background:var(--bg2);border-radius:6px;margin-bottom:4px;cursor:pointer">
+        <input type="checkbox" ${e.selecionado!==false?'checked':''} style="flex-shrink:0"
+          onchange="folhaDetalhe['${f.id}'].descontoEmprestimos[${i}].selecionado=this.checked;rebuildCard('${f.id}')">
+        <span style="flex:1;font-size:0.8rem">${e.numero}ª parcela — ${e.label}</span>
+        <input type="number" class="form-input" value="${e.valorPagar||e.valor}" step="0.01" style="width:90px;font-size:0.8rem"
+          onchange="folhaDetalhe['${f.id}'].descontoEmprestimos[${i}].valorPagar=parseFloat(this.value)||0;rebuildCard('${f.id}')">
+      </label>`).join('')}`:``}
+
+      ${d.descontoVales.length>0?`
+      <div style="font-size:0.78rem;font-weight:600;color:var(--text2);margin-bottom:4px;margin-top:6px">VALES:</div>
+      ${d.descontoVales.map((v,i)=>`
+      <label style="display:flex;align-items:center;gap:8px;padding:6px;background:var(--bg2);border-radius:6px;margin-bottom:4px;cursor:pointer">
+        <input type="checkbox" ${v.selecionado!==false?'checked':''} style="flex-shrink:0"
+          onchange="folhaDetalhe['${f.id}'].descontoVales[${i}].selecionado=this.checked;rebuildCard('${f.id}')">
+        <span style="flex:1;font-size:0.8rem">${v.label}${v.data?' ('+fmtData(v.data)+')':''}</span>
+        <input type="number" class="form-input" value="${v.valorPagar||v.valor}" step="0.01" style="width:90px;font-size:0.8rem"
+          onchange="folhaDetalhe['${f.id}'].descontoVales[${i}].valorPagar=parseFloat(this.value)||0;rebuildCard('${f.id}')">
+      </label>`).join('')}`:``}
+    </div>
   </div>`;
 }
 
@@ -3816,10 +3907,7 @@ function abrirFolhaFuncionario(funcId) {
         <label class="form-label">INSS (R$)</label>
         <input type="number" class="form-input" id="fd-inss" value="${d.inssValor||0}" step="0.01">
       </div>
-      <div class="form-group">
-        <label class="form-label">Prêmio desempenho (R$)</label>
-        <input type="number" class="form-input" id="fd-premio" value="${d.premioDesempenho||0}" step="0.01">
-      </div>
+
       <div class="form-group">
         <label class="form-label">Faltas</label>
         <input type="number" class="form-input" id="fd-faltas" value="${d.faltas||0}" min="0">
@@ -4038,8 +4126,7 @@ function buildFolhaDetalheForm(funcId, d) {
         <input type="number" class="form-input" id="fd-insalubridade" value="${d.insalPct}" step="1">
       </div>
       <div class="form-group">
-        <label class="form-label">Prêmio bom desempenho (R$)</label>
-        <input type="number" class="form-input" id="fd-premio" value="${d.premioDesempenho||0}" step="0.01">
+
       </div>
     </div>
 
@@ -4095,7 +4182,6 @@ function salvarFolhaDetalhe() {
   d.horasExtras = getVal('fd-horas', 0);
   d.horaExtraVal = getVal('fd-valhoraextra', d.horaExtraVal);
   d.inssValor = getVal('fd-inss', d.inssValor);
-  d.premioDesempenho = getVal('fd-premio', 0);
   d.faltas = getInt('fd-faltas', 0);
 
   folhaDetalhe[id] = d;
@@ -6326,91 +6412,115 @@ function openEmprestimoModal(id) {
 }
 
 async function registrarPagamentoMelhorado(id) {
-  const e = emprestimos.find(e => e.id===id);
+  const e = emprestimos.find(x => x.id===id);
   if (!e) return;
-  const parcelaAtual = (e.parcelasPagas||0) + 1;
+
+  const parcelasPagas = e.parcelasPagas || 0;
   const totalParcelas = e.parcelas || 1;
-  const isUltima = parcelaAtual >= totalParcelas;
   const restante = (e.total||0) - (e.pago||0);
 
-  // Valor sugerido para esta parcela
-  let sugerido = e.valorParcela || 0;
-  if (isUltima && e.tipoParcela==='ultima_diferente' && e.ultimaParcela) {
-    sugerido = e.ultimaParcela;
+  // Montar lista de parcelas pendentes
+  const parcelasDisponiveis = [];
+  for (let i = parcelasPagas; i < totalParcelas; i++) {
+    const num = i + 1;
+    const isUltima = num === totalParcelas;
+    let valor = e.valorParcela || 0;
+    if (isUltima && e.tipoParcela==='ultima_diferente' && e.ultimaParcela) valor = e.ultimaParcela;
+    // Não exceder restante
+    valor = Math.min(valor, restante - parcelasDisponiveis.reduce((s,p)=>s+p.valor,0));
+    if (valor <= 0.01) break;
+    parcelasDisponiveis.push({ num, valor, isUltima });
   }
-  // Se for a última, sugerir o restante
-  if (isUltima) sugerido = Math.min(sugerido, restante);
 
-  // Modal de confirmação personalizado
-  document.getElementById('confirmarTitulo').textContent = `Parcela ${parcelaAtual}/${totalParcelas} — ${e.descricao}`;
+  // Gerar HTML da lista de parcelas
+  const parcHtml = parcelasDisponiveis.map(p => `
+    <div style="display:flex;align-items:center;gap:10px;padding:8px;background:var(--bg2);border-radius:6px;margin-bottom:6px">
+      <input type="checkbox" id="parc_cb_${p.num}" checked style="width:16px;height:16px;flex-shrink:0">
+      <label for="parc_cb_${p.num}" style="flex:1;font-size:0.85rem;cursor:pointer">
+        Parcela ${p.num}/${totalParcelas}${p.isUltima?' (última)':''}
+      </label>
+      <input type="number" id="parc_val_${p.num}" class="form-input" value="${p.valor.toFixed(2)}" step="0.01"
+        style="width:100px;font-family:var(--mono);font-size:0.82rem">
+    </div>`).join('');
+
+  document.getElementById('confirmarTitulo').textContent = `Registrar pagamento — ${e.descricao}`;
   document.getElementById('confirmarMsg').innerHTML = `
-    <div style="margin-bottom:12px">
-      <div style="display:flex;justify-content:space-between;margin-bottom:4px">
-        <span>Restante:</span><strong>R$ ${fmtMoney(restante)}</strong>
-      </div>
-      <div style="display:flex;justify-content:space-between">
-        <span>Parcela sugerida:</span><strong>R$ ${fmtMoney(sugerido)}</strong>
-      </div>
+    <div style="display:flex;justify-content:space-between;margin-bottom:12px">
+      <span>Total restante:</span><strong style="font-family:var(--mono)">R$ ${fmtMoney(restante)}</strong>
     </div>
-    <label style="font-size:0.82rem;color:var(--text2)">Valor pago (editável):</label>
-    <input type="number" id="pagamentoValorInput" class="form-input" value="${sugerido.toFixed(2)}" step="0.01" style="margin-top:6px">
-    <div id="pagamentoInfo" style="font-size:0.78rem;color:var(--text3);margin-top:6px"></div>
+    <div style="font-size:0.82rem;font-weight:600;color:var(--text2);margin-bottom:8px">
+      Selecione as parcelas a pagar (e edite os valores se necessário):
+    </div>
+    ${parcHtml || `<p style="color:var(--text3)">Empréstimo já quitado ou sem parcelas pendentes.</p>`}
+    <div id="pagTotalInfo" style="margin-top:10px;padding:8px;background:var(--bg3);border-radius:6px;font-size:0.82rem;color:var(--accent2)"></div>
   `;
 
-  // Calcular info ao digitar
+  // Calcular total selecionado
   setTimeout(() => {
-    const inp = document.getElementById('pagamentoValorInput');
-    if (!inp) return;
-    const calcInfo = () => {
-      const val = parseFloat(inp.value) || 0;
-      const novoRestante = restante - val;
-      const el = document.getElementById('pagamentoInfo');
-      if (!el) return;
-      if (val > sugerido) {
-        const reduz = val - sugerido;
-        el.textContent = `Pagou R$ ${fmtMoney(reduz)} a mais → última parcela reduzida`;
-        el.style.color = 'var(--green)';
-      } else if (val < sugerido && val > 0) {
-        el.textContent = `Pagou menos → restante aumenta para R$ ${fmtMoney(novoRestante)}`;
-        el.style.color = 'var(--yellow)';
-      } else {
-        el.textContent = novoRestante <= 0 ? '✅ Empréstimo quitado!' : `Restante após pagamento: R$ ${fmtMoney(novoRestante)}`;
-        el.style.color = novoRestante <= 0 ? 'var(--green)' : 'var(--text3)';
+    const calcTotal = () => {
+      let tot = 0;
+      parcelasDisponiveis.forEach(p => {
+        const cb = document.getElementById(`parc_cb_${p.num}`);
+        const vi = document.getElementById(`parc_val_${p.num}`);
+        if (cb?.checked && vi) tot += parseFloat(vi.value)||0;
+      });
+      const el = document.getElementById('pagTotalInfo');
+      if (el) {
+        const novoRest = restante - tot;
+        el.textContent = `Total a pagar: R$ ${fmtMoney(tot)} → Restante: R$ ${fmtMoney(Math.max(0,novoRest))}`;
       }
     };
-    inp.addEventListener('input', calcInfo);
-    calcInfo();
+    parcelasDisponiveis.forEach(p => {
+      document.getElementById(`parc_cb_${p.num}`)?.addEventListener('change', calcTotal);
+      document.getElementById(`parc_val_${p.num}`)?.addEventListener('input', calcTotal);
+    });
+    calcTotal();
   }, 100);
 
   document.getElementById('modal-confirmar').classList.add('active');
-  _confirmarResolve = async (confirm) => {
+  _confirmarResolve = async (ok) => {
     document.getElementById('modal-confirmar').classList.remove('active');
     _confirmarResolve = null;
-    if (!confirm) return;
-    const inp2 = document.getElementById('pagamentoValorInput');
-    const valor = parseFloat(inp2?.value) || sugerido;
-    if (!valor) return;
+    if (!ok) return;
 
-    const novoPago = (e.pago||0) + valor;
-    const novoRestante2 = (e.total||0) - novoPago;
-    const novasParcelas = (e.parcelasPagas||0) + 1;
-    const status = novoRestante2 <= 0.01 ? 'quitado' : 'ativo';
+    // Registrar cada parcela selecionada
+    let totalPago = 0;
+    let parcelasRegistradas = 0;
+    const empAntes = {...e};
 
-    // Ajustar última parcela se pagou diferente do previsto
-    const updates = { pago: novoPago, parcelasPagas: novasParcelas, status };
-    if (status === 'ativo' && e.tipoParcela === 'ultima_diferente') {
-      const parcelasRestantes = totalParcelas - novasParcelas;
-      if (parcelasRestantes === 1) {
-        updates.ultimaParcela = novoRestante2;
-      }
+    for (const p of parcelasDisponiveis) {
+      const cb = document.getElementById(`parc_cb_${p.num}`);
+      const vi = document.getElementById(`parc_val_${p.num}`);
+      if (!cb?.checked) continue;
+      const valor = parseFloat(vi?.value) || p.valor;
+      if (valor <= 0) continue;
+      totalPago += valor;
+      parcelasRegistradas++;
     }
 
+    if (totalPago <= 0) return;
+
+    const novoPago = (e.pago||0) + totalPago;
+    const novoRestante = Math.max(0, (e.total||0) - novoPago);
+    const novasParcPagas = parcelasPagas + parcelasRegistradas;
+    const status = novoRestante <= 0.01 ? 'quitado' : 'ativo';
+    const updates = { pago: novoPago, parcelasPagas: novasParcPagas, status };
+    if (status==='ativo' && novasParcPagas === totalParcelas-1) updates.ultimaParcela = novoRestante;
+
+    const empIdx = emprestimos.findIndex(x=>x.id===id);
     await fsUpdate('emprestimos', id, updates);
-    const idx = emprestimos.findIndex(e => e.id===id);
-    if (idx>=0) Object.assign(emprestimos[idx], updates);
+    if (empIdx>=0) Object.assign(emprestimos[empIdx], updates);
+
+    pushUndo({ descricao: `Pagamento ${parcelasRegistradas} parcela(s) de ${e.descricao}`, reverter: async () => {
+      await fsUpdate('emprestimos', id, { pago: empAntes.pago, parcelasPagas: empAntes.parcelasPagas, status: empAntes.status||'ativo' });
+      const i2 = emprestimos.findIndex(x=>x.id===id);
+      if (i2>=0) Object.assign(emprestimos[i2], { pago: empAntes.pago, parcelasPagas: empAntes.parcelasPagas, status: empAntes.status||'ativo' });
+      renderEmprestimos(); renderDashboard();
+    }});
+
     renderEmprestimos();
     renderDashboard();
-    toast(`Parcela ${novasParcelas} registrada! Restante: R$ ${fmtMoney(Math.max(0,novoRestante2))}`, 'success');
+    toast(`${parcelasRegistradas} parcela(s) registrada(s) — R$ ${fmtMoney(totalPago)}! Restante: R$ ${fmtMoney(novoRestante)}`, 'success');
   };
 }
 
@@ -6573,6 +6683,66 @@ async function consolidarPeriodoTodos() {
     total++;
   }
   toast(`${total} funcionário(s) consolidado(s)!`, 'success');
+}
+
+
+// =====================================================
+// FOLHA INLINE
+// =====================================================
+let proventosNomes = JSON.parse(localStorage.getItem('cgProventosNomes') || 'null') ||
+  ['Prêmio Bom Desempenho', 'Bônus Produção', 'Horas Extras 100%', 'Adicional Noturno', 'Outros'];
+
+function salvarProventosNomes() {
+  localStorage.setItem('cgProventosNomes', JSON.stringify(proventosNomes));
+}
+
+function addProventoInline(funcId) {
+  if (!folhaDetalhe[funcId]) return;
+  if (!folhaDetalhe[funcId].outrosProventos) folhaDetalhe[funcId].outrosProventos = [];
+  folhaDetalhe[funcId].outrosProventos.push({ descricao: proventosNomes[0]||'Prêmio', valor: 0 });
+  rebuildCard(funcId);
+}
+
+function toggleFolhaInline(funcId) {
+  const el = document.getElementById(`folha-inline-${funcId}`);
+  if (!el) return;
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+function rebuildCard(funcId) {
+  const d = folhaDetalhe[funcId];
+  if (!d) return;
+  const card = document.getElementById(`fc-${funcId}`);
+  if (!card) return;
+  const wasOpen = document.getElementById(`folha-inline-${funcId}`)?.style.display !== 'none';
+  card.outerHTML = buildFolhaCard(d.funcionario, d);
+  // Re-abrir se estava aberto
+  if (wasOpen) {
+    const newInline = document.getElementById(`folha-inline-${funcId}`);
+    if (newInline) newInline.style.display = 'block';
+  }
+}
+
+async function confirmarGerarPdf(funcId) {
+  const d = folhaDetalhe[funcId];
+  if (!d) { toast('Carregue a folha primeiro', 'error'); return; }
+  const f = d.funcionario;
+
+  // Verificar se campos essenciais foram preenchidos
+  const alertas = [];
+  if (!d.horasExtras && d.horaExtraVal > 0) alertas.push('Horas extras não foram informadas');
+  if ((d.descontoEmprestimos||[]).filter(e=>e.selecionado!==false).length === 0 &&
+      (d.descontoVales||[]).filter(v=>v.selecionado!==false).length === 0 &&
+      emprestimos.some(e=>e.funcionarioId===funcId && (e.status==='ativo'||!e.status))) {
+    alertas.push('Existem empréstimos/vales mas nenhum está selecionado para desconto');
+  }
+
+  if (alertas.length > 0) {
+    const msg = `Atenção antes de gerar o PDF:\n\n${alertas.map(a=>'⚠️ '+a).join('\n')}\n\nDeseja continuar mesmo assim?`;
+    if (!await confirmar('Verificar antes de gerar PDF', msg)) return;
+  }
+
+  gerarPdfFuncionario(funcId);
 }
 
 // Service worker for PWA
