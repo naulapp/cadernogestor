@@ -2,6 +2,10 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <meta name="version" content="1777310071">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#0f1e4a">
 <meta name="description" content="CadernoGestor — Saia do papel. Sem sair do caderno.">
@@ -7153,15 +7157,15 @@ const DASH_WIDGETS = {
     padrao: true,
     render: () => {
       const btns = [
-        { label: '➕ Lançar Vale', action: "openModal('modal-vale')", style: 'btn-primary' },
-        { label: '📋 Vales em Lote', action: "openModal('modal-vale-lote')", style: 'btn-outline' },
-        { label: '🤝 Novo Lançamento', action: "openModal('modal-lancamento')", style: 'btn-outline' },
-        { label: '🔗 Novo Par', action: "openModal('modal-acerto-par')", style: 'btn-outline' },
-        { label: '💰 Novo Empréstimo', action: "openEmprestimoModal()", style: 'btn-outline' },
-        { label: '📋 Nova Folha', action: "navigate('folha')", style: 'btn-outline' },
+        { label: '🎫 Lançar Vale', action: "openModal('modal-vale')" },
+        { label: '📋 Vales em Lote', action: "openModal('modal-vale-lote')" },
+        { label: '🤝 Novo Lançamento', action: "openModal('modal-lancamento')" },
+        { label: '🔗 Novo Par', action: "openModal('modal-acerto-par')" },
+        { label: '💰 Novo Empréstimo', action: "openEmprestimoModal()" },
+        { label: '📋 Nova Folha', action: "navigate('folha')" },
       ];
       return `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
-        ${btns.map(b => `<button class="btn ${b.style} btn-sm" onclick="${b.action}">${b.label}</button>`).join('')}
+        ${btns.map(b => `<button class="btn btn-outline btn-sm" onclick="${b.action}" style="flex:1;min-width:130px;text-align:center">${b.label}</button>`).join('')}
       </div>`;
     }
   },
@@ -7392,7 +7396,12 @@ function resetarDashboard() {
 // Service worker for PWA
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('sw.js').catch(() => {});
+    navigator.serviceWorker.register('sw.js?v=1777310071')
+      .then(reg => {
+        // Forçar update imediato
+        reg.update();
+      })
+      .catch(() => {});
   });
 }
 </script>
