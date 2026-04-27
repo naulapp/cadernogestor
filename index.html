@@ -1393,8 +1393,13 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
           </div>
         </div>
 
-        <!-- ALERTAS DASHBOARD -->
-        <div id="dashAlertas" style="margin-bottom:16px"></div>
+        <!-- ATALHOS RÁPIDOS -->
+        <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+          <button class="btn btn-primary btn-sm" onclick="openModal('modal-vale')">➕ Lançar Vale</button>
+          <button class="btn btn-outline btn-sm" onclick="openModal('modal-vale-lote')">📋 Vales em Lote</button>
+          <button class="btn btn-outline btn-sm" onclick="openModal('modal-lancamento')">🤝 Acerto Mútuo</button>
+          <button class="btn btn-outline btn-sm" onclick="openModal('modal-acerto-par')">🔗 Novo Par</button>
+        </div>
 
         <div class="table-wrap">
           <div class="table-header">
@@ -1888,7 +1893,10 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
             <div class="page-title">Equipe & Acessos</div>
             <div class="page-sub">Convide pessoas e defina permissões</div>
           </div>
-          <button class="btn btn-primary btn-sm" onclick="gerarConvite()">🔗 Gerar convite</button>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-outline btn-sm" onclick="openPreConvite()">⚙️ Pré-configurar</button>
+            <button class="btn btn-primary btn-sm" onclick="gerarConvite()">🔗 Gerar convite</button>
+          </div>
         </div>
 
         <div class="section-card" style="margin-bottom:20px">
@@ -2039,7 +2047,7 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
         <div class="form-grid form-grid-3">
           <div class="form-group">
             <label class="form-label">Salário base (R$)</label>
-            <input type="number" class="form-input" id="funcSalario" placeholder="1.621,00" step="0.01">
+            <input type="number" class="form-input" id="funcSalario" oninput="atualizarResumoFunc()" placeholder="1.621,00" step="0.01">
           </div>
           <div class="form-group">
             <label class="form-label">Carga semanal (h)</label>
@@ -2060,11 +2068,11 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
         <div class="form-grid form-grid-3">
           <div class="form-group">
             <label class="form-label">Adicional hora extra (%)</label>
-            <input type="number" class="form-input" id="funcHoraExtraPct" value="50" step="1">
+            <input type="number" class="form-input" id="funcHoraExtraPct" oninput="atualizarResumoFunc()" value="50" step="1">
           </div>
           <div class="form-group">
             <label class="form-label">Valor hora extra (R$)</label>
-            <input type="number" class="form-input" id="funcHoraExtra" placeholder="13,26" step="0.01">
+            <input type="number" class="form-input" id="funcHoraExtra" oninput="atualizarResumoFunc()" placeholder="13,26" step="0.01">
           </div>
           <div class="form-group" style="display:flex;align-items:flex-end">
             <button type="button" class="btn btn-outline btn-sm" style="width:100%;height:42px"
@@ -2084,21 +2092,16 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
           </div>
           <div class="form-group" id="funcInssValorGroup">
             <label class="form-label">INSS (R$)</label>
-            <input type="number" class="form-input" id="funcInss" placeholder="207,00" step="0.01">
+            <input type="number" class="form-input" id="funcInss" oninput="atualizarResumoFunc()" placeholder="207,00" step="0.01">
           </div>
           <div class="form-group" id="funcInssPctGroup" style="display:none">
             <label class="form-label">Alíquota (%)</label>
-            <input type="number" class="form-input" id="funcInssPct" placeholder="7,5" step="0.01">
+            <input type="number" class="form-input" id="funcInssPct" oninput="atualizarResumoFunc()" placeholder="7,5" step="0.01">
           </div>
         </div>
         <p style="color:var(--text3);font-size:0.75rem;margin-top:-8px">⚠️ INSS incide sobre: salário + horas extras + adicionais habituais. Tabela 2024: 7,5% a 14%.</p>
 
-        <div class="section-card-title" style="margin-top:4px">DESCONTOS PADRÃO</div>
-        <div class="form-group">
-          <label class="form-label">Vale quinzena (R$)</label>
-          <input type="number" class="form-input" id="funcValeQuinzena" placeholder="700,00" step="0.01">
-          <div style="font-size:0.73rem;color:var(--text3);margin-top:3px">Valor adiantado na quinzena, descontado na folha mensal</div>
-        </div>
+
 
         <div class="section-card-title" style="margin-top:4px">OBSERVAÇÕES INTERNAS</div>
         <div class="form-group">
@@ -2116,7 +2119,6 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
     </div>
     <div class="modal-footer">
       <button class="btn btn-outline btn-sm" onclick="closeModal('modal-funcionario')">Cancelar</button>
-      <button class="btn btn-success btn-sm" onclick="atualizarResumoFunc()">🔄 Calcular resumo</button>
       <button class="btn btn-primary btn-sm" onclick="salvarFuncionario()">Salvar</button>
     </div>
   </div>
@@ -2278,11 +2280,7 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
         </div>
         <p style="color:var(--text3);font-size:0.75rem;margin-top:-8px">⚠️ O INSS incide sobre: salário + horas extras + adicionais habituais (exceto DSR). Tabela 2024: 7,5% a 14%.</p>
 
-        <div class="section-card-title" style="margin-top:8px">DESCONTOS PADRÃO</div>
-        <div class="form-group">
-          <label class="form-label">Vale quinzena padrão (R$)</label>
-          <input type="number" class="form-input" id="grupoValeQuinzena" placeholder="700,00" step="0.01">
-        </div>
+
 
         <div class="section-card-title" style="margin-top:8px">FUNCIONÁRIOS NESTE GRUPO</div>
         <p style="color:var(--text3);font-size:0.78rem;margin-bottom:8px">Selecione quais funcionários pertencem a este grupo. Ao salvar, todos serão atualizados automaticamente.</p>
@@ -2542,37 +2540,74 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
 
 <!-- MODAL MEMBRO EQUIPE -->
 <div class="modal-overlay" id="modal-membro">
-  <div class="modal">
+  <div class="modal" style="max-width:680px">
     <div class="modal-header">
-      <div class="modal-title">Editar permissões</div>
+      <div class="modal-title" id="membroModalTitulo">Permissões do usuário</div>
       <div class="modal-close" onclick="closeModal('modal-membro')">✕</div>
     </div>
     <div class="modal-body">
       <input type="hidden" id="membroId">
-      <div class="form-group">
-        <label class="form-label">Função</label>
-        <div class="role-grid">
-          <div class="role-option active" id="role-gestor" onclick="selectRole('gestor')">
-            <div class="ri">👑</div>
-            <h3>Gestor</h3>
-            <p>Acesso total</p>
-          </div>
-          <div class="role-option" id="role-empregador" onclick="selectRole('empregador')">
-            <div class="ri">🏢</div>
-            <h3>Empregador</h3>
-            <p>Folha e vales</p>
-          </div>
-          <div class="role-option" id="role-funcionario" onclick="selectRole('funcionario')">
-            <div class="ri">👤</div>
-            <h3>Funcionário</h3>
-            <p>Só visualiza</p>
-          </div>
+      <div class="form-grid form-grid-2" style="margin-bottom:16px">
+        <div class="form-group">
+          <label class="form-label">Nome</label>
+          <input type="text" class="form-input" id="membroNome" placeholder="Nome do usuário">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input type="text" class="form-input" id="membroEmail" placeholder="email@exemplo.com">
         </div>
       </div>
+      <div class="form-group" style="margin-bottom:16px">
+        <label class="form-label">Perfil base</label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          ${Object.entries(PERFIS_PADRAO).map(([id, p]) => `
+          <button class="btn btn-outline btn-sm" onclick="aplicarPerfil('${id}')"
+            style="border-color:${p.cor};color:${p.cor}">
+            ${p.label} — ${p.descricao}
+          </button>`).join('')}
+          <button class="btn btn-outline btn-sm" onclick="aplicarPerfil('custom')" style="border-color:var(--yellow);color:var(--yellow)">
+            ⚙️ Personalizado
+          </button>
+        </div>
+      </div>
+      <div class="section-card-title">PERMISSÕES DETALHADAS</div>
+      <div id="permissoesContainer" style="max-height:350px;overflow-y:auto;padding-right:4px"></div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-outline btn-sm" onclick="closeModal('modal-membro')">Cancelar</button>
-      <button class="btn btn-primary btn-sm" onclick="salvarMembro()">Salvar</button>
+      <button class="btn btn-primary btn-sm" onclick="salvarMembro()">Salvar permissões</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL PRÉ-CONFIGURAR CONVITE -->
+<div class="modal-overlay" id="modal-pre-convite">
+  <div class="modal" style="max-width:680px">
+    <div class="modal-header">
+      <div class="modal-title">Pré-configurar convite</div>
+      <div class="modal-close" onclick="closeModal('modal-pre-convite')">✕</div>
+    </div>
+    <div class="modal-body">
+      <p style="color:var(--text3);font-size:0.85rem;margin-bottom:16px">Configure as permissões antes de gerar o código. A pessoa já vai entrar com essas permissões.</p>
+      <div class="form-grid form-grid-2" style="margin-bottom:16px">
+        <div class="form-group">
+          <label class="form-label">Nome do usuário (opcional)</label>
+          <input type="text" class="form-input" id="preConviteNome" placeholder="Ex: Maria - RH">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Perfil base</label>
+          <select class="form-input" id="preConvitePerfil" onchange="aplicarPerfilConvite(this.value)">
+            ${Object.entries(PERFIS_PADRAO).map(([id,p])=>`<option value="${id}">${p.label}</option>`).join('')}
+            <option value="custom">⚙️ Personalizado</option>
+          </select>
+        </div>
+      </div>
+      <div class="section-card-title">PERMISSÕES</div>
+      <div id="permissoesConviteContainer" style="max-height:350px;overflow-y:auto"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline btn-sm" onclick="closeModal('modal-pre-convite')">Cancelar</button>
+      <button class="btn btn-primary btn-sm" onclick="gerarConviteComPerms()">🔗 Gerar código de convite</button>
     </div>
   </div>
 </div>
@@ -3066,8 +3101,24 @@ function openModal(id) {
   if (id === 'modal-emprestimo' || id === 'modal-vale') populateSelects();
   if (id === 'modal-lancamento') populateLancPar();
   if (id === 'modal-funcionario') { populateGrupoSelect(); loadCargos(); adicionaisFunc = []; renderAdicionaisFunc(); toggleFuncInssType(); }
+  if (id === 'modal-lancamento') { document.getElementById('lancValor').value=''; document.getElementById('lancDescricao').value=''; document.getElementById('lancData').value=new Date().toISOString().slice(0,10); }
   if (id === 'modal-vale-lote') openValesLoteModal();
-  if (id === 'modal-vale') { document.getElementById('valeData').value = document.getElementById('valeData').value || new Date().toISOString().slice(0,10); }
+  if (id === 'modal-vale') {
+    const vid = document.getElementById('valeId');
+    if (vid && !vid.value) {
+      // Novo vale — limpar campos
+      document.getElementById('valeData').value = new Date().toISOString().slice(0,10);
+      document.getElementById('valeValor').value = '';
+      document.getElementById('valeDescricao').value = '';
+      document.getElementById('valeTipo').value = 'integral';
+      document.getElementById('valeNParcelas').value = '';
+      document.getElementById('valeValorParc').value = '';
+      const funcSel = document.getElementById('valeFuncionario');
+      if (funcSel) funcSel.value = '';
+      document.getElementById('valeTituloModal').textContent = 'Registrar Vale';
+      toggleValeParcelas();
+    }
+  }
   if (id === 'modal-grupo') { setTimeout(() => renderGrupoFuncionariosCheck(document.getElementById('grupoId').value), 50); }
 }
 
@@ -3092,7 +3143,6 @@ document.addEventListener('click', e => {
 // DASHBOARD
 // =====================================================
 function renderDashboard() {
-  renderAlertasDashboard();
   document.getElementById('dashFuncionarios').textContent = funcionarios.filter(f => f.ativo !== false).length;
   const ativos = emprestimos.filter(e => e.status === 'ativo' || !e.status);
   document.getElementById('dashEmprestimos').textContent = ativos.length;
@@ -3195,7 +3245,6 @@ async function salvarFuncionario() {
     inssType: document.getElementById('funcInssType').value || 'valor',
     inss: parseFloat(document.getElementById('funcInss').value) || 0,
     inssPct: parseFloat(document.getElementById('funcInssPct')?.value) || 0,
-    valeQuinzena: parseFloat(document.getElementById('funcValeQuinzena').value) || 0,
     observacoes: document.getElementById('funcObservacoes')?.value || '',
     ativo: true
   };
@@ -3463,7 +3512,7 @@ function renderEmprestimos(filter='') {
       <td><span class="badge ${status==='quitado'?'badge-green':'badge-yellow'}">${status==='quitado'?'Quitado':'Ativo'}</span></td>
       <td style="white-space:nowrap">
         <button class="btn-icon" onclick="openEmprestimoModal('${e.id}')" title="Editar">✏️</button>
-        <button class="btn-icon" onclick="registrarPagamentoMelhorado('${e.id}')" title="Registrar parcela">💳</button>
+
         <button class="btn-icon" onclick="excluirEmprestimo('${e.id}')" title="Excluir">🗑️</button>
       </td>
     </tr>`;
@@ -3585,7 +3634,7 @@ function renderVales() {
       <td><span class="badge ${isPendente?'badge-yellow':'badge-gray'}">${isPendente?'Pendente':'Descontado'}</span></td>
       <td style="white-space:nowrap;display:flex;gap:4px">
         <button class="btn-icon" onclick="editarVale('${v.id}')" title="Editar">✏️</button>
-        ${isPendente?`<button class="btn-icon" onclick="marcarValeDescontado('${v.id}')" title="Marcar descontado">✅</button>`:''}
+
         <button class="btn-icon" onclick="excluirVale('${v.id}')" title="Excluir">🗑️</button>
       </td>
     </tr>`;
@@ -3724,6 +3773,8 @@ async function loadFolha() {
       </label>
       <button class="btn btn-primary btn-sm" onclick="gerarTodosPDFs()">📄 PDF selecionados</button>
       <button class="btn btn-success btn-sm" onclick="consolidarPeriodoTodos()">✅ Consolidar todos</button>
+      <button class="btn btn-outline btn-sm" onclick="expandirTodosCards()">▼ Expandir todos</button>
+      <button class="btn btn-outline btn-sm" onclick="recolherTodosCards()">▲ Recolher todos</button>
     </div>
     ${cards}`;
 }
@@ -3761,7 +3812,16 @@ function buildFolhaCard(f, d) {
   const provList = [];
   if (calc.salarioBase > 0) provList.push(`Salário: R$ ${fmtMoney(calc.salarioBase)}`);
   if (calc.horasExtrasValor > 0) provList.push(`H.Extra (${d.horasExtras||0}h): R$ ${fmtMoney(calc.horasExtrasValor)}`);
-  if (calc.totalAdics > 0) provList.push(`Adicionais: R$ ${fmtMoney(calc.totalAdics)}`);
+  // Listar adicionais individualmente
+  const adicsFunc = d.funcionario?.adicionais || [];
+  if (adicsFunc.length > 0) {
+    adicsFunc.forEach(a => {
+      const val = a.isValorFixo ? (a.valor||0) : ((d.salario||0)*(a.pct||0)/100);
+      if (val > 0) provList.push(`${a.nome}: R$ ${fmtMoney(val)}`);
+    });
+  } else if (calc.totalAdics > 0) {
+    provList.push(`Adicionais: R$ ${fmtMoney(calc.totalAdics)}`);
+  }
   if (calc.reflexoDsr > 0) provList.push(`DSR: R$ ${fmtMoney(calc.reflexoDsr)}`);
   (d.outrosProventos||[]).filter(o=>o.valor>0).forEach(o => provList.push(`${o.descricao}: R$ ${fmtMoney(o.valor)}`));
 
@@ -3784,7 +3844,6 @@ function buildFolhaCard(f, d) {
         </div>
       </div>
       <div style="display:flex;gap:6px;flex-wrap:wrap">
-        <button class="btn btn-outline btn-sm" onclick="toggleFolhaInline('${f.id}')">✏️ Editar</button>
         <button class="btn btn-primary btn-sm" onclick="confirmarGerarPdf('${f.id}')">📄 PDF</button>
       </div>
     </div>
@@ -3814,6 +3873,14 @@ function buildFolhaCard(f, d) {
     </div>
     ${calc.liquido<0?'<div style="color:var(--red);font-size:0.78rem;padding:4px 0">⚠️ Descontos maiores que o salário — revise os itens</div>':''}
 
+    <!-- BOTÃO EXPANDIR/RECOLHER -->
+    <div style="text-align:center;margin-top:8px">
+      <button class="btn btn-outline btn-sm" onclick="toggleFolhaInline('${f.id}')" id="btn-toggle-${f.id}"
+        style="width:100%;font-size:0.8rem;color:var(--text3)">
+        ▼ Editar proventos e descontos
+      </button>
+    </div>
+
     <!-- ÁREA INLINE DE EDIÇÃO (oculta por padrão) -->
     <div id="folha-inline-${f.id}" style="display:none;margin-top:12px;border-top:1px solid var(--border);padding-top:12px">
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-bottom:10px">
@@ -3842,9 +3909,17 @@ function buildFolhaCard(f, d) {
           <input type="number" class="form-input" value="${d.faltas||0}" min="0"
             onchange="folhaDetalhe['${f.id}'].faltas=parseInt(this.value)||0;rebuildCard('${f.id}')">
         </div>
+        <div class="form-group" style="margin:0">
+          <label class="form-label">DSR (R$)</label>
+          <input type="number" class="form-input" value="${d.reflexoDsr||0}" step="0.01"
+            oninput="folhaDetalhe['${f.id}'].reflexoDsr=parseFloat(this.value)||0;rebuildCard('${f.id}')"
+            placeholder="Auto">
+          <div style="font-size:0.7rem;color:var(--text3)">Auto: R$ ${fmtMoney(d.horasExtras>0 ? calcReflexoDsr(d.salario,d.horasExtras,d.horaExtraVal) : 0)}</div>
+        </div>
       </div>
 
-      <!-- Outros proventos inline -->
+      <!-- PROVENTOS EXTRAS -->
+      <div style="font-size:0.78rem;font-weight:700;color:var(--green);margin:10px 0 6px">▲ OUTROS PROVENTOS</div>
       <div style="margin-bottom:8px">
         ${(d.outrosProventos||[]).map((o,i)=>`
         <div style="display:flex;gap:6px;margin-bottom:6px;align-items:center">
@@ -3858,7 +3933,8 @@ function buildFolhaCard(f, d) {
         <button class="btn btn-outline btn-sm" onclick="addProventoInline('${f.id}')">➕ Provento</button>
       </div>
 
-      <!-- Descontos selecionáveis inline -->
+      <!-- DESCONTOS -->
+      <div style="font-size:0.78rem;font-weight:700;color:var(--red);margin:10px 0 6px">▼ DESCONTOS SELECIONÁVEIS</div>
       ${d.descontoEmprestimos.length>0?`
       <div style="font-size:0.78rem;font-weight:600;color:var(--text2);margin-bottom:4px">EMPRÉSTIMOS:</div>
       ${d.descontoEmprestimos.map((e,i)=>`
@@ -4286,7 +4362,6 @@ function gerarPdfFolhaCompleto(doc, params, startY = 10, save = false) {
   doc.setFontSize(11);
   doc.setTextColor(0,0,0);
   doc.text('FOLHA DE PAGAMENTO', lm + pw/2, y + 6, { align: 'center' });
-  doc.rect(lm, y, pw, 8);
   y += 8;
 
   // Cabeçalho funcionário
@@ -4363,7 +4438,7 @@ function gerarPdfFolhaCompleto(doc, params, startY = 10, save = false) {
 
   // Header descontos
   doc.setFillColor(240,240,240);
-  doc.rect(lm, y, 40, 5, 'FD'); doc.rect(lm, y, 40, 5);
+  doc.rect(lm, y, 40, 5, 'FD');
   doc.setFont('helvetica', 'bold'); doc.setFontSize(8);
   doc.text('DESCONTOS:', lm + 20, y + 3.5, { align: 'center' });
 
@@ -4384,7 +4459,7 @@ function gerarPdfFolhaCompleto(doc, params, startY = 10, save = false) {
 
   // TOTAL DESCONTADO
   doc.setFillColor(240,240,240);
-  doc.rect(lm+40, y, 120, 6, 'FD'); doc.rect(lm+160, y, 20, 'FD');
+  doc.rect(lm+40, y, 120, 6, 'FD'); doc.rect(lm+160, y, 20, 6, 'FD');
   doc.rect(lm, y, 20, 6); doc.rect(lm+20, y, 20, 6); doc.rect(lm+40, y, 120, 6); doc.rect(lm+160, y, 20, 6);
   doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(255,0,0);
   doc.text('TOTAL DESCONTADO =', lm + 100, y + 4, { align: 'center' });
@@ -4393,7 +4468,7 @@ function gerarPdfFolhaCompleto(doc, params, startY = 10, save = false) {
 
   // TOTAL RESTANTE
   doc.setFillColor(240,240,240);
-  doc.rect(lm, y, pw, 6, 'FD'); doc.rect(lm, y, pw, 6);
+  doc.rect(lm, y, pw, 6, 'FD');
   doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(255,0,0);
   doc.text('TOTAL RESTANTE A RECEBER =', lm + 80, y + 4, { align: 'center' });
   doc.text(fmtMoney(calc.liquido), rm - 2, y + 4, { align: 'right' });
@@ -4527,10 +4602,16 @@ function lancParChanged() {
 document.getElementById('lancPar').addEventListener('change', lancParChanged);
 
 function openLancamentoPar(parId) {
-  populateLancPar();
-  document.getElementById('lancPar').value = parId;
-  lancParChanged();
+  // Limpar campos primeiro
+  document.getElementById('lancValor').value = '';
+  document.getElementById('lancDescricao').value = '';
   document.getElementById('lancData').value = new Date().toISOString().slice(0,10);
+  // Popular select e definir par correto
+  populateLancPar();
+  setTimeout(() => {
+    document.getElementById('lancPar').value = parId;
+    lancParChanged();
+  }, 50);
   openModal('modal-lancamento');
 }
 
@@ -4557,6 +4638,9 @@ async function salvarLancamento() {
   };
   await fsAdd('lancamentos', data);
   closeModal('modal-lancamento');
+  // Limpar campos para próximo lançamento
+  document.getElementById('lancValor').value = '';
+  document.getElementById('lancDescricao').value = '';
   renderAcerto();
   toast('Lançamento registrado!', 'success');
 }
@@ -4608,27 +4692,7 @@ function renderEquipe() {
   </tr>`).join('');
 }
 
-function editarMembro(uid) {
-  document.getElementById('membroId').value = uid;
-  const membro = currentOrg?.membros?.find(m => m.uid === uid);
-  if (membro) selectRole(membro.role || 'funcionario');
-  openModal('modal-membro');
-}
-
-async function salvarMembro() {
-  const uid = document.getElementById('membroId').value;
-  const role = document.querySelector('.role-option.active')?.id?.replace('role-','') || 'funcionario';
-  if (!currentOrg?.membros) return;
-  const idx = currentOrg.membros.findIndex(m => m.uid === uid);
-  if (idx >= 0) {
-    currentOrg.membros[idx].role = role;
-    if (db) await db.collection('orgs').doc(currentOrg.id).update({ membros: currentOrg.membros });
-    else localDB.setOrg(currentOrg.id, currentOrg);
-  }
-  closeModal('modal-membro');
-  renderEquipe();
-  toast('Permissões atualizadas', 'success');
-}
+// editarMembro e salvarMembro definidos abaixo com permissões granulares
 
 function selectRole(role) {
   document.querySelectorAll('.role-option').forEach(r => r.classList.remove('active'));
@@ -6465,9 +6529,9 @@ async function registrarPagamentoMelhorado(id) {
   }
 
   // Gerar HTML da lista de parcelas
-  const parcHtml = parcelasDisponiveis.map(p => `
+  const parcHtml = parcelasDisponiveis.map((p, pidx) => `
     <div style="display:flex;align-items:center;gap:10px;padding:8px;background:var(--bg2);border-radius:6px;margin-bottom:6px">
-      <input type="checkbox" id="parc_cb_${p.num}" checked style="width:16px;height:16px;flex-shrink:0">
+      <input type="checkbox" id="parc_cb_${p.num}" ${pidx===0?'checked':''} style="width:16px;height:16px;flex-shrink:0">
       <label for="parc_cb_${p.num}" style="flex:1;font-size:0.85rem;cursor:pointer">
         Parcela ${p.num}/${totalParcelas}${p.isUltima?' (última)':''}
       </label>
@@ -6600,7 +6664,7 @@ function renderUndoBtn() {
   if (!btn) {
     btn = document.createElement('button');
     btn.id = 'undoFloatBtn';
-    btn.style.cssText = 'position:fixed;bottom:80px;right:24px;background:var(--navy);color:white;border:none;border-radius:20px;padding:8px 16px;font-size:0.8rem;cursor:pointer;z-index:500;box-shadow:var(--shadow2);display:none;font-family:var(--font)';
+    btn.style.cssText = 'position:fixed;bottom:90px;right:16px;background:var(--navy);color:white;border:none;border-radius:20px;padding:10px 18px;font-size:0.82rem;cursor:pointer;z-index:9000;box-shadow:0 4px 20px rgba(0,0,0,0.4);display:none;font-family:var(--font);max-width:280px;word-break:break-word;';
     btn.onclick = desfazerUltimaAcao;
     document.body.appendChild(btn);
   }
@@ -6737,8 +6801,29 @@ function addProventoInline(funcId) {
 
 function toggleFolhaInline(funcId) {
   const el = document.getElementById(`folha-inline-${funcId}`);
+  const btn = document.getElementById(`btn-toggle-${funcId}`);
   if (!el) return;
-  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+  const isOpen = el.style.display !== 'none';
+  el.style.display = isOpen ? 'none' : 'block';
+  if (btn) btn.textContent = isOpen ? '▼ Editar proventos e descontos' : '▲ Recolher';
+}
+
+function expandirTodosCards() {
+  document.querySelectorAll('[id^="folha-inline-"]').forEach(el => {
+    const funcId = el.id.replace('folha-inline-','');
+    el.style.display = 'block';
+    const btn = document.getElementById(`btn-toggle-${funcId}`);
+    if (btn) btn.textContent = '▲ Recolher';
+  });
+}
+
+function recolherTodosCards() {
+  document.querySelectorAll('[id^="folha-inline-"]').forEach(el => {
+    const funcId = el.id.replace('folha-inline-','');
+    el.style.display = 'none';
+    const btn = document.getElementById(`btn-toggle-${funcId}`);
+    if (btn) btn.textContent = '▼ Editar proventos e descontos';
+  });
 }
 
 function rebuildCard(funcId) {
@@ -6775,6 +6860,223 @@ async function confirmarGerarPdf(funcId) {
   }
 
   gerarPdfFuncionario(funcId);
+}
+
+
+// =====================================================
+// SISTEMA DE PERMISSÕES GRANULARES
+// =====================================================
+const TODAS_PERMISSOES = {
+  funcionarios: {
+    label: 'Funcionários',
+    acoes: ['ver', 'cadastrar', 'editar', 'excluir', 'ver_ficha']
+  },
+  cargos: {
+    label: 'Cargos',
+    acoes: ['ver', 'cadastrar', 'editar', 'excluir']
+  },
+  folha: {
+    label: 'Folha de Pagamento',
+    acoes: ['ver', 'gerar', 'editar', 'pdf', 'consolidar']
+  },
+  emprestimos: {
+    label: 'Empréstimos',
+    acoes: ['ver', 'cadastrar', 'editar', 'excluir']
+  },
+  vales: {
+    label: 'Vales',
+    acoes: ['ver', 'cadastrar', 'editar', 'excluir', 'lote']
+  },
+  pagamentos: {
+    label: 'Registrar Pagamentos',
+    acoes: ['registrar_parcela', 'abater_vale', 'consolidar_folha']
+  },
+  escala: {
+    label: 'Assistente de Escala',
+    acoes: ['ver', 'configurar', 'gerar', 'imprimir']
+  },
+  relatorio: {
+    label: 'Relatórios',
+    acoes: ['ver', 'exportar_excel']
+  },
+  acerto: {
+    label: 'Acerto Mútuo',
+    acoes: ['ver', 'cadastrar_par', 'lancar', 'excluir']
+  },
+  equipe: {
+    label: 'Equipe & Acessos',
+    acoes: ['ver', 'convidar', 'editar_permissoes', 'remover']
+  },
+  configuracoes: {
+    label: 'Configurações',
+    acoes: ['ver', 'editar']
+  },
+  historico: {
+    label: 'Histórico Financeiro',
+    acoes: ['ver']
+  }
+};
+
+// Perfis pré-definidos
+const PERFIS_PADRAO = {
+  gestor: { label: '👑 Gestor', cor: '#2E9E4F', descricao: 'Acesso total', permissoes: {} },
+  empregador: { label: '🏢 Empregador', cor: '#1B2D6B', descricao: 'Gerencia folha e financeiro', permissoes: {
+    funcionarios: ['ver','cadastrar','editar','ver_ficha'],
+    cargos: ['ver','cadastrar','editar'],
+    folha: ['ver','gerar','editar','pdf','consolidar'],
+    emprestimos: ['ver','cadastrar','editar'],
+    vales: ['ver','cadastrar','editar','lote'],
+    pagamentos: ['registrar_parcela','abater_vale','consolidar_folha'],
+    escala: ['ver','configurar','gerar','imprimir'],
+    relatorio: ['ver','exportar_excel'],
+    acerto: ['ver','cadastrar_par','lancar'],
+    historico: ['ver']
+  }},
+  funcionario: { label: '👤 Funcionário', cor: '#4a6a99', descricao: 'Apenas visualiza próprios dados', permissoes: {
+    folha: ['ver'],
+    emprestimos: ['ver'],
+    vales: ['ver'],
+    historico: ['ver']
+  }}
+};
+
+// Preencher gestor com tudo
+Object.entries(TODAS_PERMISSOES).forEach(([mod, info]) => {
+  PERFIS_PADRAO.gestor.permissoes[mod] = [...info.acoes];
+});
+
+function renderPermissoesModal(perfilId, permissoes, containerId) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  container.innerHTML = Object.entries(TODAS_PERMISSOES).map(([mod, info]) => `
+    <div style="margin-bottom:14px">
+      <div style="font-size:0.8rem;font-weight:700;color:var(--text2);margin-bottom:6px;text-transform:uppercase">${info.label}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px">
+        ${info.acoes.map(acao => {
+          const checked = permissoes?.[mod]?.includes(acao);
+          const label = acao.replace(/_/g,' ').replace(/\w/g, l=>l.toUpperCase());
+          return `<label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:0.78rem;background:var(--bg2);border-radius:6px;padding:4px 8px;border:1px solid ${checked?'var(--accent)':'var(--border)'}">
+            <input type="checkbox" data-mod="${mod}" data-acao="${acao}" ${checked?'checked':''}
+              onchange="this.closest('label').style.borderColor=this.checked?'var(--accent)':'var(--border)'">
+            ${label}
+          </label>`;
+        }).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+function coletarPermissoes(containerId) {
+  const container = document.getElementById(containerId);
+  if (!container) return {};
+  const perms = {};
+  container.querySelectorAll('input[data-mod]:checked').forEach(cb => {
+    const mod = cb.dataset.mod;
+    const acao = cb.dataset.acao;
+    if (!perms[mod]) perms[mod] = [];
+    perms[mod].push(acao);
+  });
+  return perms;
+}
+
+function temPermissao(acao, modulo) {
+  // Gestor tem tudo
+  const membro = currentOrg?.membros?.find(m => m.uid === currentUser?.uid);
+  if (!membro) return false;
+  if (membro.role === 'gestor') return true;
+  // Verificar permissões granulares
+  if (membro.permissoes) {
+    return membro.permissoes[modulo]?.includes(acao) || false;
+  }
+  // Fallback para perfil padrão
+  const perfil = PERFIS_PADRAO[membro.role];
+  if (!perfil) return false;
+  return perfil.permissoes[modulo]?.includes(acao) || false;
+}
+
+
+// =====================================================
+// FUNÇÕES DE PERMISSÃO
+// =====================================================
+function editarMembro(uid) {
+  const membro = currentOrg?.membros?.find(m => m.uid === uid);
+  document.getElementById('membroId').value = uid;
+  document.getElementById('membroNome').value = membro?.nome || '';
+  document.getElementById('membroEmail').value = membro?.email || '';
+  document.getElementById('membroModalTitulo').textContent = `Permissões — ${membro?.nome || uid}`;
+  renderPermissoesModal(membro?.role, membro?.permissoes || PERFIS_PADRAO[membro?.role||'funcionario']?.permissoes || {}, 'permissoesContainer');
+  openModal('modal-membro');
+}
+
+function aplicarPerfil(perfilId) {
+  const perfil = PERFIS_PADRAO[perfilId];
+  const perms = perfil ? perfil.permissoes : {};
+  renderPermissoesModal(perfilId, perms, 'permissoesContainer');
+}
+
+async function salvarMembro() {
+  const uid = document.getElementById('membroId').value;
+  const nome = document.getElementById('membroNome').value;
+  const email = document.getElementById('membroEmail').value;
+  const permissoes = coletarPermissoes('permissoesContainer');
+  if (!currentOrg?.membros) return;
+  const idx = currentOrg.membros.findIndex(m => m.uid === uid);
+  const updates = { permissoes, role: 'custom' };
+  if (nome) updates.nome = nome;
+  if (email) updates.email = email;
+  // Detectar se é perfil padrão
+  for (const [pid, p] of Object.entries(PERFIS_PADRAO)) {
+    if (JSON.stringify(p.permissoes) === JSON.stringify(permissoes)) {
+      updates.role = pid;
+      break;
+    }
+  }
+  if (idx >= 0) {
+    Object.assign(currentOrg.membros[idx], updates);
+  } else {
+    currentOrg.membros.push({ uid, ...updates });
+  }
+  if (db) await db.collection('orgs').doc(currentOrg.id).update({ membros: currentOrg.membros });
+  else localDB.setOrg(currentOrg.id, currentOrg);
+  closeModal('modal-membro');
+  renderEquipe();
+  toast('Permissões salvas!', 'success');
+}
+
+function openPreConvite() {
+  aplicarPerfilConvite('empregador');
+  openModal('modal-pre-convite');
+}
+
+function aplicarPerfilConvite(perfilId) {
+  const perfil = PERFIS_PADRAO[perfilId];
+  const perms = perfil ? perfil.permissoes : {};
+  renderPermissoesModal(perfilId, perms, 'permissoesConviteContainer');
+}
+
+async function gerarConviteComPerms() {
+  const nome = document.getElementById('preConviteNome').value.trim();
+  const permissoes = coletarPermissoes('permissoesConviteContainer');
+  const code = Math.random().toString(36).substring(2,8).toUpperCase();
+  // Salvar convite pendente com permissões pré-definidas
+  if (!currentOrg.convitesPendentes) currentOrg.convitesPendentes = [];
+  currentOrg.convitesPendentes.push({ code, nome, permissoes, criadoEm: new Date().toISOString() });
+  currentOrg.invite = code; // Atualizar convite ativo
+  if (db) await db.collection('orgs').doc(currentOrg.id).update({
+    invite: code, convitesPendentes: currentOrg.convitesPendentes
+  });
+  else localDB.setOrg(currentOrg.id, currentOrg);
+  document.getElementById('inviteDisplay').textContent = code;
+  closeModal('modal-pre-convite');
+  navigator.clipboard.writeText(code).catch(()=>{});
+  toast(`Convite gerado: ${code} (copiado!)`, 'success');
+}
+
+// Ao entrar com convite, aplicar permissões pré-definidas
+async function aplicarPermissoesPendentes(orgData, uid) {
+  const pendente = (orgData.convitesPendentes||[]).find(c => c.code === orgData.invite);
+  if (pendente?.permissoes) return pendente.permissoes;
+  return PERFIS_PADRAO.funcionario.permissoes;
 }
 
 // Service worker for PWA
