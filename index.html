@@ -1371,46 +1371,33 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
             <div class="page-title">Dashboard</div>
             <div class="page-sub" id="dashDate"></div>
           </div>
-          <button class="btn btn-primary btn-sm" onclick="navigate('folha')">➕ Nova Folha</button>
-        </div>
-
-        <div class="cards-grid" id="dashCards">
-          <div class="stat-card">
-            <div class="stat-label">Funcionários ativos</div>
-            <div class="stat-value accent" id="dashFuncionarios">0</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-label">Empréstimos ativos</div>
-            <div class="stat-value yellow" id="dashEmprestimos">0</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-label">Total em aberto</div>
-            <div class="stat-value red" id="dashTotal">R$ 0</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-label">Última folha</div>
-            <div class="stat-value" style="font-size:1rem" id="dashUltimaFolha">—</div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-outline btn-sm" onclick="openModal('modal-dash-config')" title="Personalizar">⚙️ Personalizar</button>
+            <button class="btn btn-primary btn-sm" onclick="navigate('folha')">📋 Nova Folha</button>
           </div>
         </div>
 
-        <!-- ATALHOS RÁPIDOS -->
-        <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
-          <button class="btn btn-primary btn-sm" onclick="openModal('modal-vale')">➕ Lançar Vale</button>
-          <button class="btn btn-outline btn-sm" onclick="openModal('modal-vale-lote')">📋 Vales em Lote</button>
-          <button class="btn btn-outline btn-sm" onclick="openModal('modal-lancamento')">🤝 Acerto Mútuo</button>
-          <button class="btn btn-outline btn-sm" onclick="openModal('modal-acerto-par')">🔗 Novo Par</button>
-        </div>
+        <!-- WIDGETS DINÂMICOS -->
+        <div id="dashConteudo"></div>
+      </div>
 
-        <div class="table-wrap">
-          <div class="table-header">
-            <div class="table-title">Empréstimos em andamento</div>
+      <!-- MODAL PERSONALIZAR DASHBOARD -->
+      <div class="modal-overlay" id="modal-dash-config">
+        <div class="modal" style="max-width:520px">
+          <div class="modal-header">
+            <div class="modal-title">⚙️ Personalizar Dashboard</div>
+            <div class="modal-close" onclick="closeModal('modal-dash-config')">✕</div>
           </div>
-          <div id="dashEmprestimosList">
-            <div class="empty-state">
-              <div class="icon">💰</div>
-              <h3>Nenhum empréstimo</h3>
-              <p>Os empréstimos ativos aparecerão aqui</p>
-            </div>
+          <div class="modal-body">
+            <p style="color:var(--text3);font-size:0.85rem;margin-bottom:16px">
+              Ative ou desative os blocos que deseja ver no seu painel. Arraste para reordenar.
+            </p>
+            <div id="dashWidgetsConfig"></div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-outline btn-sm" onclick="resetarDashboard()">↺ Padrão</button>
+            <button class="btn btn-outline btn-sm" onclick="closeModal('modal-dash-config')">Cancelar</button>
+            <button class="btn btn-primary btn-sm" onclick="salvarDashboard()">💾 Salvar</button>
           </div>
         </div>
       </div>
@@ -2636,13 +2623,25 @@ let firebaseReady = false;
 // INIT
 // =====================================================
 window.addEventListener('load', async () => {
-  setTimeout(() => {
+  setTimeout(async () => {
     try {
       firebase.initializeApp(firebaseConfig);
       db = firebase.firestore();
       auth = firebase.auth();
       firebaseReady = true;
 
+      // PRIMEIRO: verificar se voltou de um redirect Google
+      try {
+        const redirectResult = await auth.getRedirectResult();
+        if (redirectResult?.user) {
+          // Voltou do redirect com sucesso — onAuthStateChanged vai disparar
+          console.log('Redirect result OK:', redirectResult.user.email);
+        }
+      } catch(redirectErr) {
+        console.warn('Redirect result error:', redirectErr.message);
+      }
+
+      // DEPOIS: escutar mudanças de auth normalmente
       auth.onAuthStateChanged(async user => {
         if (user) {
           currentUser = user;
@@ -2653,13 +2652,14 @@ window.addEventListener('load', async () => {
             await loadAllData();
           } else {
             showScreen('setup');
-    // Mostrar email do usuário logado
-    setTimeout(() => {
-      const emailEl = document.getElementById('setupUserEmail');
-      if (emailEl && currentUser) {
-        emailEl.textContent = 'Conta: ' + (currentUser.email || currentUser.displayName || '');
-      }
-    }, 100);
+            setTimeout(() => {
+              const emailEl = document.getElementById('setupUserEmail');
+              if (emailEl && currentUser) {
+                emailEl.textContent = 'Conta: ' + (currentUser.email || currentUser.displayName || '');
+              }
+            }, 100);
+            // Tentar encontrar org automaticamente pelo UID
+            buscarOrgDoUsuario(user.uid);
           }
         } else {
           showScreen('auth');
@@ -2667,7 +2667,6 @@ window.addEventListener('load', async () => {
       });
     } catch(e) {
       console.warn('Firebase não configurado, modo demo:', e.message);
-      // MODO DEMO: app funciona localmente
       showScreen('auth');
     }
   }, 1800);
@@ -2753,31 +2752,67 @@ async function doGoogleLogin() {
   }
   try {
     const provider = new firebase.auth.GoogleAuthProvider();
-    // Tenta popup primeiro; se falhar (mobile), usa redirect
-    try {
+    provider.setCustomParameters({ prompt: 'select_account' });
+    // No mobile, usar redirect direto (mais confiável que popup)
+    const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+    if (isMobile) {
+      await auth.signInWithRedirect(provider);
+      // Página vai recarregar — getRedirectResult captura no load
+    } else {
       await auth.signInWithPopup(provider);
-    } catch(popupErr) {
-      if (popupErr.code === 'auth/popup-blocked' || popupErr.code === 'auth/popup-closed-by-user' || /mobile/i.test(navigator.userAgent)) {
-        await auth.signInWithRedirect(provider);
-      } else {
-        throw popupErr;
-      }
     }
   } catch(e) {
-    toast('Erro Google: ' + e.message, 'error');
+    // Se popup falhar, tentar redirect
+    if (e.code === 'auth/popup-blocked' || e.code === 'auth/popup-closed-by-user') {
+      try {
+        const provider2 = new firebase.auth.GoogleAuthProvider();
+        await auth.signInWithRedirect(provider2);
+      } catch(e2) {
+        toast('Erro ao fazer login: ' + e2.message, 'error');
+      }
+    } else {
+      toast('Erro Google: ' + e.message, 'error');
+    }
   }
 }
 
-// Verificar redirect result ao carregar
-window.addEventListener('load', () => {
-  if (auth && firebaseReady) {
-    auth.getRedirectResult().then(result => {
-      if (result?.user) {
-        currentUser = result.user;
+// Busca automática de org pelo UID — resolve problema mobile
+async function buscarOrgDoUsuario(uid) {
+  if (!db || !uid) return;
+  try {
+    // Buscar orgs onde o usuário é membro
+    const snap = await db.collection('orgs')
+      .where('membroIds', 'array-contains', uid)
+      .limit(1)
+      .get();
+    if (!snap.empty) {
+      const doc = snap.docs[0];
+      const org = { id: doc.id, ...doc.data() };
+      localStorage.setItem('cgOrgId', org.id);
+      localStorage.setItem('cgOrgNome', org.nome || '');
+      currentOrg = org;
+      toast('Organização encontrada: ' + org.nome, 'success');
+      afterOrgLoad();
+    } else {
+      // Tentar pelo campo dono
+      const snap2 = await db.collection('orgs')
+        .where('dono', '==', uid)
+        .limit(1)
+        .get();
+      if (!snap2.empty) {
+        const doc = snap2.docs[0];
+        const org = { id: doc.id, ...doc.data() };
+        localStorage.setItem('cgOrgId', org.id);
+        localStorage.setItem('cgOrgNome', org.nome || '');
+        currentOrg = org;
+        toast('Organização encontrada: ' + org.nome, 'success');
+        afterOrgLoad();
       }
-    }).catch(() => {});
+    }
+  } catch(e) {
+    console.warn('buscarOrgDoUsuario:', e.message);
   }
-});
+}
 
 function handleAfterAuth() {
   const orgId = localStorage.getItem('cgOrgId');
@@ -3089,6 +3124,7 @@ function openModal(id) {
   if (id === 'modal-emprestimo' || id === 'modal-vale') populateSelects();
   if (id === 'modal-lancamento') populateLancPar();
   if (id === 'modal-funcionario') { populateGrupoSelect(); loadCargos(); adicionaisFunc = []; renderAdicionaisFunc(); toggleFuncInssType(); }
+  if (id === 'modal-dash-config') openDashConfig();
   if (id === 'modal-lancamento') { document.getElementById('lancValor').value=''; document.getElementById('lancDescricao').value=''; document.getElementById('lancData').value=new Date().toISOString().slice(0,10); }
   if (id === 'modal-vale-lote') openValesLoteModal();
   if (id === 'modal-vale') {
@@ -3130,37 +3166,6 @@ document.addEventListener('click', e => {
 // =====================================================
 // DASHBOARD
 // =====================================================
-function renderDashboard() {
-  document.getElementById('dashFuncionarios').textContent = funcionarios.filter(f => f.ativo !== false).length;
-  const ativos = emprestimos.filter(e => e.status === 'ativo' || !e.status);
-  document.getElementById('dashEmprestimos').textContent = ativos.length;
-  const totalAberto = ativos.reduce((s, e) => s + ((e.total || 0) - (e.pago || 0)), 0);
-  document.getElementById('dashTotal').textContent = 'R$ ' + fmtMoney(totalAberto);
-
-  // Últimas folhas
-  const folhasKey = getCol('folhas').getAll();
-  document.getElementById('dashUltimaFolha').textContent = folhasKey.length > 0
-    ? folhasKey[folhasKey.length-1].mesRef || '—' : '—';
-
-  // Lista empréstimos ativos
-  const container = document.getElementById('dashEmprestimosList');
-  if (ativos.length === 0) {
-    container.innerHTML = `<div class="empty-state"><div class="icon">💰</div><h3>Nenhum empréstimo ativo</h3></div>`;
-    return;
-  }
-  container.innerHTML = `<table><thead><tr><th>Funcionário</th><th>Descrição</th><th>Total</th><th>Restante</th><th>Próxima parcela</th></tr></thead>
-    <tbody>${ativos.map(e => {
-      const func = funcionarios.find(f => f.id === e.funcionarioId);
-      const restante = (e.total||0) - (e.pago||0);
-      return `<tr>
-        <td>${func?.nome || e.funcionarioNome || '—'}</td>
-        <td>${e.descricao}</td>
-        <td class="mono">R$ ${fmtMoney(e.total)}</td>
-        <td class="mono" style="color:var(--red)">R$ ${fmtMoney(restante)}</td>
-        <td class="mono">R$ ${fmtMoney(e.valorParcela)}</td>
-      </tr>`;
-    }).join('')}</tbody></table>`;
-}
 
 // =====================================================
 // FUNCIONÁRIOS
@@ -7119,6 +7124,255 @@ function downloadEscalaPdfFuncionario(funcId) {
   const nomePdf = `${(item.funcionario.nome||'').replace(/\s+/g,'_')}_Folha_de_Ponto_${escalaGerada.competencia}.pdf`;
   doc.save(nomePdf);
   toast(`PDF gerado: ${nomePdf}`, 'success');
+}
+
+
+// =====================================================
+// DASHBOARD PERSONALIZÁVEL
+// =====================================================
+
+// Definição de todos os widgets disponíveis
+const DASH_WIDGETS = {
+  atalhos: {
+    label: '🚀 Atalhos Rápidos',
+    descricao: 'Botões de acesso rápido a ações frequentes',
+    padrao: true,
+    render: () => {
+      const btns = [
+        { label: '➕ Lançar Vale', action: "openModal('modal-vale')", style: 'btn-primary' },
+        { label: '📋 Vales em Lote', action: "openModal('modal-vale-lote')", style: 'btn-outline' },
+        { label: '🤝 Novo Lançamento', action: "openModal('modal-lancamento')", style: 'btn-outline' },
+        { label: '🔗 Novo Par', action: "openModal('modal-acerto-par')", style: 'btn-outline' },
+        { label: '💰 Novo Empréstimo', action: "openEmprestimoModal()", style: 'btn-outline' },
+        { label: '📋 Nova Folha', action: "navigate('folha')", style: 'btn-outline' },
+      ];
+      return `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
+        ${btns.map(b => `<button class="btn ${b.style} btn-sm" onclick="${b.action}">${b.label}</button>`).join('')}
+      </div>`;
+    }
+  },
+  resumo: {
+    label: '📊 Resumo Geral',
+    descricao: 'Cards com totais de funcionários, empréstimos e folha',
+    padrao: true,
+    render: () => {
+      const funcAtivos = funcionarios.filter(f => f.ativo !== false).length;
+      const empAtivos = emprestimos.filter(e => e.status === 'ativo' || !e.status);
+      const totalAberto = empAtivos.reduce((s, e) => s + ((e.total||0)-(e.pago||0)), 0);
+      const valesPend = vales.filter(v => v.status !== 'descontado');
+      const totalVales = valesPend.reduce((s,v)=>s+(v.valor||0),0);
+      const folhasHist = getCol('historicoFolhas').getAll();
+      const ultimaFolha = folhasHist.sort((a,b)=>(b.mesRef||'').localeCompare(a.mesRef||''))[0];
+      return `<div class="cards-grid" style="margin-bottom:16px">
+        <div class="stat-card" style="cursor:pointer" onclick="navigate('funcionarios')">
+          <div class="stat-label">Funcionários ativos</div>
+          <div class="stat-value accent">${funcAtivos}</div>
+        </div>
+        <div class="stat-card" style="cursor:pointer" onclick="navigate('emprestimos')">
+          <div class="stat-label">Empréstimos em aberto</div>
+          <div class="stat-value yellow">R$ ${fmtMoney(totalAberto)}</div>
+        </div>
+        <div class="stat-card" style="cursor:pointer" onclick="navigate('vales')">
+          <div class="stat-label">Vales pendentes</div>
+          <div class="stat-value red">R$ ${fmtMoney(totalVales)}</div>
+        </div>
+        <div class="stat-card" style="cursor:pointer" onclick="navigate('historico-folha')">
+          <div class="stat-label">Última folha gerada</div>
+          <div class="stat-value" style="font-size:1rem">${ultimaFolha?.mesRef || '—'}</div>
+        </div>
+      </div>`;
+    }
+  },
+  acerto: {
+    label: '🤝 Acerto Mútuo',
+    descricao: 'Resumo dos saldos entre os pares cadastrados',
+    padrao: true,
+    render: () => {
+      if (acertoPares.length === 0) {
+        return `<div class="section-card" style="margin-bottom:16px">
+          <div class="section-card-title">🤝 ACERTO MÚTUO</div>
+          <div class="empty-state" style="padding:20px">
+            <div class="icon" style="font-size:32px">🤝</div>
+            <h3>Nenhum par cadastrado</h3>
+            <p><button class="btn btn-primary btn-sm" onclick="openModal('modal-acerto-par')">🔗 Criar par</button></p>
+          </div>
+        </div>`;
+      }
+      const lancamentos = getCol('lancamentos').getAll();
+      const rows = acertoPares.map(par => {
+        const lances = lancamentos.filter(l => l.parId === par.id);
+        const totalAB = lances.filter(l=>l.de===par.pessoaA).reduce((s,l)=>s+l.valor,0);
+        const totalBA = lances.filter(l=>l.de===par.pessoaB).reduce((s,l)=>s+l.valor,0);
+        const saldo = totalAB - totalBA;
+        const devedor = saldo > 0 ? par.pessoaB : par.pessoaA;
+        const credor = saldo > 0 ? par.pessoaA : par.pessoaB;
+        const quitado = Math.abs(saldo) < 0.01;
+        return `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px;background:var(--bg2);border-radius:8px;margin-bottom:6px;gap:10px;flex-wrap:wrap">
+          <div style="font-weight:600;font-size:0.9rem">${par.pessoaA} ↔ ${par.pessoaB}</div>
+          <div style="text-align:center;flex:1">
+            ${quitado
+              ? '<span class="badge badge-green">✅ Quitados</span>'
+              : `<span style="font-size:0.82rem;color:var(--text3)">${devedor} deve a ${credor}</span>`}
+          </div>
+          <div style="font-family:var(--mono);font-weight:700;color:${quitado?'var(--green)':'var(--yellow)'}">
+            R$ ${fmtMoney(Math.abs(saldo))}
+          </div>
+          <button class="btn btn-outline btn-sm" onclick="openLancamentoPar('${par.id}')">➕</button>
+        </div>`;
+      }).join('');
+      return `<div class="section-card" style="margin-bottom:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <div class="section-card-title" style="margin:0">🤝 ACERTO MÚTUO</div>
+          <div style="display:flex;gap:6px">
+            <button class="btn btn-outline btn-sm" onclick="navigate('acerto')">Ver todos</button>
+            <button class="btn btn-primary btn-sm" onclick="openModal('modal-lancamento')">➕ Lançar</button>
+          </div>
+        </div>
+        ${rows}
+      </div>`;
+    }
+  },
+  valesPendentes: {
+    label: '🎫 Vales Pendentes',
+    descricao: 'Lista dos vales ainda não descontados',
+    padrao: false,
+    render: () => {
+      const pend = vales.filter(v=>v.status!=='descontado').slice(0,5);
+      if (pend.length === 0) return `<div class="section-card" style="margin-bottom:16px">
+        <div class="section-card-title">🎫 VALES PENDENTES</div>
+        <p style="color:var(--text3);font-size:0.85rem">Nenhum vale pendente.</p>
+      </div>`;
+      return `<div class="section-card" style="margin-bottom:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <div class="section-card-title" style="margin:0">🎫 VALES PENDENTES</div>
+          <button class="btn btn-outline btn-sm" onclick="navigate('vales')">Ver todos</button>
+        </div>
+        <table><thead><tr><th>Funcionário</th><th>Descrição</th><th>Valor</th><th>Data</th></tr></thead>
+        <tbody>${pend.map(v=>{
+          const f=funcionarios.find(fn=>fn.id===v.funcionarioId);
+          return `<tr>
+            <td>${f?.nome||'—'}</td>
+            <td>${v.descricao||'Vale'}</td>
+            <td class="mono" style="color:var(--red)">R$ ${fmtMoney(v.valor)}</td>
+            <td style="font-size:0.78rem">${v.data?fmtData(v.data):'—'}</td>
+          </tr>`;
+        }).join('')}</tbody></table>
+        ${vales.filter(v=>v.status!=='descontado').length > 5 ? `<p style="font-size:0.78rem;color:var(--text3);margin-top:8px">+${vales.filter(v=>v.status!=='descontado').length-5} outros</p>` : ''}
+      </div>`;
+    }
+  },
+  emprestimosResumo: {
+    label: '💰 Empréstimos Resumo',
+    descricao: 'Lista dos empréstimos ativos com saldo devedor',
+    padrao: false,
+    render: () => {
+      const ativos = emprestimos.filter(e=>e.status==='ativo'||!e.status).slice(0,5);
+      if (ativos.length === 0) return `<div class="section-card" style="margin-bottom:16px">
+        <div class="section-card-title">💰 EMPRÉSTIMOS</div>
+        <p style="color:var(--text3);font-size:0.85rem">Nenhum empréstimo ativo.</p>
+      </div>`;
+      return `<div class="section-card" style="margin-bottom:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <div class="section-card-title" style="margin:0">💰 EMPRÉSTIMOS ATIVOS</div>
+          <button class="btn btn-outline btn-sm" onclick="navigate('emprestimos')">Ver todos</button>
+        </div>
+        <table><thead><tr><th>Funcionário</th><th>Descrição</th><th>Restante</th><th>Próx. Parcela</th></tr></thead>
+        <tbody>${ativos.map(e=>{
+          const f=funcionarios.find(fn=>fn.id===e.funcionarioId);
+          const rest=(e.total||0)-(e.pago||0);
+          return `<tr>
+            <td>${f?.nome||e.funcionarioNome||'—'}</td>
+            <td>${e.descricao}</td>
+            <td class="mono" style="color:var(--red)">R$ ${fmtMoney(rest)}</td>
+            <td class="mono">R$ ${fmtMoney(e.valorParcela)}</td>
+          </tr>`;
+        }).join('')}</tbody></table>
+      </div>`;
+    }
+  },
+  historicoFolhas: {
+    label: '📁 Histórico de Folhas',
+    descricao: 'Últimas folhas geradas',
+    padrao: false,
+    render: () => {
+      const hist = getCol('historicoFolhas').getAll().sort((a,b)=>(b.mesRef||'').localeCompare(a.mesRef||'')).slice(0,4);
+      if (hist.length === 0) return '';
+      return `<div class="section-card" style="margin-bottom:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <div class="section-card-title" style="margin:0">📁 FOLHAS RECENTES</div>
+          <button class="btn btn-outline btn-sm" onclick="navigate('historico-folha')">Ver todas</button>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          ${hist.map(h=>`<div class="stat-card" style="flex:1;min-width:130px;cursor:pointer" onclick="navigate('historico-folha')">
+            <div class="stat-label">${h.mesRef}</div>
+            <div style="font-family:var(--mono);font-size:0.9rem;color:var(--accent2)">R$ ${fmtMoney(h.totalLiquido)}</div>
+            <div style="font-size:0.72rem;color:var(--text3)">${h.qtdFuncionarios} func.</div>
+          </div>`).join('')}
+        </div>
+      </div>`;
+    }
+  }
+};
+
+// Config padrão
+function getDashConfig() {
+  const saved = localStorage.getItem('cgDashConfig');
+  if (saved) return JSON.parse(saved);
+  // Padrão: widgets ativos na ordem padrão
+  return Object.keys(DASH_WIDGETS).filter(k => DASH_WIDGETS[k].padrao);
+}
+
+function salvarDashConfig(config) {
+  localStorage.setItem('cgDashConfig', JSON.stringify(config));
+}
+
+function renderDashboard() {
+  // Atualizar data
+  const d = new Date();
+  const dateEl = document.getElementById('dashDate');
+  if (dateEl) dateEl.textContent = d.toLocaleDateString('pt-BR', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
+
+  const config = getDashConfig();
+  const container = document.getElementById('dashConteudo');
+  if (!container) return;
+
+  container.innerHTML = config
+    .filter(k => DASH_WIDGETS[k])
+    .map(k => DASH_WIDGETS[k].render())
+    .join('');
+}
+
+function openDashConfig() {
+  const config = getDashConfig();
+  const container = document.getElementById('dashWidgetsConfig');
+  if (!container) return;
+  container.innerHTML = Object.entries(DASH_WIDGETS).map(([id, w]) => `
+    <div style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--bg2);border-radius:8px;margin-bottom:8px">
+      <input type="checkbox" id="dw_${id}" ${config.includes(id)?'checked':''}
+        style="width:18px;height:18px;flex-shrink:0;cursor:pointer">
+      <label for="dw_${id}" style="flex:1;cursor:pointer">
+        <div style="font-weight:600;font-size:0.9rem">${w.label}</div>
+        <div style="font-size:0.78rem;color:var(--text3)">${w.descricao}</div>
+      </label>
+    </div>
+  `).join('');
+}
+
+function salvarDashboard() {
+  const config = Object.keys(DASH_WIDGETS).filter(id => {
+    const cb = document.getElementById(`dw_${id}`);
+    return cb?.checked;
+  });
+  salvarDashConfig(config);
+  closeModal('modal-dash-config');
+  renderDashboard();
+  toast('Dashboard personalizado!', 'success');
+}
+
+function resetarDashboard() {
+  localStorage.removeItem('cgDashConfig');
+  openDashConfig();
+  toast('Configuração resetada para o padrão', 'info');
 }
 
 // Service worker for PWA
