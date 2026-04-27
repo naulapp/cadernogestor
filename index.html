@@ -1239,14 +1239,15 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
 
 <!-- ======== SETUP ORG ======== -->
 <div class="screen" id="screen-setup">
+  <div style="text-align:center;margin-bottom:16px">
+    <button class="btn btn-outline btn-sm" onclick="doLogout()" style="font-size:0.82rem;border-color:var(--red);color:var(--red)">
+      🔄 Entrar com outra conta
+    </button>
+    <div id="setupUserEmail" style="font-size:0.75rem;color:var(--text3);margin-top:6px"></div>
+  </div>
   <div class="setup-card">
     <h2>🏢 Configure sua conta</h2>
     <p>Para começar, crie ou entre em uma organização</p>
-    <div style="text-align:right;margin-bottom:16px">
-      <button class="btn btn-outline btn-sm" onclick="doLogout()" style="font-size:0.78rem">
-        🔄 Trocar conta Google
-      </button>
-    </div>
 
     <div class="org-options">
       <div class="org-option active" id="opt-create" onclick="selectOrgOpt('create')">
@@ -2628,6 +2629,13 @@ window.addEventListener('load', async () => {
             await loadAllData();
           } else {
             showScreen('setup');
+    // Mostrar email do usuário logado
+    setTimeout(() => {
+      const emailEl = document.getElementById('setupUserEmail');
+      if (emailEl && currentUser) {
+        emailEl.textContent = 'Conta: ' + (currentUser.email || currentUser.displayName || '');
+      }
+    }, 100);
           }
         } else {
           showScreen('auth');
@@ -2754,16 +2762,35 @@ function handleAfterAuth() {
     afterOrgLoad();
   } else {
     showScreen('setup');
+    // Mostrar email do usuário logado
+    setTimeout(() => {
+      const emailEl = document.getElementById('setupUserEmail');
+      if (emailEl && currentUser) {
+        emailEl.textContent = 'Conta: ' + (currentUser.email || currentUser.displayName || '');
+      }
+    }, 100);
   }
 }
 
 function doLogout() {
+  // Limpar todo o estado local
   localStorage.removeItem('cgOrgId');
   localStorage.removeItem('cgOrgNome');
-  if (auth) auth.signOut();
+  localStorage.removeItem('cgTheme');
+  // Limpar dados em memória
   currentUser = null; currentOrg = null;
-  funcionarios = []; emprestimos = []; vales = []; acertoPares = [];
+  funcionarios = []; grupos = []; emprestimos = []; vales = []; acertoPares = [];
+  folhaDetalhe = {};
+  // Fazer logout do Firebase
+  if (auth) {
+    auth.signOut().catch(()=>{});
+  }
+  // Forçar volta para login
   showScreen('auth');
+  // Limpar redirect pendente
+  if (firebaseReady && auth) {
+    try { auth.getRedirectResult().catch(()=>{}); } catch(e) {}
+  }
 }
 
 // =====================================================
@@ -2849,6 +2876,11 @@ function afterOrgLoad() {
 }
 
 function updateOrgUI() {
+  // Mostrar email na tela de setup
+  const emailEl = document.getElementById('setupUserEmail');
+  if (emailEl && currentUser) {
+    emailEl.textContent = 'Conta: ' + (currentUser.email || currentUser.displayName || '');
+  }
   if (!currentOrg) return;
   document.getElementById('currentOrgBadge').textContent = '🏢 ' + currentOrg.nome;
   document.getElementById('inviteDisplay').textContent = currentOrg.invite || '—';
