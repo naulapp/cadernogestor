@@ -1617,13 +1617,13 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
         </div>
 
         <div class="section-card">
-          <div class="section-card-title">Geracao mensal</div>
+          <div class="section-card-title">Geração Mensal</div>
           <div class="escala-toolbar">
             <div class="form-group" style="margin:0;min-width:160px">
-              <label class="form-label">Mes</label>
+              <label class="form-label">Mês</label>
               <select class="form-input" id="escalaMes">
                 <option value="1">Janeiro</option><option value="2">Fevereiro</option>
-                <option value="3">Marco</option><option value="4">Abril</option>
+                <option value="3">Março</option><option value="4">Abril</option>
                 <option value="5">Maio</option><option value="6">Junho</option>
                 <option value="7">Julho</option><option value="8">Agosto</option>
                 <option value="9">Setembro</option><option value="10">Outubro</option>
@@ -1634,17 +1634,9 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
               <label class="form-label">Ano</label>
               <input type="number" class="form-input" id="escalaAno" value="2026">
             </div>
-            <div class="form-group" style="margin:0;min-width:220px">
-              <label class="form-label">Funcionario para visualizar</label>
-              <select class="form-input" id="escalaPreviewFuncionario" onchange="renderEscalaPreview()">
-                <option value="">Selecione...</option>
-              </select>
-            </div>
             <button class="btn btn-primary" onclick="generateEscala()" style="height:42px">Gerar escala</button>
-            <button class="btn btn-outline" onclick="printEscalaPreview()" style="height:42px">🖨️ Imprimir</button>
-            <button class="btn btn-outline" onclick="downloadEscalaPdf()" style="height:42px">📄 PDF</button>
             <button class="btn btn-outline" onclick="printTodasEscalas()" style="height:42px">🖨️ Imprimir Todos</button>
-            <button class="btn btn-success btn-sm" onclick="downloadTodasEscalasPdf()" style="height:42px">📄 PDF Todos</button>
+            <button class="btn btn-success" onclick="downloadTodasEscalasPdf()" style="height:42px">📥 Baixar Todos (PDF)</button>
           </div>
         </div>
 
@@ -1960,10 +1952,7 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
               <label class="form-label">INSS padrão (R$)</label>
               <input type="number" class="form-input" id="cfgInss" placeholder="207,00">
             </div>
-            <div class="form-group">
-              <label class="form-label">Vale quinzena padrão (R$)</label>
-              <input type="number" class="form-input" id="cfgVale" placeholder="700,00">
-            </div>
+
           </div>
         </div>
       </div>
@@ -2927,7 +2916,6 @@ function updateOrgUI() {
   document.getElementById('cfgCidade').value = currentOrg.cidade || '';
   document.getElementById('cfgResponsavel').value = currentOrg.responsavel || '';
   document.getElementById('cfgInss').value = currentOrg.inssDefault || '207';
-  document.getElementById('cfgVale').value = currentOrg.valeDefault || '700';
 }
 
 // =====================================================
@@ -3302,7 +3290,6 @@ function editarFuncionario(id) {
   document.getElementById('funcInssType').value = f.inssType || 'valor';
   document.getElementById('funcInss').value = f.inss || '';
   document.getElementById('funcInssPct').value = f.inssPct || '';
-  document.getElementById('funcValeQuinzena').value = f.valeQuinzena || '';
   const obsEl = document.getElementById('funcObservacoes');
   if (obsEl) obsEl.value = f.observacoes || '';
   adicionaisFunc = f.adicionais ? JSON.parse(JSON.stringify(f.adicionais)) : [];
@@ -3321,7 +3308,7 @@ async function excluirFuncionario(id) {
 }
 
 function limparFormFuncionario() {
-  ['funcId','funcNome','funcCpf','funcSalario','funcHoraExtra','funcInss','funcInssPct','funcValeQuinzena']
+  ['funcId','funcNome','funcCpf','funcSalario','funcHoraExtra','funcInss','funcInssPct']
     .forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
   document.getElementById('funcCargo').value = '';
   document.getElementById('funcGrupo').value = '';
@@ -3385,7 +3372,6 @@ async function salvarGrupo() {
     inssType,
     inss: inssType === 'valor' ? (parseFloat(document.getElementById('grupoInss').value) || 0) : 0,
     inssPct: inssType === 'pct' ? (parseFloat(document.getElementById('grupoInssPct').value) || 0) : 0,
-    valeQuinzena: parseFloat(document.getElementById('grupoValeQuinzena').value) || 0
   };
   let grupoIdFinal = id;
   if (id) {
@@ -3462,7 +3448,6 @@ function editarGrupo(id) {
   document.getElementById('grupoInssType').value = g.inssType || 'valor';
   document.getElementById('grupoInss').value = g.inss || '';
   document.getElementById('grupoInssPct').value = g.inssPct || '';
-  document.getElementById('grupoValeQuinzena').value = g.valeQuinzena || '';
   toggleInssType();
   renderAdicionaisGrupo();
   openModal('modal-grupo');
@@ -4736,8 +4721,7 @@ async function salvarConfig() {
     cnpj: document.getElementById('cfgCnpj').value,
     cidade: document.getElementById('cfgCidade').value,
     responsavel: document.getElementById('cfgResponsavel').value,
-    inssDefault: parseFloat(document.getElementById('cfgInss').value) || 207,
-    valeDefault: parseFloat(document.getElementById('cfgVale').value) || 700
+    inssDefault: parseFloat(document.getElementById('cfgInss').value) || 207
   };
   Object.assign(currentOrg, update);
   if (db) await db.collection('orgs').doc(currentOrg.id).update(update);
@@ -4945,7 +4929,7 @@ async function generateEscala() {
     alertas: collectEscalaAlertas(resultadoEquipe, settings, mes, ano),
     geradoEm: new Date().toISOString()
   };
-  const previewSelect = document.getElementById('escalaPreviewFuncionario');
+  // preview select removed
   previewSelect.innerHTML = '<option value="">Selecione...</option>' + resultadoEquipe.map(item => `<option value="${item.funcionario.id}">${item.funcionario.nome}</option>`).join('');
   previewSelect.value = resultadoEquipe[0]?.funcionario.id || '';
   renderEscalaResultado();
@@ -5071,7 +5055,7 @@ function renderEscalaResultado() {
       </div>
       <div style="margin-top:18px;overflow:auto">
         <table>
-          <thead><tr><th>Funcionario</th><th>Dias</th><th>Horas</th><th>Extras</th><th>Turno</th></tr></thead>
+          <thead><tr><th>Funcionário</th><th>Dias</th><th>Horas</th><th>Extras</th><th>Turno</th><th style="text-align:center">Folha de Ponto</th></tr></thead>
           <tbody>${escalaGerada.equipe.map(item => `
             <tr>
               <td>${item.funcionario.nome}</td>
@@ -5079,6 +5063,12 @@ function renderEscalaResultado() {
               <td>${item.totalHorasMes}h</td>
               <td>${item.totalExtrasMes}h</td>
               <td>${labelTurno(item.regra.preferenciaTurno)}</td>
+              <td style="text-align:center;white-space:nowrap">
+                <button class="btn-icon" title="Imprimir"
+                  onclick="printEscalaFuncionario('${item.funcionario.id}')">🖨️</button>
+                <button class="btn-icon" title="Baixar PDF" style="margin-left:4px"
+                  onclick="downloadEscalaPdfFuncionario('${item.funcionario.id}')">📥</button>
+              </td>
             </tr>
           `).join('')}</tbody>
         </table>
@@ -5087,68 +5077,20 @@ function renderEscalaResultado() {
   alertasEl.innerHTML = escalaGerada.alertas.length > 0
     ? `<div class="section-card"><div class="section-card-title">Alertas</div>${escalaGerada.alertas.map(alerta => `<div class="escala-alert"><strong>Atencao:</strong> ${alerta}</div>`).join('')}</div>`
     : `<div class="section-card"><div class="section-card-title">Alertas</div><div class="empty-state"><div class="icon">OK</div><h3>Nenhum alerta critico</h3><p>A escala foi montada dentro dos limites configurados.</p></div></div>`;
-  renderEscalaPreview();
+  // renderEscalaPreview is now a no-op
 }
 
 function renderEscalaPreview() {
+  // Preview individual agora é feito pelos botões 🖨️ e 📥 na tabela de funcionários
   const previewEl = document.getElementById('escalaPreview');
-  const select = document.getElementById('escalaPreviewFuncionario');
-  if (!previewEl) return;
-  if (!escalaGerada || !select?.value) {
-    previewEl.innerHTML = '';
-    return;
-  }
-  const item = escalaGerada.equipe.find(entry => entry.funcionario.id === select.value);
-  if (!item) {
-    previewEl.innerHTML = '';
-    return;
-  }
-  previewEl.innerHTML = `
-    <div class="section-card">
-      <div class="section-card-title">Folha individual</div>
-      <div class="escala-preview-sheet" id="escalaPrintableArea">
-        <div class="escala-preview-head">
-          <div>
-            <div class="escala-preview-title">FOLHA DE PONTO</div>
-            <div class="escala-preview-sub">${currentOrg?.nome || 'Empresa'} • ${item.funcionario.nome} • ${item.funcionario.cargo || 'Funcionario'}</div>
-          </div>
-          <div class="escala-preview-meta">
-            <div><strong>Competencia:</strong> ${monthNameFromPeriod(escalaGerada.competencia)}</div>
-            <div><strong>TOTAL:</strong> ${item.totalHorasMes}h</div>
-            <div><strong>HORA EXTRA:</strong> ${item.totalExtrasMes}h</div>
-          </div>
-        </div>
-        <table class="escala-preview-table">
-          <thead><tr><th>DATA</th><th>DIA</th><th>ENTRADA</th><th>SAÍDA INT.</th><th>RETORNO</th><th>SAÍDA</th><th>TOTAL</th><th>H. EXTRA</th><th>OBS.</th></tr></thead>
-          <tbody>${item.dias.map(dia => `
-            <tr>
-              <td>${fmtData(dia.data)}</td>
-              <td>${dayNameShort(dia.diaSemana).toUpperCase()}</td>
-              <td>${dia.entrada}</td>
-              <td>${dia.saidaIntervalo}</td>
-              <td>${dia.retornoIntervalo}</td>
-              <td>${dia.saidaFinal}</td>
-              <td>${dia.horasPrevistas}h</td>
-              <td>${dia.horaExtraPrevista > 0 ? dia.horaExtraPrevista + 'h' : '—'}</td>
-              <td>${(dia.observacao || '').toUpperCase()}</td>
-            </tr>
-          `).join('')}</tbody>
-        </table>
-        <div class="escala-preview-sign">
-          <div class="escala-preview-sign-line">ASSINATURA DO FUNCIONÁRIO</div>
-          <div class="escala-preview-sign-line">RESPONSÁVEL / GESTOR</div>
-        </div>
-      </div>
-    </div>`;
+  if (previewEl) previewEl.innerHTML = '';
 }
 
 function printEscalaPreview() {
-  const select = document.getElementById('escalaPreviewFuncionario');
-  if (!escalaGerada || !select?.value) {
-    toast('Gere a escala e escolha um funcionario para imprimir', 'error');
-    return;
-  }
-  const area = document.getElementById('escalaPrintableArea');
+  // Substituído por printEscalaFuncionario(funcId) — use os botões na tabela
+  toast('Use os botões 🖨️ ao lado de cada funcionário na tabela', 'info');
+  return;
+  const area = null;
   if (!area) return;
   const popup = window.open('', '_blank', 'width=980,height=720');
   popup.document.write(`<!DOCTYPE html><html><head><title>FOLHA DE PONTO</title><style>body{font-family:Arial,sans-serif;padding:24px;background:#fff;color:#111}table{width:100%;border-collapse:collapse}th,td{border:1px solid #cbd5e1;padding:8px;font-size:12px;text-align:left}.escala-preview-head{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:20px}.escala-preview-title{font-size:22px;font-weight:700}.escala-preview-sub,.escala-preview-meta{font-size:13px;color:#475569}.escala-preview-sign{margin-top:28px;display:flex;justify-content:space-between;gap:24px}.escala-preview-sign-line{flex:1;padding-top:14px;border-top:1px solid #94a3b8;text-align:center;font-size:12px}</style></head><body>${area.innerHTML}</body></html>`);
@@ -5158,7 +5100,7 @@ function printEscalaPreview() {
 }
 
 function downloadEscalaPdf() {
-  const select = document.getElementById('escalaPreviewFuncionario');
+  const select = null; // removed
   if (!escalaGerada || !select?.value) {
     toast('Gere a escala e escolha um funcionario para exportar', 'error');
     return;
@@ -6079,7 +6021,7 @@ function onGrupoFuncChange(grupoId) {
   if (grupo.inssType) { document.getElementById('funcInssType').value = grupo.inssType; toggleFuncInssType(); }
   if (grupo.inss) document.getElementById('funcInss').value = grupo.inss;
   if (grupo.inssPct) document.getElementById('funcInssPct').value = grupo.inssPct;
-  if (grupo.valeQuinzena) document.getElementById('funcValeQuinzena').value = grupo.valeQuinzena;
+  if (grupo.valeQuinzena) document.getElementById('funcInss').value = grupo.valeQuinzena;
   adicionaisFunc = grupo.adicionais ? JSON.parse(JSON.stringify(grupo.adicionais)) : [];
   renderAdicionaisFunc();
   if (info) info.style.display = 'block';
@@ -6365,7 +6307,7 @@ function atualizarResumoFunc() {
   const pctHE = parseFloat(document.getElementById('funcHoraExtraPct').value) || 50;
   const horaExtra = parseFloat(document.getElementById('funcHoraExtra').value) || 0;
   const inss = parseFloat(document.getElementById('funcInss').value) || 0;
-  const valeQ = parseFloat(document.getElementById('funcValeQuinzena').value) || 0;
+  const valeQ = parseFloat(document.getElementById('funcInss').value) || 0;
 
   // Adicionais
   let totalAdicionais = 0;
@@ -7077,6 +7019,106 @@ async function aplicarPermissoesPendentes(orgData, uid) {
   const pendente = (orgData.convitesPendentes||[]).find(c => c.code === orgData.invite);
   if (pendente?.permissoes) return pendente.permissoes;
   return PERFIS_PADRAO.funcionario.permissoes;
+}
+
+
+// =====================================================
+// ESCALA — Imprimir / PDF individual por funcionário
+// =====================================================
+function getEscalaItem(funcId) {
+  return escalaGerada?.equipe.find(e => e.funcionario.id === funcId);
+}
+
+function buildEscalaHtml(item) {
+  if (!item) return '';
+  const orgNome = currentOrg?.nome || 'Empresa';
+  const competencia = monthNameFromPeriod(escalaGerada.competencia);
+  return `<!DOCTYPE html><html><head><title>FOLHA DE PONTO — ${item.funcionario.nome}</title>
+  <style>
+    body{font-family:Arial,sans-serif;padding:20px;background:#fff;color:#111}
+    h2{font-size:16px;margin:0}
+    .sub{font-size:11px;color:#555;margin-bottom:12px}
+    table{width:100%;border-collapse:collapse;margin-top:8px}
+    th,td{border:1px solid #aaa;padding:5px 7px;font-size:10px;text-align:left}
+    th{background:#f0f0f0;font-weight:bold}
+    .sign{margin-top:24px;display:flex;justify-content:space-between;gap:24px}
+    .sign-line{flex:1;padding-top:12px;border-top:1px solid #666;text-align:center;font-size:10px}
+    @media print{@page{size:A4 landscape;margin:15mm}}
+  </style></head><body>
+  <h2>FOLHA DE PONTO</h2>
+  <div class="sub">${orgNome} &nbsp;•&nbsp; ${item.funcionario.nome} &nbsp;•&nbsp; ${item.funcionario.cargo||''} &nbsp;•&nbsp; Competência: ${competencia} &nbsp;•&nbsp; Total: ${item.totalHorasMes}h &nbsp;•&nbsp; Hora Extra: ${item.totalExtrasMes}h</div>
+  <table>
+    <thead><tr><th>DATA</th><th>DIA</th><th>ENTRADA</th><th>SAÍDA INT.</th><th>RETORNO</th><th>SAÍDA</th><th>TOTAL</th><th>H. EXTRA</th></tr></thead>
+    <tbody>
+      ${item.dias.map(dia => `<tr>
+        <td>${fmtData(dia.data)}</td>
+        <td>${dayNameShort(dia.diaSemana).toUpperCase()}</td>
+        <td>${dia.entrada}</td>
+        <td>${dia.saidaIntervalo}</td>
+        <td>${dia.retornoIntervalo}</td>
+        <td>${dia.saidaFinal}</td>
+        <td>${dia.horasPrevistas}h</td>
+        <td>${dia.horaExtraPrevista > 0 ? dia.horaExtraPrevista + 'h' : '—'}</td>
+      </tr>`).join('')}
+    </tbody>
+  </table>
+  <div class="sign">
+    <div class="sign-line">ASSINATURA DO FUNCIONÁRIO</div>
+    <div class="sign-line">RESPONSÁVEL / GESTOR</div>
+  </div>
+  </body></html>`;
+}
+
+function printEscalaFuncionario(funcId) {
+  const item = getEscalaItem(funcId);
+  if (!item) { toast('Gere a escala primeiro', 'error'); return; }
+  const popup = window.open('', '_blank');
+  popup.document.write(buildEscalaHtml(item));
+  popup.document.close();
+  popup.onload = () => { popup.focus(); popup.print(); };
+}
+
+function downloadEscalaPdfFuncionario(funcId) {
+  const item = getEscalaItem(funcId);
+  if (!item) { toast('Gere a escala primeiro', 'error'); return; }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+  const orgNome = currentOrg?.nome || 'Empresa';
+  const competencia = monthNameFromPeriod(escalaGerada.competencia);
+
+  doc.setFontSize(13); doc.setFont('helvetica', 'bold');
+  doc.text('FOLHA DE PONTO', 14, 14);
+  doc.setFontSize(8); doc.setFont('helvetica', 'normal');
+  doc.text(`${orgNome} • ${item.funcionario.nome} • ${item.funcionario.cargo||''}`, 14, 20);
+  doc.text(`Competência: ${competencia}   Total: ${item.totalHorasMes}h   Hora Extra: ${item.totalExtrasMes}h`, 14, 25);
+
+  doc.autoTable({
+    startY: 29,
+    head: [['DATA','DIA','ENTRADA','SAÍDA INT.','RETORNO','SAÍDA','TOTAL','H. EXTRA']],
+    body: item.dias.map(dia => [
+      fmtData(dia.data),
+      dayNameShort(dia.diaSemana).toUpperCase(),
+      dia.entrada, dia.saidaIntervalo, dia.retornoIntervalo, dia.saidaFinal,
+      `${dia.horasPrevistas}h`,
+      dia.horaExtraPrevista > 0 ? `${dia.horaExtraPrevista}h` : '—'
+    ]),
+    styles: { fontSize: 7, cellPadding: 2 },
+    headStyles: { fillColor: [27,45,107], textColor: 255, fontStyle: 'bold' },
+    alternateRowStyles: { fillColor: [245,248,252] }
+  });
+
+  const finalY = doc.lastAutoTable.finalY + 14;
+  if (finalY < 195) {
+    doc.line(14, finalY, 130, finalY);
+    doc.line(140, finalY, 283, finalY);
+    doc.setFontSize(8);
+    doc.text('ASSINATURA DO FUNCIONÁRIO', 72, finalY + 4, { align: 'center' });
+    doc.text('RESPONSÁVEL / GESTOR', 211, finalY + 4, { align: 'center' });
+  }
+
+  const nomePdf = `${(item.funcionario.nome||'').replace(/\s+/g,'_')}_Folha_de_Ponto_${escalaGerada.competencia}.pdf`;
+  doc.save(nomePdf);
+  toast(`PDF gerado: ${nomePdf}`, 'success');
 }
 
 // Service worker for PWA
