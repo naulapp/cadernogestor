@@ -926,7 +926,7 @@ tr:hover td { background: rgba(108,99,255,0.04); }
 .role-option .ri { font-size: 22px; margin-bottom: 6px; }
 .role-option p { font-size: 0.75rem; color: var(--text2); }
 
-/* MONEY INPUT */
+
 .money-input-wrap {
   position: relative;
 }
@@ -1165,6 +1165,13 @@ tr:hover td { background: rgba(108,99,255,0.04); }
     text-align: left;
   }
 }
+
+/* MONEY INPUT */
+.money-wrap { position:relative; }
+.money-wrap::before { content:'R$'; position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--text3); font-size:0.85rem; font-family:var(--mono); pointer-events:none; z-index:1; }
+.money-wrap .form-input { padding-left:36px; }
+input.money-fmt { text-align:right; font-family:var(--mono); }
+
 </style>
 </head>
 <body>
@@ -1235,6 +1242,11 @@ tr:hover td { background: rgba(108,99,255,0.04); }
   <div class="setup-card">
     <h2>🏢 Configure sua conta</h2>
     <p>Para começar, crie ou entre em uma organização</p>
+    <div style="text-align:right;margin-bottom:16px">
+      <button class="btn btn-outline btn-sm" onclick="doLogout()" style="font-size:0.78rem">
+        🔄 Trocar conta Google
+      </button>
+    </div>
 
     <div class="org-options">
       <div class="org-option active" id="opt-create" onclick="selectOrgOpt('create')">
@@ -1309,8 +1321,8 @@ tr:hover td { background: rgba(108,99,255,0.04); }
       <div class="nav-item" onclick="navigate('funcionarios')" id="nav-funcionarios">
         <span class="icon">👥</span> Funcionários
       </div>
-      <div class="nav-item" onclick="navigate('grupos')" id="nav-grupos">
-        <span class="icon">🏷️</span> Grupos Salário
+      <div class="nav-item" onclick="navigate('cargos')" id="nav-cargos">
+        <span class="icon">👔</span> Cargos
       </div>
 
       <div class="nav-section-title">Financeiro</div>
@@ -1322,6 +1334,9 @@ tr:hover td { background: rgba(108,99,255,0.04); }
       </div>
       <div class="nav-item" onclick="navigate('vales')" id="nav-vales">
         <span class="icon">🎫</span> Vales
+      </div>
+      <div class="nav-item" onclick="navigate('historico-fin')" id="nav-historico-fin">
+        <span class="icon">📜</span> Histórico Fin.
       </div>
       <div class="nav-item" onclick="navigate('acerto')" id="nav-acerto">
         <span class="icon">🤝</span> Acerto Mútuo
@@ -1431,10 +1446,10 @@ tr:hover td { background: rgba(108,99,255,0.04); }
       </div>
 
       <!-- ===== GRUPOS SALÁRIO ===== -->
-      <div class="page" id="page-grupos">
+      <div class="page" id="page-cargos">
         <div class="page-header">
           <div>
-            <div class="page-title">Grupos de Salário</div>
+            <div class="page-title">Cargos</div>
             <div class="page-sub">Modelos reutilizáveis por cargo</div>
           </div>
           <button class="btn btn-primary btn-sm" onclick="openModal('modal-grupo')">➕ Novo grupo</button>
@@ -1443,7 +1458,7 @@ tr:hover td { background: rgba(108,99,255,0.04); }
           <div class="empty-state">
             <div class="icon">🏷️</div>
             <h3>Nenhum grupo criado</h3>
-            <p>Crie grupos para padronizar salários de cargos semelhantes</p>
+            <p>Crie um cargo para definir salário, hora extra e benefícios</p>
           </div>
         </div>
       </div>
@@ -1764,6 +1779,26 @@ tr:hover td { background: rgba(108,99,255,0.04); }
         </div>
       </div>
 
+      <!-- ===== HISTÓRICO FINANCEIRO ===== -->
+      <div class="page" id="page-historico-fin">
+        <div class="page-header">
+          <div>
+            <div class="page-title">Histórico Financeiro</div>
+            <div class="page-sub">Empréstimos e vales quitados</div>
+          </div>
+        </div>
+
+        <div class="section-card" style="margin-bottom:16px">
+          <div class="section-card-title">📜 EMPRÉSTIMOS — TODOS</div>
+          <div id="histFinEmprestimos"></div>
+        </div>
+
+        <div class="section-card">
+          <div class="section-card-title">🎫 VALES — TODOS</div>
+          <div id="histFinVales"></div>
+        </div>
+      </div>
+
       <!-- ===== RELATÓRIO CONSOLIDADO ===== -->
       <div class="page" id="page-relatorio">
         <div class="page-header">
@@ -1980,24 +2015,22 @@ tr:hover td { background: rgba(108,99,255,0.04); }
             <label class="form-label">CPF</label>
             <input type="text" class="form-input" id="funcCpf" placeholder="000.000.000-00" oninput="maskCpf(this)">
           </div>
-          <div class="form-group">
-            <label class="form-label">Cargo</label>
-            <div style="display:flex;gap:8px">
-              <select class="form-input" id="funcCargo" style="flex:1" onchange="onCargoChange(this)">
-                <option value="">Selecione ou cadastre...</option>
-              </select>
-              <button type="button" class="btn btn-outline btn-sm" onclick="cadastrarNovoCargo()" style="white-space:nowrap;padding:0 12px">+ Cargo</button>
-            </div>
+          <div class="form-group" style="display:none">
+            <input type="text" id="funcCargo">
           </div>
         </div>
 
-        <div class="section-card-title" style="margin-top:4px">GRUPO SALARIAL</div>
+        <div class="section-card-title" style="margin-top:4px">CARGO</div>
         <div class="form-group">
-          <select class="form-input" id="funcGrupo" onchange="onGrupoFuncChange(this.value)">
-            <option value="">Nenhum (manual)</option>
-          </select>
+          <div style="display:flex;gap:8px;align-items:center">
+            <select class="form-input" id="funcGrupo" style="flex:1" onchange="onGrupoFuncChange(this.value)">
+              <option value="">Sem cargo definido</option>
+            </select>
+            <button type="button" class="btn-icon" title="Editar cargo selecionado"
+              onclick="editarCargoDoFunc()" style="font-size:16px">✏️</button>
+          </div>
           <div id="grupoHerancaInfo" style="font-size:0.75rem;color:var(--accent2);margin-top:4px;display:none">
-            ✅ Valores herdados do grupo
+            ✅ Valores do cargo carregados automaticamente
           </div>
         </div>
 
@@ -2171,11 +2204,11 @@ tr:hover td { background: rgba(108,99,255,0.04); }
   </div>
 </div>
 
-<!-- MODAL GRUPO SALARIAL -->
+<!-- MODAL CARGO -->
 <div class="modal-overlay" id="modal-grupo">
   <div class="modal" style="max-width:620px">
     <div class="modal-header">
-      <div class="modal-title">Grupo Salarial</div>
+      <div class="modal-title" id="cargoModalTitulo">Cargo</div>
       <div class="modal-close" onclick="closeModal('modal-grupo')">✕</div>
     </div>
     <div class="modal-body">
@@ -2688,11 +2721,31 @@ async function doGoogleLogin() {
   }
   try {
     const provider = new firebase.auth.GoogleAuthProvider();
-    await auth.signInWithPopup(provider);
+    // Tenta popup primeiro; se falhar (mobile), usa redirect
+    try {
+      await auth.signInWithPopup(provider);
+    } catch(popupErr) {
+      if (popupErr.code === 'auth/popup-blocked' || popupErr.code === 'auth/popup-closed-by-user' || /mobile/i.test(navigator.userAgent)) {
+        await auth.signInWithRedirect(provider);
+      } else {
+        throw popupErr;
+      }
+    }
   } catch(e) {
     toast('Erro Google: ' + e.message, 'error');
   }
 }
+
+// Verificar redirect result ao carregar
+window.addEventListener('load', () => {
+  if (auth && firebaseReady) {
+    auth.getRedirectResult().then(result => {
+      if (result?.user) {
+        currentUser = result.user;
+      }
+    }).catch(() => {});
+  }
+});
 
 function handleAfterAuth() {
   const orgId = localStorage.getItem('cgOrgId');
@@ -2959,6 +3012,7 @@ function navigate(page) {
   const p = document.getElementById('page-' + page);
   if (p) p.classList.add('active');
   if (page === 'relatorio') populateRelatorioGrupos();
+  if (page === 'historico-fin') renderHistoricoFin();
   if (page === 'historico-folha') renderHistoricoFolhas();
   if (page === 'folha') { const d=new Date(); document.getElementById('folhaMes').value=d.getMonth()+1; document.getElementById('folhaAno').value=d.getFullYear(); }
   const n = document.getElementById('nav-' + page);
@@ -3056,9 +3110,10 @@ function renderFuncionarios(filter='') {
       <td>${f.cargo || '—'}</td>
       <td>${grupo ? `<span class="badge badge-accent">${grupo.nome}</span>` : '<span class="badge badge-gray">Manual</span>'}</td>
       <td><span class="badge ${f.ativo!==false ? 'badge-green' : 'badge-gray'}">${f.ativo!==false ? 'Ativo' : 'Inativo'}</span></td>
-      <td style="text-align:right;white-space:nowrap">
+      <td style="text-align:right;white-space:nowrap;display:flex;gap:4px;justify-content:flex-end">
+        <button class="btn btn-outline btn-sm" onclick="abrirFichaFuncionario('${f.id}')" title="Ficha">📋 Ficha</button>
         <button class="btn-icon" onclick="editarFuncionario('${f.id}')" title="Editar">✏️</button>
-        <button class="btn-icon" onclick="excluirFuncionario('${f.id}')" title="Excluir" style="margin-left:4px">🗑️</button>
+        <button class="btn-icon" onclick="excluirFuncionario('${f.id}')" title="Excluir">🗑️</button>
       </td>
     </tr>`;
   }).join('');
@@ -3068,8 +3123,21 @@ function filterFuncionarios(v) { renderFuncionarios(v); }
 
 function populateGrupoSelect() {
   const sel = document.getElementById('funcGrupo');
-  sel.innerHTML = '<option value="">Nenhum (manual)</option>' +
-    grupos.map(g => `<option value="${g.id}">${g.nome}</option>`).join('');
+  if (!sel) return;
+  const current = sel.value;
+  sel.innerHTML = '<option value="">Sem cargo definido</option>' +
+    grupos.map(g => `<option value="${g.id}">${g.nome}</option>`).join('') +
+    '<option value="__novo__">➕ Criar novo cargo...</option>';
+  if (current) sel.value = current;
+}
+
+function editarCargoDoFunc() {
+  const grupoId = document.getElementById('funcGrupo').value;
+  if (!grupoId || grupoId === '__novo__') {
+    openModal('modal-grupo');
+    return;
+  }
+  editarGrupo(grupoId);
 }
 
 async function salvarFuncionario() {
@@ -3320,7 +3388,7 @@ function editarGrupo(id) {
 }
 
 async function excluirGrupo(id) {
-  if (!await confirmar('Excluir grupo salarial?', 'Os funcionários vinculados ficarão sem grupo.')) return;
+  if (!await confirmar('Excluir cargo?', 'Os funcionários vinculados ficarão sem grupo.')) return;
   await fsDelete('grupos', id);
   grupos = grupos.filter(g => g.id !== id);
   renderGrupos();
@@ -3616,8 +3684,14 @@ async function loadFolha() {
   }).join('');
 
   document.getElementById('folhaList').innerHTML = `
-    <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
-      <button class="btn btn-primary btn-sm" onclick="gerarTodosPDFs()">📄 Gerar todos os PDFs</button>
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap">
+      <label style="display:flex;align-items:center;gap:6px;font-size:0.85rem;cursor:pointer">
+        <input type="checkbox" id="selecionarTodosFolha" checked
+          onchange="toggleTodosFolha(this.checked)">
+        Selecionar todos
+      </label>
+      <button class="btn btn-primary btn-sm" onclick="gerarTodosPDFs()">📄 PDF selecionados</button>
+      <button class="btn btn-success btn-sm" onclick="consolidarPeriodoTodos()">✅ Consolidar todos</button>
     </div>
     ${cards}`;
 }
@@ -3653,12 +3727,15 @@ function buildFolhaCard(f, d) {
 
   return `<div class="folha-card" id="fc-${f.id}" ${alertaDesc}>
     <div class="folha-card-header">
-      <div>
-        <div class="folha-employee-name">${f.nome}</div>
-        <div class="folha-employee-role">${f.cargo||'—'} • CPF: ${f.cpf||'—'}</div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <input type="checkbox" class="folha-func-cb" data-id="${f.id}" checked style="width:16px;height:16px">
+        <div>
+          <div class="folha-employee-name">${f.nome}</div>
+          <div class="folha-employee-role">${f.cargo||'—'} • CPF: ${f.cpf||'—'}</div>
+        </div>
       </div>
       <div style="display:flex;gap:8px">
-        <button class="btn btn-outline btn-sm" onclick="abrirFolhaFuncionario('${f.id}')">📋 Abrir ficha</button>
+        <button class="btn btn-outline btn-sm" onclick="abrirFolhaFuncionario('${f.id}')">📋 Detalhes</button>
         <button class="btn btn-primary btn-sm" onclick="gerarPdfFuncionario('${f.id}')">📄 PDF</button>
       </div>
     </div>
@@ -3833,7 +3910,7 @@ function abrirFolhaFuncionario(funcId) {
   document.querySelector('#modal-folha-detalhe .modal-footer').innerHTML = `
     <button class="btn btn-outline btn-sm" onclick="closeModal('modal-folha-detalhe')">Fechar</button>
     <button class="btn btn-success btn-sm" onclick="salvarFolhaDetalhe()">💾 Salvar</button>
-    <button class="btn btn-primary btn-sm" onclick="gerarPdfEQuitarFolha('${funcId}')">📄 PDF + Quitar selecionados</button>
+    <button class="btn btn-success btn-sm" onclick="gerarPdfEQuitarFolha('${funcId}')">✅ Consolidar período</button>
   `;
   openModal('modal-folha-detalhe');
 }
@@ -3889,7 +3966,7 @@ function removerExtraDesconto(funcId, idx) {
   abrirFolhaFuncionario(funcId);
 }
 
-async function gerarPdfEQuitarFolha(funcId) {
+async function gerarPdfEQuitarFolha(funcId, fecharModal=true) {
   salvarFolhaDetalhe();
   // Gerar PDF
   gerarPdfFuncionario(funcId);
@@ -3928,11 +4005,11 @@ async function gerarPdfEQuitarFolha(funcId) {
     baixados++;
   }
 
-  closeModal('modal-folha-detalhe');
+  if (fecharModal) closeModal('modal-folha-detalhe');
   renderEmprestimos();
   renderVales();
   renderDashboard();
-  toast(`PDF gerado + ${baixados} item(ns) baixado(s)!`, 'success');
+  toast(`PDF gerado + ${baixados} item(ns) baixado(s)! (Ctrl+Z para desfazer)`, 'success');
 }
 
 function buildFolhaDetalheForm(funcId, d) {
@@ -4086,7 +4163,7 @@ function gerarPdfFolhaCompleto(doc, params, startY = 10, save = false) {
 
   // --- HEADER ---
   doc.setFillColor(255,255,255);
-  doc.rect(lm, y, pw, 8, 'F');
+  doc.rect(lm, y, pw, 8, 'FD');
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(11);
   doc.setTextColor(0,0,0);
@@ -4122,7 +4199,9 @@ function gerarPdfFolhaCompleto(doc, params, startY = 10, save = false) {
   if (d.horasExtras > 0) proventos.push([`${d.horasExtras}`, `x ${fmtMoney(d.horaExtraVal)}`, 'HORAS EXTRAS =', fmtMoney(calc.horasExtrasValor)]);
   const diasLabel = d.diasTrabalhados > 0 ? `SALÁRIO MENSAL (${d.diasTrabalhados} DIAS TRABALHADOS) =` : 'SALÁRIO MENSAL =';
   proventos.push(['', '', diasLabel, fmtMoney(calc.salarioBase)]);
+  // Adicionais da folha
   if (d.insalPct > 0) proventos.push(['', '', `ADICIONAL POR INSALUBRIDADE ${d.insalPct}% =`, fmtMoney(calc.insalubridade)]);
+  (d.outrosProventos||[]).forEach(o => { if (o.valor>0) proventos.push(['','',o.descricao.toUpperCase()+' =',fmtMoney(o.valor)]); });
   if (calc.reflexoDsr > 0) proventos.push(['', '', 'REFLEXO EXTRA DSR =', fmtMoney(calc.reflexoDsr)]);
   if (calc.premioDesempenho > 0) proventos.push(['', '', 'PRÊMIO BOM DESEMPENHO =', fmtMoney(calc.premioDesempenho)]);
   // Blank rows to match template
@@ -4139,7 +4218,7 @@ function gerarPdfFolhaCompleto(doc, params, startY = 10, save = false) {
 
   // TOTAL proventos
   doc.setFillColor(240,240,240);
-  doc.rect(lm+40, y, 120, 6, 'F'); doc.rect(lm+160, y, 20, 6, 'F');
+  doc.rect(lm+40, y, 120, 6, 'FD'); doc.rect(lm+160, y, 20, 6, 'FD');
   doc.rect(lm, y, 20, 6); doc.rect(lm+20, y, 20, 6); doc.rect(lm+40, y, 120, 6); doc.rect(lm+160, y, 20, 6);
   doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(255,0,0);
   doc.text('TOTAL =', lm + 100, y + 4, { align: 'center' });
@@ -4166,7 +4245,7 @@ function gerarPdfFolhaCompleto(doc, params, startY = 10, save = false) {
 
   // Header descontos
   doc.setFillColor(240,240,240);
-  doc.rect(lm, y, 40, 5, 'F'); doc.rect(lm, y, 40, 5);
+  doc.rect(lm, y, 40, 5, 'FD'); doc.rect(lm, y, 40, 5);
   doc.setFont('helvetica', 'bold'); doc.setFontSize(8);
   doc.text('DESCONTOS:', lm + 20, y + 3.5, { align: 'center' });
 
@@ -4187,7 +4266,7 @@ function gerarPdfFolhaCompleto(doc, params, startY = 10, save = false) {
 
   // TOTAL DESCONTADO
   doc.setFillColor(240,240,240);
-  doc.rect(lm+40, y, 120, 6, 'F'); doc.rect(lm+160, y, 20, 'F');
+  doc.rect(lm+40, y, 120, 6, 'FD'); doc.rect(lm+160, y, 20, 'FD');
   doc.rect(lm, y, 20, 6); doc.rect(lm+20, y, 20, 6); doc.rect(lm+40, y, 120, 6); doc.rect(lm+160, y, 20, 6);
   doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(255,0,0);
   doc.text('TOTAL DESCONTADO =', lm + 100, y + 4, { align: 'center' });
@@ -4196,7 +4275,7 @@ function gerarPdfFolhaCompleto(doc, params, startY = 10, save = false) {
 
   // TOTAL RESTANTE
   doc.setFillColor(240,240,240);
-  doc.rect(lm, y, pw, 6, 'F'); doc.rect(lm, y, pw, 6);
+  doc.rect(lm, y, pw, 6, 'FD'); doc.rect(lm, y, pw, 6);
   doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(255,0,0);
   doc.text('TOTAL RESTANTE A RECEBER =', lm + 80, y + 4, { align: 'center' });
   doc.text(fmtMoney(calc.liquido), rm - 2, y + 4, { align: 'right' });
@@ -4228,7 +4307,7 @@ function gerarPdfFolhaCompleto(doc, params, startY = 10, save = false) {
   doc.text(f.nome || '', lm + pw/2, y, { align: 'center' });
 
   if (save) {
-    doc.save(`Folha_${(f.nome||'').replace(/\s+/g,'_')}.pdf`);
+    doc.save(`${(f.nome||'Funcionario').replace(/\s+/g,'_')}_-_Folha_de_Pagamento_${mesNome}_${ano}.pdf`);
     toast('PDF gerado!', 'success');
     closeModal('modal-folha-detalhe');
   }
@@ -4254,7 +4333,8 @@ function gerarTodosPDFs() {
     gerarPdfFolhaCompleto(doc, { f: d.funcionario, d, calc, orgNome, orgCnpj, dataFolha, mesNome, ano }, 10, false);
   });
 
-  doc.save(`Folhas_${mesNome}_${ano}.pdf`);
+  const _mesAno = `${String(new Date().getMonth()+1).padStart(2,'0')}_${new Date().getFullYear()}`;
+  doc.save(`Folha_de_Pagamento_${_mesAno}_Todos.pdf`);
   // Salvar histórico
   const snapshot = ids.map(id => {
     const d = folhaDetalhe[id];
@@ -5029,6 +5109,18 @@ function fmtMoney(val) {
   return (parseFloat(val) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
+// Formatar input como BRL ao perder foco
+function formatMoneyBlur(el) {
+  const val = parseFloat(el.value.replace(/[^0-9,.-]/g,'').replace(',','.')) || 0;
+  el.value = val.toFixed(2).replace('.',',');
+}
+
+// Retorna valor numérico de input BRL formatado
+function parseMoneyInput(el) {
+  return parseFloat((el?.value||'0').replace(/\./g,'').replace(',','.')) || 0;
+}
+
+
 function fmtData(d) {
   if (!d) return '—';
   const [y,m,day] = d.split('-');
@@ -5099,7 +5191,7 @@ function toggleTheme() {
 })();
 
 // =====================================================
-// GRUPO SALARIAL — HELPERS
+// CARGO — HELPERS
 // =====================================================
 let adicionaisGrupo = [];
 
@@ -5431,7 +5523,7 @@ function exportFuncionariosExcel() {
       'Nome': f.nome || '',
       'CPF': f.cpf || '',
       'Cargo': f.cargo || '',
-      'Grupo Salarial': grupo?.nome || 'Manual',
+      'Cargo': grupo?.nome || 'Manual',
       'Salário Base': f.salario || 0,
       'Valor Hora Extra': f.horaExtra || 0,
       'INSS': f.inss || 0,
@@ -5787,6 +5879,11 @@ function exportarBackup() {
 
 // Auto-preenche campos do funcionário ao selecionar grupo
 function onGrupoFuncChange(grupoId) {
+  if (grupoId === '__novo__') {
+    document.getElementById('funcGrupo').value = '';
+    openModal('modal-grupo');
+    return;
+  }
   const info = document.getElementById('grupoHerancaInfo');
   if (!grupoId) { if (info) info.style.display = 'none'; return; }
   const grupo = grupos.find(g => g.id === grupoId);
@@ -6060,13 +6157,20 @@ async function fichaAbaterVale(valeId, funcId) {
     const novosAbatimentos = [...(v.abatimentos||[]), { valor, data: new Date().toISOString().slice(0,10), tipo: 'avulso' }];
     const totalAbatido2 = novosAbatimentos.reduce((s,a)=>s+a.valor,0);
     const novoStatus = totalAbatido2 >= (v.valor||0) ? 'descontado' : 'pendente';
+    const valeAntes = {...vales.find(x=>x.id===valeId)};
     await fsUpdate('vales', valeId, { abatimentos: novosAbatimentos, status: novoStatus });
     const idx = vales.findIndex(x=>x.id===valeId);
     if (idx>=0) Object.assign(vales[idx], { abatimentos: novosAbatimentos, status: novoStatus });
+    pushUndo({ descricao: `Abatimento R$ ${fmtMoney(valor)} no vale ${v.descricao||''}`, reverter: async () => {
+      await fsUpdate('vales', valeId, { abatimentos: valeAntes.abatimentos||[], status: valeAntes.status||'pendente' });
+      const i2 = vales.findIndex(x=>x.id===valeId);
+      if (i2>=0) Object.assign(vales[i2], { abatimentos: valeAntes.abatimentos||[], status: valeAntes.status||'pendente' });
+      renderVales(); renderFichaConteudo(funcId); renderDashboard();
+    }});
     renderFichaConteudo(funcId);
     renderVales();
     renderDashboard();
-    toast(`R$ ${fmtMoney(valor)} abatido do vale!`, 'success');
+    toast(`R$ ${fmtMoney(valor)} abatido! (Ctrl+Z para desfazer)`, 'success');
   };
 }
 
@@ -6333,6 +6437,142 @@ function atualizarSimulacaoEmp() {
     `<span style="color:var(--yellow)">Com última diferente:</span> ${n-1}x R$ ${fmtMoney(padraoVal)} + 1x R$ ${fmtMoney(ultimaVal)}`;
 
   document.getElementById('empSimulacao').style.display = '';
+}
+
+
+// =====================================================
+// SISTEMA DE UNDO — histórico de ações reversíveis
+// =====================================================
+const undoStack = [];
+const MAX_UNDO = 20;
+
+function pushUndo(acao) {
+  // acao = { descricao, async reverter() {} }
+  undoStack.push(acao);
+  if (undoStack.length > MAX_UNDO) undoStack.shift();
+  renderUndoBtn();
+}
+
+function renderUndoBtn() {
+  let btn = document.getElementById('undoFloatBtn');
+  if (!btn) {
+    btn = document.createElement('button');
+    btn.id = 'undoFloatBtn';
+    btn.style.cssText = 'position:fixed;bottom:80px;right:24px;background:var(--navy);color:white;border:none;border-radius:20px;padding:8px 16px;font-size:0.8rem;cursor:pointer;z-index:500;box-shadow:var(--shadow2);display:none;font-family:var(--font)';
+    btn.onclick = desfazerUltimaAcao;
+    document.body.appendChild(btn);
+  }
+  if (undoStack.length > 0) {
+    btn.style.display = 'block';
+    btn.textContent = `↩️ Desfazer: ${undoStack[undoStack.length-1].descricao}`;
+  } else {
+    btn.style.display = 'none';
+  }
+}
+
+async function desfazerUltimaAcao() {
+  const acao = undoStack.pop();
+  if (!acao) return;
+  try {
+    await acao.reverter();
+    toast(`Ação desfeita: ${acao.descricao}`, 'success');
+  } catch(e) {
+    toast('Erro ao desfazer: ' + e.message, 'error');
+  }
+  renderUndoBtn();
+}
+
+// Atalho Ctrl+Z
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+    const active = document.activeElement;
+    // Não interceptar em inputs/textareas
+    if (!['INPUT','TEXTAREA'].includes(active.tagName)) {
+      e.preventDefault();
+      desfazerUltimaAcao();
+    }
+  }
+});
+
+
+// =====================================================
+// HISTÓRICO FINANCEIRO
+// =====================================================
+function renderHistoricoFin() {
+  // Empréstimos — todos, incluindo quitados
+  const empEl = document.getElementById('histFinEmprestimos');
+  if (empEl) {
+    const todos = emprestimos.sort((a,b) => (b.criadoEm||'').localeCompare(a.criadoEm||''));
+    if (todos.length === 0) {
+      empEl.innerHTML = '<p style="color:var(--text3);font-size:0.85rem">Nenhum empréstimo.</p>';
+    } else {
+      empEl.innerHTML = todos.map(e => {
+        const func = funcionarios.find(f=>f.id===e.funcionarioId);
+        const rest = (e.total||0)-(e.pago||0);
+        const pct = e.total>0 ? Math.min(100,(e.pago||0)/e.total*100) : 0;
+        const isQuitado = e.status==='quitado' || rest<=0.01;
+        return `<div style="background:var(--bg2);border-radius:10px;padding:12px;margin-bottom:8px;opacity:${isQuitado?0.7:1}">
+          <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px">
+            <div>
+              <div style="font-weight:600">${e.descricao}</div>
+              <div style="font-size:0.78rem;color:var(--text3)">${func?.nome||'—'} • ${e.criadoEm?new Date(e.criadoEm).toLocaleDateString('pt-BR'):'—'}</div>
+            </div>
+            <span class="badge ${isQuitado?'badge-green':'badge-yellow'}">${isQuitado?'✅ Quitado':'Em andamento'}</span>
+          </div>
+          <div style="display:flex;gap:16px;margin-top:8px;flex-wrap:wrap;font-size:0.82rem">
+            <div><span style="color:var(--text3)">Total: </span><span style="font-family:var(--mono)">R$ ${fmtMoney(e.total)}</span></div>
+            <div><span style="color:var(--text3)">Pago: </span><span style="font-family:var(--mono);color:var(--green)">R$ ${fmtMoney(e.pago||0)}</span></div>
+            <div><span style="color:var(--text3)">Parcelas: </span><span>${e.parcelasPagas||0}/${e.parcelas}</span></div>
+          </div>
+          <div class="progress-bar" style="margin-top:8px"><div class="progress-fill" style="width:${pct}%"></div></div>
+        </div>`;
+      }).join('');
+    }
+  }
+
+  // Vales — todos
+  const valesEl = document.getElementById('histFinVales');
+  if (valesEl) {
+    const todos = vales.sort((a,b) => (b.data||'').localeCompare(a.data||''));
+    if (todos.length === 0) {
+      valesEl.innerHTML = '<p style="color:var(--text3);font-size:0.85rem">Nenhum vale.</p>';
+    } else {
+      valesEl.innerHTML = `<table><thead><tr><th>Data</th><th>Funcionário</th><th>Descrição</th><th>Valor</th><th>Abatido</th><th>Restante</th><th>Status</th></tr></thead>
+        <tbody>${todos.map(v => {
+          const func = funcionarios.find(f=>f.id===v.funcionarioId);
+          const abatido = (v.abatimentos||[]).reduce((s,a)=>s+a.valor,0);
+          const rest = Math.max(0,(v.valor||0)-abatido);
+          return `<tr>
+            <td style="font-size:0.8rem">${v.data?fmtData(v.data):'—'}</td>
+            <td>${func?.nome||'—'}</td>
+            <td>${v.descricao||'Vale'}</td>
+            <td class="mono">R$ ${fmtMoney(v.valor)}</td>
+            <td class="mono" style="color:var(--green)">R$ ${fmtMoney(abatido)}</td>
+            <td class="mono" style="color:${rest>0?'var(--red)':'var(--text3)'}">R$ ${fmtMoney(rest)}</td>
+            <td><span class="badge ${v.status==='descontado'?'badge-green':'badge-yellow'}">${v.status==='descontado'?'Quitado':'Pendente'}</span></td>
+          </tr>`;
+        }).join('')}</tbody></table>`;
+    }
+  }
+}
+
+function toggleTodosFolha(checked) {
+  document.querySelectorAll('.folha-func-cb').forEach(cb => cb.checked = checked);
+}
+
+async function consolidarPeriodoTodos() {
+  const mes = document.getElementById('folhaMes')?.value;
+  const ano = document.getElementById('folhaAno')?.value;
+  const confirm = await confirmar('Consolidar período?', `Isso dará baixa em todos os itens selecionados de todos os funcionários marcados para ${mes}/${ano}. Esta ação pode ser desfeita com Ctrl+Z.`);
+  if (!confirm) return;
+  // Processar cada funcionário marcado
+  const marcados = [...document.querySelectorAll('.folha-func-cb:checked')].map(cb => cb.dataset.id);
+  let total = 0;
+  for (const funcId of marcados) {
+    await gerarPdfEQuitarFolha(funcId, false); // false = não fechar modal
+    total++;
+  }
+  toast(`${total} funcionário(s) consolidado(s)!`, 'success');
 }
 
 // Service worker for PWA
