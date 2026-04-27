@@ -1239,15 +1239,19 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
 
 <!-- ======== SETUP ORG ======== -->
 <div class="screen" id="screen-setup">
-  <div style="text-align:center;margin-bottom:16px">
-    <button class="btn btn-outline btn-sm" onclick="doLogout()" style="font-size:0.82rem;border-color:var(--red);color:var(--red)">
-      🔄 Entrar com outra conta
-    </button>
-    <div id="setupUserEmail" style="font-size:0.75rem;color:var(--text3);margin-top:6px"></div>
-  </div>
   <div class="setup-card">
     <h2>🏢 Configure sua conta</h2>
-    <p>Para começar, crie ou entre em uma organização</p>
+
+    <!-- Email logado + botão trocar conta — sempre visível -->
+    <div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.3);border-radius:10px;padding:12px;margin-bottom:20px;text-align:center">
+      <div id="setupUserEmail" style="font-size:0.85rem;color:var(--text2);margin-bottom:8px">Carregando conta...</div>
+      <button class="btn btn-sm" onclick="doLogoutForce()"
+        style="background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.5);color:var(--red);width:100%;font-size:0.85rem;padding:10px">
+        🔄 Não é você? Entrar com outra conta
+      </button>
+    </div>
+
+    <p style="color:var(--text3);font-size:0.85rem;margin-bottom:20px">Para começar, crie ou entre em uma organização</p>
 
     <div class="org-options">
       <div class="org-option active" id="opt-create" onclick="selectOrgOpt('create')">
@@ -2623,6 +2627,21 @@ let firebaseReady = false;
 // INIT
 // =====================================================
 window.addEventListener('load', async () => {
+
+  // Se URL tem ?logout=1 ou ?trocar=1, fazer logout imediato antes de tudo
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get('logout') === '1' || urlParams.get('trocar') === '1') {
+    localStorage.clear();
+    // Limpar param da URL sem recarregar
+    window.history.replaceState({}, '', window.location.pathname);
+    try {
+      firebase.initializeApp(firebaseConfig);
+      await firebase.auth().signOut();
+    } catch(e) {}
+    showScreen('auth');
+    return;
+  }
+
   setTimeout(async () => {
     try {
       firebase.initializeApp(firebaseConfig);
@@ -2634,7 +2653,6 @@ window.addEventListener('load', async () => {
       try {
         const redirectResult = await auth.getRedirectResult();
         if (redirectResult?.user) {
-          // Voltou do redirect com sucesso — onAuthStateChanged vai disparar
           console.log('Redirect result OK:', redirectResult.user.email);
         }
       } catch(redirectErr) {
@@ -2832,24 +2850,20 @@ function handleAfterAuth() {
 }
 
 function doLogout() {
-  // Limpar todo o estado local
   localStorage.removeItem('cgOrgId');
   localStorage.removeItem('cgOrgNome');
-  localStorage.removeItem('cgTheme');
-  // Limpar dados em memória
   currentUser = null; currentOrg = null;
   funcionarios = []; grupos = []; emprestimos = []; vales = []; acertoPares = [];
   folhaDetalhe = {};
-  // Fazer logout do Firebase
-  if (auth) {
-    auth.signOut().catch(()=>{});
-  }
-  // Forçar volta para login
+  if (auth) auth.signOut().catch(()=>{});
   showScreen('auth');
-  // Limpar redirect pendente
-  if (firebaseReady && auth) {
-    try { auth.getRedirectResult().catch(()=>{}); } catch(e) {}
-  }
+}
+
+// Versão forçada — redireciona para URL com ?logout=1
+// Garante funcionar mesmo quando JS está em estado inconsistente
+function doLogoutForce() {
+  localStorage.clear();
+  window.location.href = window.location.pathname + '?logout=1';
 }
 
 // =====================================================
