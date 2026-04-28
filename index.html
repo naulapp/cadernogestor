@@ -1357,7 +1357,13 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
 <div class="screen" id="screen-app">
   <!-- TOP BAR -->
   <div class="topbar">
-    <div class="topbar-logo"><img src="logo.png" style="height:28px;width:28px;object-fit:contain;border-radius:6px"> CadernoGestor</div>
+    <div class="topbar-logo">
+      <img src="logo.png" style="height:28px;width:28px;object-fit:contain;border-radius:6px">
+      <div style="display:flex;flex-direction:column;line-height:1.1">
+        <span>CadernoGestor</span>
+        <span style="font-size:0.62rem;font-weight:400;color:var(--text3);letter-spacing:0.01em">Saia do papel. Sem sair do caderno.</span>
+      </div>
+    </div>
     <div class="topbar-org">
       <span class="org-badge" id="currentOrgBadge" onclick="openOrgSelector()">Carregando...</span>
     </div>
@@ -2771,7 +2777,11 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
         <div class="form-grid form-grid-2">
           <div class="form-group">
             <label class="form-label">Valor (R$)</label>
-            <input type="number" class="form-input" id="lancValor" placeholder="200,00" step="0.01">
+            <div style="position:relative">
+              <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:0.82rem;pointer-events:none">R$</span>
+              <input type="text" class="form-input" id="lancValor" placeholder="0,00" inputmode="decimal"
+                style="padding-left:30px" oninput="maskValorReais(this)">
+            </div>
           </div>
           <div class="form-group">
             <label class="form-label">Data</label>
@@ -5282,7 +5292,8 @@ function popularSelectLancDe(parId) {
 async function salvarLancamento() {
   const parId = document.getElementById('lancPar').value;
   const de = document.getElementById('lancDe').value;
-  const valor = parseFloat(document.getElementById('lancValor').value);
+  const valorRaw = document.getElementById('lancValor').value.replace(/\./g,'').replace(',','.');
+  const valor = parseFloat(valorRaw) || 0;
   if (!parId || !de || !valor) { toast('Preencha todos os campos', 'error'); return; }
   // Garantir que data está preenchida — sem data, lançamento fica oculto
   const lancDataVal = document.getElementById('lancData').value || new Date().toISOString().slice(0,10);
@@ -5305,11 +5316,21 @@ async function salvarLancamento() {
     });
   }
   closeModal('modal-lancamento');
-  // Limpar campos para próximo lançamento
   document.getElementById('lancValor').value = '';
   document.getElementById('lancDescricao').value = '';
-  renderAcerto();
   toast('Lançamento registrado!', 'success');
+  // Aguardar Firebase propagar antes de recarregar
+  await new Promise(r => setTimeout(r, 500));
+  // Recarregar lançamentos do Firebase
+  if (db && currentOrg) {
+    try {
+      const snap = await db.collection('orgs').doc(currentOrg.id).collection('lancamentos').get();
+      lancamentosCache = snap.docs.map(d => ({id: d.id, ...d.data()}));
+    } catch(e) { /* manter cache */ }
+  }
+  renderAcerto();
+  // Se estiver na página do par, atualizar também
+  if (parAtualId === parId) renderParPage(parId);
 }
 
 async function excluirPar(id) {
@@ -5952,6 +5973,18 @@ function fmtData(d) {
   if (!d) return '—';
   const [y,m,day] = d.split('-');
   return `${day}/${m}/${y}`;
+}
+
+function maskValorReais(el) {
+  // Remove tudo que não é dígito
+  let v = el.value.replace(/\D/g, '');
+  if (!v) { el.value = ''; return; }
+  // Converter para centavos e formatar
+  const num = parseInt(v, 10);
+  const reais = Math.floor(num / 100);
+  const cents = num % 100;
+  const reaisStr = reais.toLocaleString('pt-BR');
+  el.value = reaisStr + ',' + String(cents).padStart(2, '0');
 }
 
 function maskCnpj(el) {
@@ -8204,15 +8237,15 @@ const DASH_WIDGETS = {
               ${quitado ? '✅ Quitado' : '⚠️ ' + devedor + ' deve R$ ' + fmtMoney(Math.abs(saldo))}
             </div>
           </div>
-          <!-- Botões compactos -->
+          <!-- Botões compactos — mesmo estilo do acerto de contas -->
           <button onclick="openLancamentoPar('${par.id}','${par.pessoaA}')"
             class="btn btn-outline btn-sm"
-            style="font-size:0.7rem;padding:4px 8px;white-space:nowrap;flex-shrink:0;border-color:rgba(239,68,68,0.4);color:var(--red)">
+            style="font-size:0.72rem;padding:4px 8px;white-space:nowrap;flex-shrink:0">
             ${par.pessoaA.split(' ')[0]} deve
           </button>
           <button onclick="openLancamentoPar('${par.id}','${par.pessoaB}')"
             class="btn btn-outline btn-sm"
-            style="font-size:0.7rem;padding:4px 8px;white-space:nowrap;flex-shrink:0;border-color:rgba(239,68,68,0.4);color:var(--red)">
+            style="font-size:0.72rem;padding:4px 8px;white-space:nowrap;flex-shrink:0">
             ${par.pessoaB.split(' ')[0]} deve
           </button>
         </div>`;
