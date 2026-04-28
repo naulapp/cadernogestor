@@ -1458,6 +1458,9 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
               Ative ou desative os blocos que deseja ver no seu painel. Arraste para reordenar.
             </p>
             <div id="dashWidgetsConfig"></div>
+          <div class="section-card-title" style="margin-top:16px">🚀 ATALHOS RÁPIDOS</div>
+          <p style="color:var(--text3);font-size:0.8rem;margin-bottom:10px">Selecione quais atalhos aparecem no painel:</p>
+          <div id="dashAtalhosConfig" style="display:flex;flex-wrap:wrap;gap:8px"></div>
           </div>
           <div class="modal-footer">
             <button class="btn btn-outline btn-sm" onclick="resetarDashboard()">↺ Padrão</button>
@@ -1976,16 +1979,13 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
               <div id="calcOpDisplay" style="font-size:0.75rem;color:var(--text3);min-height:16px"></div>
             </div>
 
-            <!-- Campo descrição -->
-            <input type="text" class="form-input" id="calcDesc" placeholder="Descrição (opcional)"
-              style="margin-bottom:10px;font-size:0.82rem">
-
+            <!-- Campo descrição removido — descrição fica inline na fita -->
             <!-- Teclado numérico -->
             <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px">
-              <button class="calc-btn calc-fn" onclick="calcFn('%')">%</button>
-              <button class="calc-btn calc-fn" onclick="calcFn('CE')">CE</button>
-              <button class="calc-btn calc-fn" onclick="calcFn('C')">C</button>
-              <button class="calc-btn calc-op" onclick="calcFn('÷')">÷</button>
+              <button class="calc-btn calc-fn" onclick="calcFn('%')" title="Porcentagem">%</button>
+              <button class="calc-btn calc-fn" onclick="calcFn('CE')" title="Limpa operação (Delete)">CE</button>
+              <button class="calc-btn calc-fn" onclick="calcFn('C')" title="Limpa número (Esc reinicia fita)">C</button>
+              <button class="calc-btn calc-op" onclick="calcFn('÷')" title="Dividir">÷</button>
 
               <button class="calc-btn" onclick="calcNum('7')">7</button>
               <button class="calc-btn" onclick="calcNum('8')">8</button>
@@ -2571,29 +2571,37 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
             <input type="number" class="form-input" id="empParcelas" placeholder="8" min="1" oninput="calcParcela()">
           </div>
         </div>
+        <!-- SIMULAÇÃO — aparece após preencher valor + parcelas -->
+        <div id="empSimulacao" style="display:none;background:var(--bg2);border-radius:8px;padding:12px;font-size:0.85rem;margin-bottom:4px">
+          <div style="font-weight:600;margin-bottom:8px;color:var(--text2)">📊 Como ficará o parcelamento:</div>
+          <div id="empSimIgual" style="margin-bottom:6px;padding:8px;background:var(--bg3);border-radius:6px"></div>
+          <div id="empSimUltima" style="padding:8px;background:var(--bg3);border-radius:6px"></div>
+        </div>
         <div class="form-group">
           <label class="form-label">Tipo de parcelamento</label>
           <select class="form-input" id="empTipoParcela" onchange="calcParcela()">
-            <option value="igual">Parcelas iguais (ex: 7x R$107,14)</option>
-            <option value="ultima_diferente">Última parcela diferente (ex: 6x R$100 + 1x R$50)</option>
+            <option value="igual">Parcelas iguais</option>
+            <option value="ultima_diferente">Última parcela diferente</option>
           </select>
         </div>
         <div class="form-grid form-grid-2">
           <div class="form-group">
             <label class="form-label">Valor por parcela (R$)</label>
-            <input type="number" class="form-input" id="empValorParcela" placeholder="100,00" step="0.01" oninput="calcUltimaParcela()">
+            <div style="position:relative">
+              <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:0.82rem;pointer-events:none">R$</span>
+              <input type="number" class="form-input" id="empValorParcela" placeholder="0,00" step="0.01" style="padding-left:30px" oninput="calcUltimaParcela()">
+            </div>
           </div>
           <div class="form-group" id="empUltimaParcelaGroup" style="display:none">
             <label class="form-label">Última parcela (R$)</label>
-            <input type="number" class="form-input" id="empUltimaParcela" placeholder="50,00" step="0.01">
+            <div style="position:relative">
+              <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:0.82rem;pointer-events:none">R$</span>
+              <input type="number" class="form-input" id="empUltimaParcela" placeholder="0,00" step="0.01" style="padding-left:30px" oninput="calcValidarParcelas()">
+            </div>
           </div>
         </div>
         <div id="empResumoParcelamento" style="font-size:0.82rem;color:var(--text3);margin-top:-8px"></div>
-        <div id="empSimulacao" style="display:none;background:var(--bg2);border-radius:8px;padding:12px;font-size:0.82rem">
-          <div style="font-weight:600;margin-bottom:6px;color:var(--text2)">📊 Simulação automática:</div>
-          <div id="empSimIgual" style="margin-bottom:4px"></div>
-          <div id="empSimUltima"></div>
-        </div>
+        <div id="empValidacaoAlerta" style="display:none;color:var(--red);font-size:0.82rem;margin-top:4px;padding:6px;background:rgba(239,68,68,0.1);border-radius:6px"></div>
         <div class="form-group">
           <label class="form-label">Data início</label>
           <input type="date" class="form-input" id="empDataInicio">
@@ -2796,17 +2804,25 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
     </div>
     <div class="modal-body">
       <input type="hidden" id="exportAcertoParId">
+      <div class="form-group" style="margin-bottom:12px">
+        <label class="form-label">Período</label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-outline btn-sm" onclick="setExportPeriodo('aberto')">📂 Período em aberto</button>
+          <button class="btn btn-outline btn-sm" onclick="setExportPeriodo('este_mes')">Este mês</button>
+          <button class="btn btn-outline btn-sm" onclick="setExportPeriodo('mes_passado')">Mês passado</button>
+          <button class="btn btn-outline btn-sm" onclick="setExportPeriodo('tudo')">Histórico completo</button>
+        </div>
+      </div>
       <div class="form-grid form-grid-2">
         <div class="form-group">
-          <label class="form-label">Data inicial</label>
+          <label class="form-label">Data inicial (opcional)</label>
           <input type="date" class="form-input" id="exportAcertoDe">
         </div>
         <div class="form-group">
-          <label class="form-label">Data final</label>
+          <label class="form-label">Data final (opcional)</label>
           <input type="date" class="form-input" id="exportAcertoAte">
         </div>
       </div>
-      <p style="color:var(--text3);font-size:0.8rem;margin-top:4px">Deixe em branco para exportar todo o histórico.</p>
     </div>
     <div class="modal-footer">
       <button class="btn btn-outline btn-sm" onclick="closeModal('modal-exportar-acerto')">Cancelar</button>
@@ -3843,6 +3859,11 @@ async function salvarEmprestimo() {
   const funcId = document.getElementById('empFuncionario').value;
   const descricao = document.getElementById('empDescricao').value.trim();
   if (!funcId || !descricao) { toast('Funcionário e descrição obrigatórios', 'error'); return; }
+  // Validar que parcelas batem com total
+  const alertaEl = document.getElementById('empValidacaoAlerta');
+  if (alertaEl && alertaEl.style.display !== 'none') {
+    toast('Corrija o parcelamento antes de salvar', 'error'); return;
+  }
   const func = funcionarios.find(f => f.id === funcId);
   const data = {
     funcionarioId: funcId, funcionarioNome: func?.nome||'', descricao,
@@ -4977,16 +4998,20 @@ function renderAcerto() {
   carregarERenderAcerto(container);
 }
 async function carregarERenderAcerto(container) {
-  // Recarregar do Firebase sempre para garantir dados frescos
   try {
     if (db && currentOrg) {
-      const snap = await db.collection('orgs').doc(currentOrg.id).collection('lancamentos').get();
+      // Usar .get() com timeout para evitar "message channel closed"
+      const snap = await Promise.race([
+        db.collection('orgs').doc(currentOrg.id).collection('lancamentos').get(),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 5000))
+      ]);
       lancamentosCache = snap.docs.map(d => ({id: d.id, ...d.data()}));
     } else {
       lancamentosCache = getCol('lancamentos').getAll();
     }
   } catch(e) {
-    lancamentosCache = getCol('lancamentos').getAll();
+    console.warn('carregarERenderAcerto fallback:', e.message);
+    // Usar cache existente se falhar
   }
   const todosLancamentos = lancamentosCache;
   container.innerHTML = acertoPares.map(par => {
@@ -5014,7 +5039,15 @@ async function carregarERenderAcerto(container) {
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px">
         <div style="font-weight:700;font-size:1.05rem">🤝 ${par.pessoaA} ↔ ${par.pessoaB}</div>
         <div style="display:flex;gap:6px" onclick="event.stopPropagation()">
-          <button class="btn btn-primary btn-sm" onclick="abrirPaginaPar('${par.id}')">Ver detalhes →</button>
+          <div style="display:flex;gap:4px;flex-wrap:wrap">
+            <button class="btn btn-outline btn-sm" style="font-size:0.78rem" onclick="event.stopPropagation();openLancamentoPar('${par.id}','${par.pessoaA}')">
+              ${par.pessoaA} deve
+            </button>
+            <button class="btn btn-outline btn-sm" style="font-size:0.78rem" onclick="event.stopPropagation();openLancamentoPar('${par.id}','${par.pessoaB}')">
+              ${par.pessoaB} deve
+            </button>
+            <button class="btn btn-primary btn-sm" onclick="abrirPaginaPar('${par.id}')">Ver →</button>
+          </div>
         </div>
       </div>
 
@@ -5062,27 +5095,54 @@ async function excluirLancamento(lancId, parId) {
 
 function populateLancPar() {
   const sel = document.getElementById('lancPar');
-  sel.innerHTML = acertoPares.map(p => `<option value="${p.id}">${p.pessoaA} ↔ ${p.pessoaB}</option>`).join('');
-  if (acertoPares.length > 0) lancParChanged();
+  sel.innerHTML = '<option value="">— Selecionar par —</option>' +
+    acertoPares.map(p => `<option value="${p.id}">${p.pessoaA} ↔ ${p.pessoaB}</option>`).join('');
+  // Não auto-selecionar — usuário deve escolher
 }
 
 function lancParChanged() {
   const parId = document.getElementById('lancPar').value;
+  if (!parId) {
+    document.getElementById('lancDe').innerHTML = '<option value="">— Selecionar —</option>';
+    const at = document.getElementById('lancAtalhos');
+    if (at) at.style.display = 'none';
+    return;
+  }
   popularSelectLancDe(parId);
+  // Mostrar atalhos rápidos
+  const par = acertoPares.find(p => p.id === parId);
+  const at = document.getElementById('lancAtalhos');
+  if (at && par) {
+    at.style.display = 'flex';
+    at.innerHTML = `
+      <button class="btn btn-outline btn-sm" style="flex:1;font-size:0.78rem"
+        onclick="document.getElementById('lancDe').value='${par.pessoaA}'" >
+        ${par.pessoaA} deve
+      </button>
+      <button class="btn btn-outline btn-sm" style="flex:1;font-size:0.78rem"
+        onclick="document.getElementById('lancDe').value='${par.pessoaB}'">
+        ${par.pessoaB} deve
+      </button>`;
+  }
 }
 
 document.getElementById('lancPar').addEventListener('change', lancParChanged);
 
-function openLancamentoPar(parId) {
+function openLancamentoPar(parId, pessoaDeve) {
   // Limpar campos primeiro
   document.getElementById('lancValor').value = '';
   document.getElementById('lancDescricao').value = '';
   document.getElementById('lancData').value = new Date().toISOString().slice(0,10);
-  // Popular select e definir par correto
   populateLancPar();
   setTimeout(() => {
     document.getElementById('lancPar').value = parId;
     lancParChanged();
+    // Se veio com pessoa pré-selecionada
+    if (pessoaDeve) {
+      setTimeout(() => {
+        document.getElementById('lancDe').value = pessoaDeve;
+      }, 50);
+    }
   }, 50);
   openModal('modal-lancamento');
 }
@@ -5133,7 +5193,7 @@ function popularSelectLancDe(parId) {
   if (!par) return;
   const sel = document.getElementById('lancDe');
   if (!sel) return;
-  sel.innerHTML = `<option value="${par.pessoaA}">${par.pessoaA}</option><option value="${par.pessoaB}">${par.pessoaB}</option>`;
+  sel.innerHTML = `<option value="">— Selecionar —</option><option value="${par.pessoaA}">${par.pessoaA}</option><option value="${par.pessoaB}">${par.pessoaB}</option>`;
 }
 
 async function salvarLancamento() {
@@ -6511,31 +6571,64 @@ function calcParcela() {
   const n = parseInt(document.getElementById('empParcelas').value) || 1;
   const tipo = document.getElementById('empTipoParcela')?.value || 'igual';
   const grupoUltima = document.getElementById('empUltimaParcelaGroup');
-  const resumo = document.getElementById('empResumoParcelamento');
 
   if (grupoUltima) grupoUltima.style.display = tipo === 'ultima_diferente' ? '' : 'none';
 
-  if (!total || !n) return;
-
-  atualizarSimulacaoEmp();
-  if (tipo === 'igual') {
-    const val = Math.round((total / n) * 100) / 100;
-    document.getElementById('empValorParcela').value = val.toFixed(2);
-    if (resumo) resumo.textContent = `${n}x R$ ${fmtMoney(val)} = R$ ${fmtMoney(val * n)}${Math.abs(val * n - total) > 0.01 ? ' (diferença de R$ ' + fmtMoney(Math.abs(val*n-total)) + ')' : ''}`;
-  } else {
-    // Últimas n-1 parcelas iguais, última diferente
-    const parcelaPadrao = parseFloat(document.getElementById('empValorParcela').value) || 0;
-    if (parcelaPadrao && n > 1) {
-      const ultimaVal = Math.round((total - parcelaPadrao * (n - 1)) * 100) / 100;
-      document.getElementById('empUltimaParcela').value = ultimaVal > 0 ? ultimaVal.toFixed(2) : '0.00';
-      if (resumo) resumo.textContent = `${n-1}x R$ ${fmtMoney(parcelaPadrao)} + 1x R$ ${fmtMoney(ultimaVal)} = R$ ${fmtMoney(parcelaPadrao*(n-1)+ultimaVal)}`;
-    }
+  if (!total || !n) {
+    document.getElementById('empSimulacao').style.display = 'none';
+    return;
   }
+
+  // Sempre mostrar simulação com ambas as opções
+  const valIgual = Math.round((total / n) * 100) / 100;
+  const somaIgual = valIgual * n;
+  const diffIgual = Math.round((total - somaIgual) * 100) / 100;
+
+  const valPadrao = Math.floor(total / n * 100) / 100;
+  const ultimaDif = Math.round((total - valPadrao * (n-1)) * 100) / 100;
+
+  const simIgual = document.getElementById('empSimIgual');
+  const simUltima = document.getElementById('empSimUltima');
+  if (simIgual) simIgual.innerHTML = `<span style="color:var(--accent2);font-weight:600">Parcelas iguais:</span> ${n}x <strong>R$ ${fmtMoney(valIgual)}</strong>${Math.abs(diffIgual)>0.01?' <span style="color:var(--text3);font-size:0.78rem">(última: R$ '+fmtMoney(valIgual+diffIgual)+')</span>':''}`;
+  if (simUltima) simUltima.innerHTML = `<span style="color:var(--yellow);font-weight:600">Última diferente:</span> ${n-1}x <strong>R$ ${fmtMoney(valPadrao)}</strong> + 1x <strong>R$ ${fmtMoney(ultimaDif)}</strong>`;
+  document.getElementById('empSimulacao').style.display = '';
+
+  if (tipo === 'igual') {
+    document.getElementById('empValorParcela').value = valIgual.toFixed(2);
+  } else if (tipo === 'ultima_diferente') {
+    document.getElementById('empValorParcela').value = valPadrao.toFixed(2);
+    document.getElementById('empUltimaParcela').value = ultimaDif.toFixed(2);
+  }
+
+  calcValidarParcelas();
 }
 
 function calcUltimaParcela() {
-  const tipo = document.getElementById('empTipoParcela')?.value;
-  if (tipo === 'ultima_diferente') calcParcela();
+  calcValidarParcelas();
+}
+
+function calcValidarParcelas() {
+  const total = parseFloat(document.getElementById('empTotal').value) || 0;
+  const n = parseInt(document.getElementById('empParcelas').value) || 1;
+  const tipo = document.getElementById('empTipoParcela')?.value || 'igual';
+  const alerta = document.getElementById('empValidacaoAlerta');
+  if (!total || !n || !alerta) return;
+
+  let soma = 0;
+  if (tipo === 'igual') {
+    soma = (parseFloat(document.getElementById('empValorParcela').value)||0) * n;
+  } else {
+    soma = (parseFloat(document.getElementById('empValorParcela').value)||0) * (n-1) +
+           (parseFloat(document.getElementById('empUltimaParcela').value)||0);
+  }
+
+  const diff = Math.abs(soma - total);
+  if (diff > 0.02) {
+    alerta.style.display = 'block';
+    alerta.textContent = `⚠️ A soma das parcelas (R$ ${fmtMoney(soma)}) não confere com o total (R$ ${fmtMoney(total)}). Diferença: R$ ${fmtMoney(diff)}`;
+  } else {
+    alerta.style.display = 'none';
+  }
 }
 
 // =====================================================
@@ -7843,14 +7936,24 @@ const DASH_WIDGETS = {
     descricao: 'Botões de acesso rápido a ações frequentes',
     padrao: true,
     render: () => {
-      const btns = [
-        { label: '🎫 Adiantamento', action: "openModal('modal-vale')" },
-        { label: '📋 Adiantamentos em Lote', action: "openModal('modal-vale-lote')" },
-        { label: '🤝 Novo Lançamento', action: "openModal('modal-lancamento')" },
-        { label: '🔗 Novo Par', action: "openModal('modal-acerto-par')" },
-        { label: '💰 Novo Empréstimo', action: "openEmprestimoModal()" },
-        { label: '📋 Folha de Pagamento', action: "navigate('folha')" },
-      ];
+      // Atalhos configuráveis — carregados do localStorage
+      const todosAtalhos = {
+        'adiantamento': { label: '💵 Adiantamento Salarial', action: "openModal('modal-vale')" },
+        'adiantamento_lote': { label: '📋 Adiantamentos em Lote', action: "openModal('modal-vale-lote')" },
+        'acerto': { label: '🤝 Novo Acerto de Contas Pessoais', action: "openModal('modal-lancamento')" },
+        'par': { label: '🔗 Novo Par', action: "openModal('modal-acerto-par')" },
+        'emprestimo': { label: '💰 Novo Empréstimo a Funcionários', action: "openEmprestimoModal()" },
+        'folha': { label: '📋 Folha de Pagamento', action: "navigate('folha')" },
+        'funcionario': { label: '👤 Novo Funcionário', action: "openModal('modal-funcionario')" },
+        'cargo': { label: '👔 Novo Cargo', action: "openModal('modal-grupo')" },
+        'calculadora': { label: '🧮 Calculadora', action: "navigate('calculadora')" },
+        'contrato': { label: '📝 Novo Contrato', action: "navigate('contratos')" },
+        'escala': { label: '🗓️ Assistente de Escala', action: "navigate('escala')" },
+        'relatorio': { label: '📊 Relatório', action: "navigate('relatorio')" },
+      };
+      const atalhosSel = JSON.parse(localStorage.getItem('cgAtalhosDash') || 'null') ||
+        ['adiantamento','adiantamento_lote','acerto','par','emprestimo','folha'];
+      const btns = atalhosSel.map(k => todosAtalhos[k]).filter(Boolean);
       return `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
         ${btns.map(b => `<button class="btn btn-outline btn-sm" onclick="${b.action}" style="flex:1;min-width:130px;text-align:center">${b.label}</button>`).join('')}
       </div>`;
@@ -8085,6 +8188,33 @@ function openDashConfig() {
       </label>
     </div>
   `).join('');
+
+  // Configurar atalhos
+  const atalhosContainer = document.getElementById('dashAtalhosConfig');
+  if (atalhosContainer) {
+    const todosAtalhos = {
+      'adiantamento': '💵 Adiantamento Salarial',
+      'adiantamento_lote': '📋 Adiantamentos em Lote',
+      'acerto': '🤝 Novo Acerto de Contas Pessoais',
+      'par': '🔗 Novo Par',
+      'emprestimo': '💰 Novo Empréstimo a Funcionários',
+      'folha': '📋 Folha de Pagamento',
+      'funcionario': '👤 Novo Funcionário',
+      'cargo': '👔 Novo Cargo',
+      'calculadora': '🧮 Calculadora',
+      'contrato': '📝 Novo Contrato',
+      'escala': '🗓️ Assistente de Escala',
+      'relatorio': '📊 Relatório',
+    };
+    const atalhosSel = JSON.parse(localStorage.getItem('cgAtalhosDash') || 'null') ||
+      ['adiantamento','adiantamento_lote','acerto','par','emprestimo','folha'];
+    atalhosContainer.innerHTML = Object.entries(todosAtalhos).map(([id, label]) => `
+      <label style="display:flex;align-items:center;gap:6px;padding:6px 10px;background:var(--bg2);border-radius:8px;cursor:pointer;font-size:0.82rem;border:1px solid ${atalhosSel.includes(id)?'var(--accent)':'var(--border)'}">
+        <input type="checkbox" id="da_${id}" ${atalhosSel.includes(id)?'checked':''}
+          onchange="this.closest('label').style.borderColor=this.checked?'var(--accent)':'var(--border)'">
+        ${label}
+      </label>`).join('');
+  }
 }
 
 function salvarDashboard() {
@@ -8093,6 +8223,9 @@ function salvarDashboard() {
     return cb?.checked;
   });
   salvarDashConfig(config);
+  // Salvar atalhos selecionados
+  const atalhosSel = Array.from(document.querySelectorAll('[id^="da_"]:checked')).map(cb => cb.id.replace('da_',''));
+  if (atalhosSel.length > 0) localStorage.setItem('cgAtalhosDash', JSON.stringify(atalhosSel));
   closeModal('modal-dash-config');
   renderDashboard();
   toast('Dashboard personalizado!', 'success');
@@ -8108,6 +8241,27 @@ function resetarDashboard() {
 // =====================================================
 // EXPORTAR ACERTO DE CONTAS
 // =====================================================
+function setExportPeriodo(tipo) {
+  const parId = document.getElementById('exportAcertoParId').value;
+  const par = acertoPares.find(p => p.id === parId);
+  const hoje = new Date();
+  if (tipo === 'aberto') {
+    // Após última consolidação
+    const desde = par?.consolidadoEm || '';
+    document.getElementById('exportAcertoDe').value = desde;
+    document.getElementById('exportAcertoAte').value = '';
+  } else if (tipo === 'este_mes') {
+    document.getElementById('exportAcertoDe').value = new Date(hoje.getFullYear(), hoje.getMonth(), 1).toISOString().slice(0,10);
+    document.getElementById('exportAcertoAte').value = new Date(hoje.getFullYear(), hoje.getMonth()+1, 0).toISOString().slice(0,10);
+  } else if (tipo === 'mes_passado') {
+    document.getElementById('exportAcertoDe').value = new Date(hoje.getFullYear(), hoje.getMonth()-1, 1).toISOString().slice(0,10);
+    document.getElementById('exportAcertoAte').value = new Date(hoje.getFullYear(), hoje.getMonth(), 0).toISOString().slice(0,10);
+  } else {
+    document.getElementById('exportAcertoDe').value = '';
+    document.getElementById('exportAcertoAte').value = '';
+  }
+}
+
 function abrirExportarAcerto(parId) {
   document.getElementById('exportAcertoParId').value = parId;
   // Datas padrão: último mês
@@ -8261,10 +8415,19 @@ async function exportarAcertoPar(parId) {
 // =====================================================
 let parAtualId = null;
 
+function decodeHtml(str) {
+  const txt = document.createElement('textarea');
+  txt.innerHTML = str || '';
+  return txt.value;
+}
+
 function abrirPaginaPar(parId) {
   parAtualId = parId;
   const par = acertoPares.find(p => p.id === parId);
   if (!par) return;
+  // Decodificar HTML entities nos nomes
+  par.pessoaA = decodeHtml(par.pessoaA);
+  par.pessoaB = decodeHtml(par.pessoaB);
 
   document.getElementById('parPageTitulo').textContent = `${par.pessoaA} ↔ ${par.pessoaB}`;
 
@@ -8278,7 +8441,14 @@ function abrirPaginaPar(parId) {
   navigate('acerto-par');
 }
 
-function renderParPage(parId) {
+async function renderParPage(parId) {
+  // Recarregar lançamentos antes de renderizar
+  try {
+    if (db && currentOrg) {
+      const snap = await db.collection('orgs').doc(currentOrg.id).collection('lancamentos').get();
+      lancamentosCache = snap.docs.map(d => ({id: d.id, ...d.data()}));
+    }
+  } catch(e) { /* usar cache */ }
   const par = acertoPares.find(p => p.id === parId);
   if (!par) return;
 
@@ -8644,10 +8814,23 @@ function calcValor() {
 
 function calcFn(op) {
   const val = calcValor();
-  const desc = document.getElementById('calcDesc')?.value || '';
+  const desc = ''; // descrição agora é inline na fita
 
-  if (op === 'C') { calcEstado.display = '0'; calcEstado.novoNumero = true; calcRender(); return; }
-  if (op === 'CE') { calcEstado = { display:'0', acumulador:null, operacao:null, novoNumero:true, fita:[...calcEstado.fita], totalAtual: calcEstado.totalAtual }; calcRender(); return; }
+  if (op === 'C') {
+    // C: limpa só o número atual
+    calcEstado.display = '0'; calcEstado.novoNumero = true; calcRender(); return;
+  }
+  if (op === 'CE') {
+    // CE: limpa display E operação pendente (mantém fita)
+    calcEstado.display = '0'; calcEstado.acumulador = null; calcEstado.operacao = null;
+    calcEstado.novoNumero = true;
+    document.getElementById('calcOpDisplay').textContent = '';
+    calcRender(); return;
+  }
+  if (op === 'CF') {
+    // CF: limpa a fita inteira
+    calcNova(); return;
+  }
 
   if (op === '%') {
     const pct = calcEstado.acumulador !== null ? calcEstado.acumulador * val / 100 : val / 100;
@@ -8668,8 +8851,7 @@ function calcFn(op) {
       if (calcEstado.acumulador === null) {
         calcEstado.acumulador = val;
         calcEstado.totalAtual = val;
-        calcEstado.fita.push({ tipo: 'entrada', op: '', valor: val, desc });
-        if (desc) document.getElementById('calcDesc').value = '';
+        calcEstado.fita.push({ tipo: 'entrada', op: '', valor: val, desc: '' });
         calcRenderFita();
       }
     }
@@ -8699,20 +8881,27 @@ function calcExecutar(val, desc) {
   if (opSim === '×') resultado = acc * val;
   if (opSim === '÷') resultado = val !== 0 ? acc / val : 0;
 
-  calcEstado.fita.push({ tipo:'entrada', op: opSim, valor: val, resultado, desc });
-  if (desc) document.getElementById('calcDesc').value = '';
+  calcEstado.fita.push({ tipo:'entrada', op: opSim, valor: val, resultado, desc: '' });
   calcEstado.acumulador = resultado;
   calcEstado.totalAtual = resultado;
   calcEstado.display = String(Math.round(resultado*100)/100).replace('.',',');
   calcRenderFita();
 }
 
+function calcFormatDisplay(str) {
+  // Formatar número enquanto digita: 1500 → 1.500
+  if (!str || str === '0') return '0';
+  const negative = str.startsWith('-');
+  const parts = str.replace('-','').split(',');
+  const intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  const decPart = parts[1] !== undefined ? ',' + parts[1] : '';
+  return (negative ? '-' : '') + intPart + decPart;
+}
+
 function calcRender() {
   const el = document.getElementById('calcDisplay');
   const tot = document.getElementById('calcTotalDisplay');
-  if (el) el.textContent = calcEstado.display.length > 12
-    ? calcEstado.display.substring(0,12)+'…'
-    : calcEstado.display;
+  if (el) el.textContent = calcFormatDisplay(calcEstado.display);
   if (tot) tot.textContent = fmtMoney(calcEstado.totalAtual);
 }
 
@@ -8734,7 +8923,10 @@ function calcRenderFita() {
     const cor = linha.op==='+' ? 'var(--green)' : linha.op==='-' ? 'var(--red)' : 'var(--text)';
     return `<div class="calc-linha ${linha.resultado!==undefined?'cl-eq':''}">
       <span class="cl-op" style="color:${cor}">${linha.op||'='}</span>
-      <span class="cl-desc">${linha.desc||''}</span>
+      <input type="text" class="calc-desc-input" placeholder="descrição..."
+        value="${linha.desc||''}"
+        oninput="calcEstado.fita[${i}].desc=this.value"
+        style="border:none;background:transparent;color:var(--text3);font-size:0.75rem;flex:2;outline:none;padding:0 2px">
       <span class="cl-val" style="color:${cor}">R$ ${fmtMoney(linha.valor)}</span>
       ${linha.resultado!==undefined ? `<span style="font-family:var(--mono);font-weight:700;color:var(--accent2);min-width:80px;text-align:right">= R$ ${fmtMoney(linha.resultado)}</span>` : ''}
       <button class="btn-icon" style="font-size:11px;opacity:0.5" onclick="calcRemoverLinha(${i})">✕</button>
@@ -8768,7 +8960,7 @@ function calcImprimir(tipo) {
   const cupomW = tipo==='cupom' ? 'width:72mm;' : '';
   const html = `<!DOCTYPE html><html><head><title>Calculadora — ${orgNome}</title>
   <style>
-    body{font-family:${tipo==='cupom'?'Courier New,monospace':'Arial,sans-serif'};${cupomW}padding:${tipo==='cupom'?'4mm':'20px'};font-size:${tipo==='cupom'?'9px':'11px'}}
+    body{font-family:${tipo==='cupom'?'Courier New,monospace':'Arial,sans-serif'};${cupomW}padding:${tipo==='cupom'?'4mm':'20px'};font-size:${tipo==='cupom'?'10px':'11px'};-webkit-font-smoothing:none;font-weight:${tipo==='cupom'?'bold':'normal'}}
     table{width:100%;border-collapse:collapse}
     td{padding:${tipo==='cupom'?'2px 3px':'5px 8px'};border-bottom:1px dashed #ddd}
     .total{font-size:${tipo==='cupom'?'12px':'16px'};font-weight:700;border-top:2px solid #333;padding-top:8px}
@@ -9240,8 +9432,9 @@ function calcHandleKeyboard(e) {
     }
     calcRender(); return;
   }
-  if (key === 'Escape') { calcFn('C'); return; }
-  if (key === 'Delete') { calcFn('CE'); return; }
+  if (key === 'Escape') { calcNova(); return; } // Esc = Nova fita
+  if (key === 'Delete') { calcFn('CE'); return; } // Del = limpa operação
+  if (key === 'F9') { calcFn('CF'); return; } // F9 = limpa fita
   // Enter no campo descrição — confirma operação pendente
   if (key === 'Tab' && calcEstado.operacao) { calcFn('='); return; }
 }
