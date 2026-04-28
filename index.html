@@ -1407,11 +1407,11 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
       <div class="nav-item" onclick="navigate('emprestimos')" id="nav-emprestimos">
         <span class="icon">💰</span> Empréstimos a Funcionários
       </div>
-
-      <div class="nav-section-title">Gestão</div>
       <div class="nav-item" onclick="navigate('calculadora')" id="nav-calculadora">
         <span class="icon">🧮</span> Calculadora
       </div>
+
+      <div class="nav-section-title">Gestão</div>
       <div class="nav-item" onclick="navigate('contratos')" id="nav-contratos">
         <span class="icon">📝</span> Contratos
       </div>
@@ -2213,13 +2213,7 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
           </div>
         </div>
 
-        <div class="section-card">
-          <div class="section-card-title">Padrões de folha</div>
-          <div class="form-grid form-grid-2">
 
-
-          </div>
-        </div>
       </div>
 
     </div><!-- /main-panel -->
@@ -4026,7 +4020,20 @@ let folhaDetalhe = {}; // funcionario id -> dados folha
 
 async function gerarNovaFolha() {
   navigate('folha');
-  await loadFolha();
+  // Aguardar DOM atualizar antes de chamar loadFolha
+  setTimeout(async () => {
+    // Garantir que mês/ano estão preenchidos
+    const mesEl = document.getElementById('folhaMes');
+    const anoEl = document.getElementById('folhaAno');
+    if (mesEl && !mesEl.value) {
+      const now = new Date();
+      mesEl.value = now.getMonth() + 1;
+    }
+    if (anoEl && !anoEl.value) {
+      anoEl.value = new Date().getFullYear();
+    }
+    await loadFolha();
+  }, 100);
 }
 
 async function loadFolha() {
@@ -4744,18 +4751,24 @@ function gerarPdfFolhaCompleto(doc, params, startY = 10, save = false) {
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(10);
   doc.setTextColor(...COR_TEXTO);
-  doc.text(f.nome || '—', lm + 5, y + 14);
-  doc.text(f.cpf || '—', lm + 80, y + 14);
-  const cargoText = f.cargo || '—';
-  if (cargoText.length > 28) {
-    doc.setFontSize(8);
-    const cargoLines = doc.splitTextToSize(cargoText, 60);
-    doc.text(cargoLines[0], lm + 130, y + 11);
-    if (cargoLines[1]) doc.text(cargoLines[1], lm + 130, y + 16);
+  // Nome pode ser longo — quebrar se necessário
+  const nomeText = f.nome || '—';
+  if (nomeText.length > 30) {
+    doc.setFontSize(9);
+    doc.text(nomeText.substring(0, 35), lm + 5, y + 14);
     doc.setFontSize(10);
   } else {
-    doc.text(cargoText, lm + 130, y + 14);
+    doc.text(nomeText, lm + 5, y + 14);
   }
+  doc.text(f.cpf || '—', lm + 80, y + 14);
+  // Cargo: buscar do grupo se não tiver no funcionário
+  const grupoNomeObj = d?.funcionario?.grupoId ? grupos.find(g => g.id === d.funcionario.grupoId) : null;
+  const cargoText = f.cargo || grupoNomeObj?.nome || '—';
+  doc.setFontSize(8.5);
+  const cargoLines = doc.splitTextToSize(cargoText, 52);
+  doc.text(cargoLines[0] || '', lm + 130, y + 11);
+  if (cargoLines[1]) doc.text(cargoLines[1], lm + 130, y + 17);
+  doc.setFontSize(10);
   y += 24;
 
   // ── PROVENTOS ───────────────────────────────────────
@@ -5320,14 +5333,16 @@ function renderEscalaPage() {
   });
   const diasEl = document.getElementById('escalaDiasFuncionamento');
   if (diasEl) {
-    Array.from(diasEl.options).forEach(opt => {
-      // Suporte a checkboxes e select
-      if (opt.tagName === 'INPUT') {
-        opt.checked = settings.diasFuncionamento.includes(parseInt(opt.value, 10));
-      } else {
-        opt.selected = settings.diasFuncionamento.includes(parseInt(opt.value, 10));
-      }
-    });
+    // Suporte a div com checkboxes
+    if (diasEl.tagName === 'DIV') {
+      diasEl.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+        cb.checked = (settings.diasFuncionamento || [1,2,3,4,5]).includes(parseInt(cb.value, 10));
+      });
+    } else {
+      Array.from(diasEl.options || []).forEach(opt => {
+        opt.selected = (settings.diasFuncionamento || [1,2,3,4,5]).includes(parseInt(opt.value, 10));
+      });
+    }
   }
   const now = new Date();
   const mesEl = document.getElementById('escalaMes');
@@ -7986,6 +8001,24 @@ const DASH_WIDGETS = {
       </div>`;
     }
   },
+  calculadora: {
+    label: '🧮 Calculadora Rápida',
+    descricao: 'Acesso rápido à calculadora com fita',
+    padrao: false,
+    render: () => {
+      return `<div class="section-card" style="margin-bottom:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <div class="section-card-title" style="margin:0">🧮 CALCULADORA</div>
+          <button class="btn btn-primary btn-sm" onclick="navigate('calculadora')">Abrir calculadora →</button>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-outline btn-sm" style="flex:1" onclick="navigate('calculadora');setTimeout(()=>calcFn('+'),200)">➕ Nova soma</button>
+          <button class="btn btn-outline btn-sm" style="flex:1" onclick="navigate('calculadora');setTimeout(()=>calcNova(),200)">🗑️ Nova fita</button>
+        </div>
+        <div style="font-size:0.78rem;color:var(--text3);margin-top:8px">Total atual: <strong style="font-family:var(--mono)">R$ ${fmtMoney(calcEstado?.totalAtual||0)}</strong></div>
+      </div>`;
+    }
+  },
   historicoFolhas: {
     label: '📁 Histórico de Folhas',
     descricao: 'Últimas folhas geradas',
@@ -9176,6 +9209,48 @@ function abrirNovoContrato() {
 function previewContrato() {
   toast('Preencha os campos e clique em Gerar PDF para visualizar', 'info');
 }
+
+
+// =====================================================
+// CALCULADORA — TECLADO DO COMPUTADOR
+// =====================================================
+function calcHandleKeyboard(e) {
+  // Só funciona quando a página da calculadora está ativa
+  if (!document.getElementById('page-calculadora')?.classList.contains('active')) return;
+  // Não interceptar quando estiver num input (exceto calcDesc)
+  const active = document.activeElement;
+  if (active && active.id !== 'calcDesc' && ['INPUT','TEXTAREA','SELECT'].includes(active.tagName)) return;
+
+  const key = e.key;
+  e.preventDefault();
+
+  if (key >= '0' && key <= '9') { calcNum(key); return; }
+  if (key === ',' || key === '.') { calcNum(','); return; }
+  if (key === '+') { calcFn('+'); return; }
+  if (key === '-') { calcFn('-'); return; }
+  if (key === '*') { calcFn('×'); return; }
+  if (key === '/') { calcFn('÷'); return; }
+  if (key === '%') { calcFn('%'); return; }
+  if (key === 'Enter' || key === '=') { calcFn('='); return; }
+  if (key === 'Backspace') {
+    if (calcEstado.display.length > 1) {
+      calcEstado.display = calcEstado.display.slice(0, -1);
+    } else {
+      calcEstado.display = '0';
+    }
+    calcRender(); return;
+  }
+  if (key === 'Escape') { calcFn('C'); return; }
+  if (key === 'Delete') { calcFn('CE'); return; }
+  // Enter no campo descrição — confirma operação pendente
+  if (key === 'Tab' && calcEstado.operacao) { calcFn('='); return; }
+}
+
+document.addEventListener('keydown', (e) => {
+  // Não interceptar Ctrl+Z (undo) nem outros atalhos do sistema
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  calcHandleKeyboard(e);
+});
 
 // Service worker for PWA
 if ('serviceWorker' in navigator) {
