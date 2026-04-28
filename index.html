@@ -1487,15 +1487,22 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
         <div class="table-wrap">
           <div class="table-header">
             <div class="table-title">Lista de funcionários</div>
-            <input type="text" class="search-input" placeholder="🔍 Buscar..." oninput="filterFuncionarios(this.value)">
+<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+              <input type="text" class="search-input" id="funcBuscaInput" placeholder="🔍 Buscar por nome, cargo, CPF..." oninput="filterFuncionarios(this.value)" style="flex:1;min-width:180px">
+              <select class="form-input" id="funcCargoFiltro" onchange="filterFuncionarios(document.getElementById('funcBuscaInput').value)" style="width:auto;font-size:0.82rem">
+                <option value="">Todos os cargos</option>
+              </select>
+              <button class="btn btn-outline btn-sm" onclick="toggleOrdemFuncionarios()" title="Ordenar A-Z / Z-A">⇅ A-Z</button>
+            </div>
           </div>
           <table>
             <thead>
               <tr>
-                <th>Nome</th>
+                <th onclick="toggleOrdemFuncionarios()" style="cursor:pointer" title="Clique para ordenar">
+                  Nome <span id="ordemFuncIcon">↑↓</span>
+                </th>
                 <th>CPF</th>
                 <th>Cargo</th>
-                <th>Grupo</th>
                 <th>Status</th>
                 <th></th>
               </tr>
@@ -3507,20 +3514,44 @@ document.addEventListener('click', e => {
 // =====================================================
 // FUNCIONÁRIOS
 // =====================================================
-function renderFuncionarios(filter='') {
+let funcOrdemAZ = true;
+
+function toggleOrdemFuncionarios() {
+  funcOrdemAZ = !funcOrdemAZ;
+  const icon = document.getElementById('ordemFuncIcon');
+  if (icon) icon.textContent = funcOrdemAZ ? '↑' : '↓';
+  const btn = document.querySelector('[onclick="toggleOrdemFuncionarios()"]');
+  if (btn) btn.textContent = `⇅ ${funcOrdemAZ ? 'A-Z' : 'Z-A'}`;
+  renderFuncionarios(document.getElementById('funcBuscaInput')?.value || '');
+}
+
+function filterFuncionarios(v) {
+  const cargoFiltro = document.getElementById('funcCargoFiltro')?.value || '';
+  renderFuncionarios(v, cargoFiltro);
+}
+
+function renderFuncionarios(filter='', cargoFiltro='') {
   const tbody = document.getElementById('tabelaFuncionarios');
-  const list = filter ? funcionarios.filter(f => f.nome.toLowerCase().includes(filter.toLowerCase())) : funcionarios;
+  // Popular filtro de cargos
+  const cargoSel = document.getElementById('funcCargoFiltro');
+  if (cargoSel && cargoSel.options.length <= 1) {
+    grupos.forEach(g => {
+      const opt = document.createElement('option');
+      opt.value = g.id; opt.textContent = g.nome;
+      cargoSel.appendChild(opt);
+    });
+  }
+  const list = getFuncionariosOrdenados(filter, cargoFiltro, funcOrdemAZ);
   if (list.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><div class="icon">👥</div><h3>Nenhum funcionário</h3></div></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="5"><div class="empty-state"><div class="icon">👥</div><h3>Nenhum funcionário encontrado</h3></div></td></tr>`;
     return;
   }
   tbody.innerHTML = list.map(f => {
-    const grupo = grupos.find(g => g.id === f.grupoId);
+    const nomeCargo = getNomeCargo(f);
     return `<tr>
       <td><span style="cursor:pointer;color:var(--accent2);text-decoration:underline" onclick="abrirFichaFuncionario('${f.id}')" title="Ver ficha completa"><strong>${f.nome}</strong></span>${f.observacoes ? ` <span title="${f.observacoes}" style="cursor:help;color:var(--text3);font-size:0.8rem">📝</span>` : ''}</td>
       <td style="font-family:var(--mono);font-size:0.78rem">${f.cpf || '—'}</td>
-      <td>${f.cargo || '—'}</td>
-      <td>${grupo ? `<span class="badge badge-accent">${grupo.nome}</span>` : '<span class="badge badge-gray">Manual</span>'}</td>
+      <td><span class="badge badge-accent">${nomeCargo}</span></td>
       <td><span class="badge ${f.ativo!==false ? 'badge-green' : 'badge-gray'}">${f.ativo!==false ? 'Ativo' : 'Inativo'}</span></td>
       <td style="text-align:right;white-space:nowrap;display:flex;gap:4px;justify-content:flex-end">
         <button class="btn btn-outline btn-sm" onclick="abrirFichaFuncionario('${f.id}')" title="Ficha">📋 Ficha</button>
@@ -3530,8 +3561,6 @@ function renderFuncionarios(filter='') {
     </tr>`;
   }).join('');
 }
-
-function filterFuncionarios(v) { renderFuncionarios(v); }
 
 function populateGrupoSelect() {
   const sel = document.getElementById('funcGrupo');
@@ -4075,47 +4104,54 @@ async function loadFolha() {
   const empAtivos = emprestimos.filter(e => e.status === 'ativo' || !e.status);
 
   folhaDetalhe = {};
-  const cards = ativos.map(f => {
+  // Ordenar funcionários A-Z
+  const ativosOrdenados = [...ativos].sort((a,b) => a.nome.localeCompare(b.nome,'pt-BR'));
+
+  const cards = ativosOrdenados.map(f => {
     const grupo = f.grupoId ? grupos.find(g => g.id === f.grupoId) : null;
-    const salario = grupo ? grupo.salario : (f.salario || 0);
-    const horaExtraVal = grupo ? grupo.horaExtra : (f.horaExtra || 0);
-    const insalPct = grupo ? grupo.insalubridade : (f.insalubridade || 0);
-    const inssValor = grupo ? grupo.inss : (f.inss || 0);
-    const insalubridade = salario * (insalPct / 100);
+    const salario = grupo ? (grupo.salario||0) : (f.salario || 0);
+    const horaExtraVal = grupo ? (grupo.horaExtra||0) : (f.horaExtra || 0);
+    const horaExtraPct = grupo ? (grupo.horaExtraPct||50) : (f.horaExtraPct || 50);
+    const cargaMensal = grupo ? (grupo.cargaMensal||220) : (f.cargaMensal || 220);
+
+    // INSS — preferência: tipo e valor do funcionário, fallback do grupo
+    const inssType = f.inssType || grupo?.inssType || 'valor';
+    const inssPct = f.inssPct || grupo?.inssPct || 0;
+    const inssValor = inssType === 'pct'
+      ? Math.round(salario * (inssPct / 100) * 100) / 100
+      : (f.inss || grupo?.inss || 0);
+
+    // Adicionais — do funcionário primeiro, fallback do grupo
+    const adicionais = (f.adicionais?.length ? f.adicionais : grupo?.adicionais) || [];
+
+    // Calcular valor de cada adicional
+    const adicionaisComValor = adicionais.map(a => ({
+      ...a,
+      valorCalculado: a.isValorFixo ? (a.valor||0) : Math.round(salario*(a.pct||0)/100*100)/100
+    }));
 
     const empFuncionario = empAtivos.filter(e => e.funcionarioId === f.id);
     const valesFuncionario = valesMes.filter(v => v.funcionarioId === f.id);
 
-    // Calcular descontos de parcelas
     const descontoEmprestimos = empFuncionario.map(e => ({
-      label: e.descricao,
-      valor: e.valorParcela,
-      numero: (e.parcelasPagas||0) + 1,
-      total: e.parcelas,
-      id: e.id
+      label: e.descricao, valor: e.valorParcela,
+      numero: (e.parcelasPagas||0) + 1, total: e.parcelas, id: e.id
     }));
 
-    // Vales do mês
     const descontoVales = valesFuncionario.map(v => ({
-      label: v.descricao || 'Vale',
-      data: v.data,
-      valor: v.valor,
-      id: v.id,
-      valeQuinzena: v.descricao === 'Vale quinzena'
+      label: v.descricao || 'Adiantamento', data: v.data, valor: v.valor, id: v.id
     }));
 
-    // Estado inicial (horas extras = 0 pois usuário precisa preencher)
     folhaDetalhe[f.id] = {
       funcionario: f,
-      salario, horaExtraVal, insalPct, inssValor,
-      diasTrabalhados: 0, // 0 = mês completo
+      salario, horaExtraVal, horaExtraPct, cargaMensal,
+      inssType, inssPct, inssValor,
+      adicionaisBase: adicionaisComValor, // adicionais do cargo/func (editáveis)
+      diasTrabalhados: 0,
       horasExtras: 0,
-      insalubridade,
       reflexoDsr: 0,
-      premioDesempenho: 0,
       descontoEmprestimos,
       descontoVales,
-      valeQuinzena: grupo ? grupo.valeQuinzena : 0,
       outrosProventos: [],
       outrosDescontos: [],
       faltas: 0
@@ -4144,10 +4180,12 @@ function calcFolhaTotais(d) {
   const reflexoDsr = d.horasExtras > 0 ? (d.reflexoDsr || calcReflexoDsr(d.salario, d.horasExtras, d.horaExtraVal)) : 0;
   let salarioBase = d.salario||0;
   if (d.diasTrabalhados > 0 && d.diasTrabalhados < 30) salarioBase = (d.salario/30)*d.diasTrabalhados;
-  // Adicionais do funcionário
-  const adics = (d.funcionario?.adicionais || []);
+  // Adicionais: usar adicionaisBase (já calculados no loadFolha) ou direto do funcionário
+  const adics = d.adicionaisBase || (d.funcionario?.adicionais || []);
   const totalAdics = adics.reduce((s,a) => {
-    const val = a.isValorFixo ? (a.valor||0) : (salarioBase*(a.pct||0)/100);
+    const val = a.valorEditado !== undefined ? a.valorEditado :
+                (a.valorCalculado !== undefined ? a.valorCalculado :
+                (a.isValorFixo ? (a.valor||0) : (salarioBase*(a.pct||0)/100)));
     return s + val;
   }, 0);
   const totalProventos = salarioBase + horasExtrasValor + totalAdics + reflexoDsr + (d.premioDesempenho||0) +
@@ -4197,7 +4235,7 @@ function buildFolhaCard(f, d) {
         <input type="checkbox" class="folha-func-cb" data-id="${f.id}" checked style="width:16px;height:16px;flex-shrink:0">
         <div>
           <div class="folha-employee-name">${f.nome}</div>
-          <div class="folha-employee-role">${f.cargo||f.grupoNome||'—'} • CPF: ${f.cpf||'—'}</div>
+          <div class="folha-employee-role">${getNomeCargo(f)} • CPF: ${f.cpf||'—'}</div>
         </div>
       </div>
       <div style="display:flex;gap:6px;flex-wrap:wrap">
@@ -4289,7 +4327,21 @@ function buildFolhaCard(f, d) {
         </div>
       </div>
 
-      <!-- PROVENTOS EXTRAS -->
+      <!-- ADICIONAIS DO CARGO (editáveis) -->
+      ${(d.adicionaisBase||[]).length > 0 ? `
+      <div style="font-size:0.78rem;font-weight:700;color:var(--green);margin:10px 0 6px">▲ ADICIONAIS DO CARGO</div>
+      ${(d.adicionaisBase||[]).map((a,i) => `
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+          <span style="flex:2;font-size:0.82rem">${a.nome}${!a.isValorFixo && a.pct ? ` (${a.pct}%)` : ''}</span>
+          <div style="position:relative;flex:1">
+            <span style="position:absolute;left:8px;top:50%;transform:translateY(-50%);font-size:0.75rem;color:var(--text3)">R$</span>
+            <input type="number" class="form-input" value="${a.valorEditado!==undefined?a.valorEditado:a.valorCalculado||0}" step="0.01"
+              style="padding-left:26px;font-size:0.82rem"
+              oninput="folhaDetalhe['${f.id}'].adicionaisBase[${i}].valorEditado=parseFloat(this.value)||0;rebuildCard('${f.id}')">
+          </div>
+        </div>`).join('')}` : ''}
+
+      <!-- OUTROS PROVENTOS (extras) -->
       <div style="font-size:0.78rem;font-weight:700;color:var(--green);margin:10px 0 6px">▲ OUTROS PROVENTOS</div>
       <div style="margin-bottom:8px">
         ${(d.outrosProventos||[]).map((o,i)=>`
@@ -5095,9 +5147,9 @@ async function excluirLancamento(lancId, parId) {
 
 function populateLancPar() {
   const sel = document.getElementById('lancPar');
+  if (!sel) return;
   sel.innerHTML = '<option value="">— Selecionar par —</option>' +
     acertoPares.map(p => `<option value="${p.id}">${p.pessoaA} ↔ ${p.pessoaB}</option>`).join('');
-  // Não auto-selecionar — usuário deve escolher
 }
 
 function lancParChanged() {
@@ -6241,7 +6293,8 @@ function gerarRelatorio() {
   let totalBruto = 0, totalDesc = 0, totalLiq = 0;
   const rows = [];
 
-  for (const f of ativos) {
+  const ativosOrd = [...ativos].sort((a,b) => a.nome.localeCompare(b.nome,'pt-BR'));
+  for (const f of ativosOrd) {
     let bruto = 0, descontos = 0, liq = 0;
     let fonte = 'sem dados';
 
@@ -6399,7 +6452,7 @@ function exportFuncionariosExcel() {
     return {
       'Nome': f.nome || '',
       'CPF': f.cpf || '',
-      'Cargo': f.cargo || '',
+      'Cargo': getNomeCargo(f),
       'Cargo': grupo?.nome || 'Manual',
       'Salário Base': f.salario || 0,
       'Valor Hora Extra': f.horaExtra || 0,
@@ -6437,7 +6490,7 @@ function exportRelatorioExcel() {
     const descontos = inss + valeQ + empF + valesF;
     return {
       'Funcionário': f.nome,
-      'Cargo': f.cargo || '',
+      'Cargo': getNomeCargo(f),
       'Salário Bruto': salario,
       'INSS': inss,
       'Vale Quinzena': valeQ,
@@ -6891,7 +6944,7 @@ function renderGrupoFuncionariosCheck(grupoId) {
     container.innerHTML = '<p style="color:var(--text3);font-size:0.82rem">Nenhum funcionário cadastrado ainda.</p>';
     return;
   }
-  container.innerHTML = funcionarios.filter(f => f.ativo !== false).map(f => `
+  container.innerHTML = getFuncionariosOrdenados('','',true).map(f => `
     <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:4px 0">
       <input type="checkbox" id="gfc_${f.id}" ${f.grupoId === grupoId ? 'checked' : ''}
         style="width:16px;height:16px;cursor:pointer">
@@ -7166,7 +7219,7 @@ function openValesLoteModal() {
   const hoje = new Date().toISOString().slice(0,10);
   document.getElementById('lotevaleData').value = hoje;
   if (!container) return;
-  container.innerHTML = funcionarios.filter(f=>f.ativo!==false).map(f => `
+  container.innerHTML = getFuncionariosOrdenados('','',true).map(f => `
     <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
       <input type="checkbox" id="lote_cb_${f.id}" checked style="width:16px;height:16px;flex-shrink:0">
       <label for="lote_cb_${f.id}" style="flex:1;font-size:0.85rem;cursor:pointer">${f.nome}</label>
@@ -8770,7 +8823,7 @@ function exportFuncionariosPDF() {
     doc.setFont('helvetica','normal'); doc.setFontSize(8);
     doc.text((f.nome||'').substring(0,24), lm+3, y+5);
     doc.text(f.cpf||'—', lm+55, y+5);
-    doc.text((f.cargo||grupo?.nome||'—').substring(0,18), lm+90, y+5);
+    doc.text(getNomeCargo(f).substring(0,18), lm+90, y+5);
     doc.setFont('helvetica','bold'); doc.setTextColor(46,158,79);
     doc.text(`R$ ${fmtMoney(f.salario||0)}`, lm+140, y+5);
     doc.setTextColor(f.ativo!==false?46:200, f.ativo!==false?158:30, f.ativo!==false?79:30);
@@ -9445,6 +9498,36 @@ document.addEventListener('keydown', (e) => {
   calcHandleKeyboard(e);
 });
 
+
+// Helper: retorna o nome do cargo de um funcionário
+function getNomeCargo(f) {
+  if (f.grupoId) {
+    const g = grupos.find(g => g.id === f.grupoId);
+    if (g) return g.nome;
+  }
+  return f.cargo || '—';
+}
+
+// Helper: lista de funcionários ativos ordenada e filtrada
+function getFuncionariosOrdenados(filtro='', cargoFiltro='', ordemAZ=true) {
+  let lista = funcionarios.filter(f => f.ativo !== false);
+  if (filtro) {
+    const q = filtro.toLowerCase();
+    lista = lista.filter(f =>
+      f.nome.toLowerCase().includes(q) ||
+      getNomeCargo(f).toLowerCase().includes(q) ||
+      (f.cpf||'').includes(q)
+    );
+  }
+  if (cargoFiltro) {
+    lista = lista.filter(f => f.grupoId === cargoFiltro || f.cargo === cargoFiltro);
+  }
+  lista.sort((a, b) => {
+    const cmp = a.nome.localeCompare(b.nome, 'pt-BR');
+    return ordemAZ ? cmp : -cmp;
+  });
+  return lista;
+}
 // Service worker for PWA
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
