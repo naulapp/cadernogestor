@@ -3493,7 +3493,7 @@ function openModal(id) {
       toggleValeParcelas();
     }
   }
-  if (id === 'modal-grupo') { setTimeout(() => renderGrupoFuncionariosCheck(document.getElementById('grupoId').value), 50); }
+  if (id === 'modal-grupo') { setTimeout(() => { renderGrupoFuncionariosCheck(document.getElementById('grupoId').value); atualizarResumoGrupo(); }, 50); }
 }
 
 function closeModal(id) { document.getElementById(id).classList.remove('active'); }
