@@ -1176,6 +1176,31 @@ tr:hover td { background: rgba(108,99,255,0.04); }
 .money-wrap .form-input { padding-left:36px; }
 input.money-fmt { text-align:right; font-family:var(--mono); }
 
+
+/* BOTÕES FLUTUANTES FOLHA */
+#floatFolhaButtons {
+  position: fixed;
+  bottom: 90px;
+  right: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 400;
+}
+#floatFolhaButtons button {
+  background: var(--navy);
+  color: white;
+  border: none;
+  border-radius: 20px;
+  padding: 8px 14px;
+  font-size: 0.78rem;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.3);
+  font-family: var(--font);
+  white-space: nowrap;
+}
+#floatFolhaButtons button:hover { opacity: 0.9; }
+
 </style>
 </head>
 <body>
@@ -1333,36 +1358,33 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
       <div class="nav-item" onclick="navigate('cargos')" id="nav-cargos">
         <span class="icon">👔</span> Cargos
       </div>
+      <div class="nav-item" onclick="navigate('folha')" id="nav-folha">
+        <span class="icon">📋</span> Folha de Pagamento
+      </div>
+      <div class="nav-item" onclick="navigate('escala')" id="nav-escala">
+        <span class="icon">🗓️</span> Assistente de Escala
+      </div>
 
       <div class="nav-section-title">Financeiro</div>
-      <div class="nav-item" onclick="navigate('folha')" id="nav-folha">
-        <span class="icon">📋</span> Folha Pgto.
-      </div>
       <div class="nav-item" onclick="navigate('emprestimos')" id="nav-emprestimos">
         <span class="icon">💰</span> Empréstimos
       </div>
       <div class="nav-item" onclick="navigate('vales')" id="nav-vales">
         <span class="icon">🎫</span> Vales
       </div>
-      <div class="nav-item" onclick="navigate('historico-fin')" id="nav-historico-fin">
-        <span class="icon">📜</span> Histórico Fin.
-      </div>
       <div class="nav-item" onclick="navigate('acerto')" id="nav-acerto">
-        <span class="icon">🤝</span> Controle Fin. Pessoal
+        <span class="icon">🤝</span> Controle Financeiro Pessoal
       </div>
 
       <div class="nav-section-title">Gestão</div>
       <div class="nav-item" onclick="navigate('relatorio')" id="nav-relatorio">
-        <span class="icon">📊</span> Relatório
+        <span class="icon">📊</span> Relatório de Funcionários
       </div>
       <div class="nav-item" onclick="navigate('historico-folha')" id="nav-historico-folha">
-        <span class="icon">📁</span> Histórico Folhas
-      </div>
-      <div class="nav-item" onclick="navigate('escala')" id="nav-escala">
-        <span class="icon">SC</span> Assist. Escala
+        <span class="icon">📁</span> Histórico de Folhas
       </div>
       <div class="nav-item" onclick="navigate('equipe')" id="nav-equipe">
-        <span class="icon">🔑</span> Equipe/Acesso
+        <span class="icon">🔑</span> Equipe & Acessos
       </div>
       <div class="nav-item" onclick="navigate('configuracoes')" id="nav-configuracoes">
         <span class="icon">⚙️</span> Configurações
@@ -1762,30 +1784,16 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
           <div id="fichaVales"></div>
         </div>
 
+        <!-- Histórico financeiro -->
+        <div class="section-card" style="margin-bottom:16px">
+          <div class="section-card-title">📜 HISTÓRICO FINANCEIRO COMPLETO</div>
+          <div id="fichaHistoricoFinanceiro"></div>
+        </div>
+
         <!-- Histórico de folhas -->
         <div class="section-card">
           <div class="section-card-title">📋 HISTÓRICO DE FOLHAS</div>
           <div id="fichaHistoricoFolhas"></div>
-        </div>
-      </div>
-
-      <!-- ===== HISTÓRICO FINANCEIRO ===== -->
-      <div class="page" id="page-historico-fin">
-        <div class="page-header">
-          <div>
-            <div class="page-title">Histórico Financeiro</div>
-            <div class="page-sub">Empréstimos e vales quitados</div>
-          </div>
-        </div>
-
-        <div class="section-card" style="margin-bottom:16px">
-          <div class="section-card-title">📜 EMPRÉSTIMOS — TODOS</div>
-          <div id="histFinEmprestimos"></div>
-        </div>
-
-        <div class="section-card">
-          <div class="section-card-title">🎫 VALES — TODOS</div>
-          <div id="histFinVales"></div>
         </div>
       </div>
 
@@ -2256,7 +2264,7 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
           </div>
           <div class="form-group" id="grupoInssPctGroup" style="display:none">
             <label class="form-label">Alíquota INSS (%)</label>
-            <input type="number" class="form-input" id="grupoInssPct" placeholder="7,5" step="0.01">
+            <input type="text" class="form-input" id="grupoInssPct" placeholder="7,5" inputmode="decimal">
           </div>
         </div>
         <p style="color:var(--text3);font-size:0.75rem;margin-top:-8px">⚠️ O INSS incide sobre: salário + horas extras + adicionais habituais (exceto DSR). Tabela 2024: 7,5% a 14%.</p>
@@ -2517,6 +2525,12 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
       <button class="btn btn-primary btn-sm" onclick="gerarPdfFolha()">📄 Gerar PDF</button>
     </div>
   </div>
+</div>
+
+<!-- BOTÕES FLUTUANTES FOLHA -->
+<div id="floatFolhaButtons" style="display:none">
+  <button onclick="window.scrollTo({top:0,behavior:'smooth'})">▲ Topo</button>
+  <button onclick="recolherTodosCards()">▲ Recolher</button>
 </div>
 
 <!-- MODAL MEMBRO EQUIPE -->
@@ -3253,7 +3267,7 @@ async function salvarFuncionario() {
     adicionais: JSON.parse(JSON.stringify(adicionaisFunc || [])),
     inssType: document.getElementById('funcInssType').value || 'valor',
     inss: parseFloat(document.getElementById('funcInss').value) || 0,
-    inssPct: parseFloat(document.getElementById('funcInssPct')?.value) || 0,
+    inssPct: parseFloat(((document.getElementById('funcInssPct')?.value||'').replace(',','.')) || '0') || 0,
     observacoes: document.getElementById('funcObservacoes')?.value || '',
     ativo: true
   };
@@ -3392,7 +3406,7 @@ async function salvarGrupo() {
     adicionais: JSON.parse(JSON.stringify(adicionaisGrupo)),
     inssType,
     inss: inssType === 'valor' ? (parseFloat(document.getElementById('grupoInss').value) || 0) : 0,
-    inssPct: inssType === 'pct' ? (parseFloat(document.getElementById('grupoInssPct').value) || 0) : 0,
+    inssPct: inssType === 'pct' ? (parseFloat((document.getElementById('grupoInssPct').value||'').replace(',','.')) || 0) : 0,
   };
   let grupoIdFinal = id;
   if (id) {
@@ -4370,155 +4384,214 @@ function gerarPdfFuncionario(funcId) {
 function gerarPdfFolhaCompleto(doc, params, startY = 10, save = false) {
   const { f, d, calc, orgNome, orgCnpj, dataFolha, mesNome = '', ano = '' } = params;
 
-  const lm = 15, rm = 195, pw = 180;
+  // CORES DO TEMA
+  const COR_PRIMARIA  = [27, 45, 107];   // navy
+  const COR_SECUNDARIA = [46, 158, 79];  // green
+  const COR_CLARA     = [245, 248, 252]; // bg light
+  const COR_TEXTO     = [30, 30, 45];
+  const COR_VERMELHO  = [200, 30, 30];
+  const COR_BORDA     = [200, 210, 225];
+
+  const lm = 14, pw = 182, rm = lm + pw;
   let y = startY;
 
-  // --- HEADER ---
-  doc.setFillColor(255,255,255);
-  doc.rect(lm, y, pw, 8, 'FD');
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(11);
-  doc.setTextColor(0,0,0);
-  doc.text('FOLHA DE PAGAMENTO', lm + pw/2, y + 6, { align: 'center' });
-  y += 8;
+  // ── CABEÇALHO EMPRESA ──────────────────────────────
+  doc.setFillColor(...COR_PRIMARIA);
+  doc.rect(lm, y, pw, 22, 'F');
 
-  // Cabeçalho funcionário
+  doc.setTextColor(255,255,255);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(15);
+  doc.text(orgNome || 'EMPRESA', lm + 6, y + 9);
+
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'normal');
+  if (orgCnpj) doc.text(`CNPJ: ${orgCnpj}`, lm + 6, y + 15);
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(12);
+  doc.text('FOLHA DE PAGAMENTO', rm - 6, y + 9, { align: 'right' });
   doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
-  const cabRows = [
-    ['NOME:', f.nome || ''],
-    ['CPF:', f.cpf || ''],
-    ['CARGO:', f.cargo || '']
-  ];
-  cabRows.forEach(([lbl, val]) => {
-    doc.setFont('helvetica', 'bold'); doc.text(lbl, lm + 2, y + 5);
-    doc.setFont('helvetica', 'normal'); doc.text(val, lm + 20, y + 5);
-    doc.rect(lm, y, pw, 6);
-    y += 6;
-  });
+  doc.text(`Competência: ${mesNome} / ${ano}`, rm - 6, y + 15, { align: 'right' });
 
-  // --- COMPOSIÇÃO SALARIAL ---
-  doc.setFillColor(240,240,240);
-  doc.rect(lm, y, pw, 7, 'FD');
+  doc.setTextColor(...COR_TEXTO);
+  y += 26;
+
+  // ── DADOS DO FUNCIONÁRIO ────────────────────────────
+  doc.setFillColor(...COR_CLARA);
+  doc.setDrawColor(...COR_BORDA);
+  doc.rect(lm, y, pw, 20, 'FD');
+
   doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.setTextColor(...COR_PRIMARIA);
+  doc.text('FUNCIONÁRIO', lm + 5, y + 6);
+  doc.text('CPF', lm + 80, y + 6);
+  doc.text('CARGO / FUNÇÃO', lm + 130, y + 6);
+
+  doc.setFont('helvetica', 'normal');
   doc.setFontSize(10);
-  doc.text('COMPOSIÇÃO SALARIAL:', lm + pw/2, y + 5, { align: 'center' });
-  y += 7;
+  doc.setTextColor(...COR_TEXTO);
+  doc.text(f.nome || '—', lm + 5, y + 14);
+  doc.text(f.cpf || '—', lm + 80, y + 14);
+  doc.text((f.cargo || '—').substring(0, 28), lm + 130, y + 14);
+  y += 24;
 
-  // Proventos rows
+  // ── PROVENTOS ───────────────────────────────────────
+  // Header
+  doc.setFillColor(...COR_SECUNDARIA);
+  doc.rect(lm, y, pw, 8, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(9);
+  doc.setTextColor(255,255,255);
+  doc.text('PROVENTOS', lm + 5, y + 5.5);
+  doc.text('VALOR (R$)', rm - 5, y + 5.5, { align: 'right' });
+  doc.setTextColor(...COR_TEXTO);
+  y += 8;
+
   const proventos = [];
-  if (d.horasExtras > 0) proventos.push([`${d.horasExtras}`, `x ${fmtMoney(d.horaExtraVal)}`, 'HORAS EXTRAS =', fmtMoney(calc.horasExtrasValor)]);
-  const diasLabel = d.diasTrabalhados > 0 ? `SALÁRIO MENSAL (${d.diasTrabalhados} DIAS TRABALHADOS) =` : 'SALÁRIO MENSAL =';
-  proventos.push(['', '', diasLabel, fmtMoney(calc.salarioBase)]);
-  // Adicionais da folha
-  if (d.insalPct > 0) proventos.push(['', '', `ADICIONAL POR INSALUBRIDADE ${d.insalPct}% =`, fmtMoney(calc.insalubridade)]);
-  (d.outrosProventos||[]).forEach(o => { if (o.valor>0) proventos.push(['','',o.descricao.toUpperCase()+' =',fmtMoney(o.valor)]); });
-  if (calc.reflexoDsr > 0) proventos.push(['', '', 'REFLEXO EXTRA DSR =', fmtMoney(calc.reflexoDsr)]);
-  if (calc.premioDesempenho > 0) proventos.push(['', '', 'PRÊMIO BOM DESEMPENHO =', fmtMoney(calc.premioDesempenho)]);
-  // Blank rows to match template
-  while (proventos.length < 6) proventos.push(['', '', '', '']);
+  const diasLabel = d.diasTrabalhados > 0 ? `Salário Mensal (${d.diasTrabalhados} dias trabalhados)` : 'Salário Mensal';
+  proventos.push([diasLabel, fmtMoney(calc.salarioBase)]);
+  if (d.horasExtras > 0) proventos.push([`Horas Extras (${d.horasExtras}h × R$ ${fmtMoney(d.horaExtraVal)})`, fmtMoney(calc.horasExtrasValor)]);
+  if (calc.reflexoDsr > 0) proventos.push(['Reflexo DSR em Horas Extras', fmtMoney(calc.reflexoDsr)]);
+  const adicsFunc2 = d.funcionario?.adicionais || [];
+  adicsFunc2.forEach(a => {
+    const val = a.isValorFixo ? (a.valor||0) : ((d.salario||0)*(a.pct||0)/100);
+    if (val > 0) proventos.push([a.nome + (a.isValorFixo ? '' : ` (${a.pct}%)`), fmtMoney(val)]);
+  });
+  (d.outrosProventos||[]).forEach(o => { if ((o.valor||0)>0) proventos.push([o.descricao, fmtMoney(o.valor)]); });
 
-  proventos.forEach(([c1, c2, c3, c4]) => {
-    doc.setFont('helvetica', 'normal'); doc.setFontSize(8);
-    doc.rect(lm, y, 20, 5); doc.text(c1, lm + 2, y + 3.5);
-    doc.rect(lm+20, y, 20, 5); doc.text(c2, lm + 22, y + 3.5);
-    doc.rect(lm+40, y, 120, 5); doc.text(c3, lm + 80, y + 3.5, { align: 'center' });
-    doc.rect(lm+160, y, 20, 5); doc.text(c4, rm - 2, y + 3.5, { align: 'right' });
-    y += 5;
+  proventos.forEach((row, i) => {
+    doc.setFillColor(i % 2 === 0 ? 255 : 248, i % 2 === 0 ? 255 : 250, i % 2 === 0 ? 255 : 255);
+    doc.rect(lm, y, pw, 7, 'F');
+    doc.setDrawColor(...COR_BORDA);
+    doc.line(lm, y+7, rm, y+7);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(9);
+    doc.text(row[0], lm + 5, y + 5);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...COR_SECUNDARIA);
+    doc.text(row[1], rm - 5, y + 5, { align: 'right' });
+    doc.setTextColor(...COR_TEXTO);
+    y += 7;
   });
 
-  // TOTAL proventos
-  doc.setFillColor(240,240,240);
-  doc.rect(lm+40, y, 120, 6, 'FD'); doc.rect(lm+160, y, 20, 6, 'FD');
-  doc.rect(lm, y, 20, 6); doc.rect(lm+20, y, 20, 6); doc.rect(lm+40, y, 120, 6); doc.rect(lm+160, y, 20, 6);
-  doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(255,0,0);
-  doc.text('TOTAL =', lm + 100, y + 4, { align: 'center' });
-  doc.text(fmtMoney(calc.totalProventos), rm - 2, y + 4, { align: 'right' });
-  doc.setTextColor(0,0,0);
-  y += 6;
-
-  // --- DESCONTOS ---
-  const descontos = [];
-  if (d.inssValor > 0) descontos.push(['', 'INSS =', fmtMoney(-d.inssValor)]);
-  if (d.valeQuinzena > 0) descontos.push(['', 'VALE DA QUINZENA =', fmtMoney(-d.valeQuinzena)]);
-  d.descontoEmprestimos.forEach(e => {
-    descontos.push([`${e.numero}ª`, `PARCELA ${e.label.toUpperCase()} =`, fmtMoney(-e.valor)]);
-  });
-  d.descontoVales.forEach(v => {
-    const label = (v.descricao || 'VALE').toUpperCase() + (v.data ? ' ' + fmtData(v.data) : '') + ' =';
-    descontos.push(['', label, fmtMoney(-v.valor)]);
-  });
-  if (d.faltas > 0) {
-    const descFalta = calcFaltas(d.salario, d.faltas, calc.reflexoDsr);
-    descontos.push([`${d.faltas}`, 'FALTA(S) INJUSTIFICADA / DESCONTAR DSR =', fmtMoney(-descFalta)]);
-  }
-  while (descontos.length < 10) descontos.push(['', '', '']);
-
-  // Header descontos
-  doc.setFillColor(240,240,240);
-  doc.rect(lm, y, 40, 5, 'FD');
-  doc.setFont('helvetica', 'bold'); doc.setFontSize(8);
-  doc.text('DESCONTOS:', lm + 20, y + 3.5, { align: 'center' });
-
-  descontos.forEach(([c1, c2, c3]) => {
-    if (descontos.indexOf([c1,c2,c3]) === 0 && c2) {} // already rendered header row
-    doc.rect(lm, y, 20, 5); doc.setFont('helvetica', 'normal'); doc.setFontSize(8);
-    doc.text(c1, lm + 10, y + 3.5, { align: 'center' });
-    doc.rect(lm+20, y, 20, 5);
-    doc.rect(lm+40, y, 120, 5); doc.text(c2, lm + 100, y + 3.5, { align: 'center' });
-    doc.rect(lm+160, y, 20, 5);
-    if (c3 && c3 !== '') {
-      doc.setTextColor(180,0,0);
-      doc.text(c3, rm - 2, y + 3.5, { align: 'right' });
-      doc.setTextColor(0,0,0);
-    }
-    y += 5;
-  });
-
-  // TOTAL DESCONTADO
-  doc.setFillColor(240,240,240);
-  doc.rect(lm+40, y, 120, 6, 'FD'); doc.rect(lm+160, y, 20, 6, 'FD');
-  doc.rect(lm, y, 20, 6); doc.rect(lm+20, y, 20, 6); doc.rect(lm+40, y, 120, 6); doc.rect(lm+160, y, 20, 6);
-  doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(255,0,0);
-  doc.text('TOTAL DESCONTADO =', lm + 100, y + 4, { align: 'center' });
-  doc.text(fmtMoney(-calc.totalDescontos), rm - 2, y + 4, { align: 'right' });
-  y += 6;
-
-  // TOTAL RESTANTE
-  doc.setFillColor(240,240,240);
-  doc.rect(lm, y, pw, 6, 'FD');
-  doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(255,0,0);
-  doc.text('TOTAL RESTANTE A RECEBER =', lm + 80, y + 4, { align: 'center' });
-  doc.text(fmtMoney(calc.liquido), rm - 2, y + 4, { align: 'right' });
-  doc.setTextColor(0,0,0);
-  y += 6;
-
-  // --- RECIBO ---
-  y += 4;
+  // Total proventos
+  doc.setFillColor(230, 245, 235);
+  doc.rect(lm, y, pw, 8, 'F');
   doc.setFont('helvetica', 'bold'); doc.setFontSize(10);
-  doc.text('RECIBO', lm + pw/2, y, { align: 'center' });
+  doc.text('TOTAL DE PROVENTOS', lm + 5, y + 5.5);
+  doc.setTextColor(...COR_SECUNDARIA);
+  doc.text(`R$ ${fmtMoney(calc.totalProventos)}`, rm - 5, y + 5.5, { align: 'right' });
+  doc.setTextColor(...COR_TEXTO);
+  y += 12;
+
+  // ── DESCONTOS ───────────────────────────────────────
+  doc.setFillColor(...COR_VERMELHO);
+  doc.rect(lm, y, pw, 8, 'F');
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(9);
+  doc.setTextColor(255,255,255);
+  doc.text('DESCONTOS', lm + 5, y + 5.5);
+  doc.text('VALOR (R$)', rm - 5, y + 5.5, { align: 'right' });
+  doc.setTextColor(...COR_TEXTO);
+  y += 8;
+
+  const descontos = [];
+  if ((d.inssValor||0) > 0) {
+    const inssLabel = d.inssType === 'pct' ? `INSS (${d.inssPct||0}%)` : 'INSS';
+    descontos.push([inssLabel, fmtMoney(d.inssValor)]);
+  }
+  (d.descontoEmprestimos||[]).filter(e=>e.selecionado!==false).forEach(e => {
+    descontos.push([`${e.numero}ª Parcela — Empréstimo: ${e.label}`, fmtMoney(e.valorPagar||e.valor)]);
+  });
+  (d.descontoVales||[]).filter(v=>v.selecionado!==false).forEach(v => {
+    const label = (v.label||v.descricao||'Vale') + (v.data ? ` (${fmtData(v.data)})` : '');
+    descontos.push([label, fmtMoney(v.valorPagar||v.valor)]);
+  });
+  if ((d.faltas||0) > 0) {
+    const descFalta = calcFaltas(d.salario, d.faltas, calc.reflexoDsr);
+    descontos.push([`${d.faltas} Falta(s) — Desconto proporcional`, fmtMoney(descFalta)]);
+  }
+  (d.outrosDescontos||[]).forEach(o => { if ((o.valor||0)>0) descontos.push([o.descricao, fmtMoney(o.valor)]); });
+
+  descontos.forEach((row, i) => {
+    doc.setFillColor(i % 2 === 0 ? 255 : 255, i % 2 === 0 ? 255 : 248, i % 2 === 0 ? 255 : 248);
+    doc.rect(lm, y, pw, 7, 'F');
+    doc.setDrawColor(...COR_BORDA);
+    doc.line(lm, y+7, rm, y+7);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(9);
+    doc.text(row[0], lm + 5, y + 5);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...COR_VERMELHO);
+    doc.text(`- R$ ${row[1]}`, rm - 5, y + 5, { align: 'right' });
+    doc.setTextColor(...COR_TEXTO);
+    y += 7;
+  });
+
+  if (descontos.length === 0) {
+    doc.setFontSize(9); doc.setFont('helvetica', 'italic'); doc.setTextColor(150,150,160);
+    doc.text('Nenhum desconto neste período', lm + 5, y + 5);
+    doc.setTextColor(...COR_TEXTO);
+    y += 7;
+  }
+
+  // Total descontos
+  doc.setFillColor(255, 235, 235);
+  doc.rect(lm, y, pw, 8, 'F');
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(10);
+  doc.text('TOTAL DE DESCONTOS', lm + 5, y + 5.5);
+  doc.setTextColor(...COR_VERMELHO);
+  doc.text(`- R$ ${fmtMoney(calc.totalDescontos)}`, rm - 5, y + 5.5, { align: 'right' });
+  doc.setTextColor(...COR_TEXTO);
+  y += 12;
+
+  // ── LÍQUIDO ─────────────────────────────────────────
+  doc.setFillColor(...COR_PRIMARIA);
+  doc.rect(lm, y, pw, 14, 'F');
+  doc.setTextColor(255,255,255);
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(11);
+  doc.text('VALOR LÍQUIDO A RECEBER', lm + 6, y + 9);
+  doc.setFontSize(14);
+  doc.text(`R$ ${fmtMoney(calc.liquido)}`, rm - 6, y + 9, { align: 'right' });
+  doc.setTextColor(...COR_TEXTO);
+  y += 18;
+
+  // ── RECIBO ──────────────────────────────────────────
+  doc.setDrawColor(...COR_BORDA);
+  doc.setLineWidth(0.5);
+  doc.line(lm, y, rm, y);
+  y += 5;
+
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(9);
+  doc.text('RECIBO DE PAGAMENTO', lm + pw/2, y, { align: 'center' });
   y += 5;
 
   doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5);
   const valorExtenso = numberToWords(calc.liquido);
-  const recibo = `Pelo presente, eu, ${f.nome}, CPF sob nº ${f.cpf || '—'}, declaro que RECEBI na data de hoje, o valor de R$ ${fmtMoney(calc.liquido)} (${valorExtenso}), referente ao pagamento de salário mensal no valor de R$ ${fmtMoney(calc.salarioBase)} + R$ ${fmtMoney(calc.horasExtrasValor)} (referente a ${d.horasExtras} horas extras), pago pela empresa ${orgNome}${orgCnpj ? ', inscrita no CNPJ nº ' + orgCnpj : ''}, relativo aos serviços prestado na função de ${f.cargo || 'cargo não definido'}.`;
-
-  const lines = doc.splitTextToSize(recibo, pw);
-  doc.text(lines, lm, y);
-  y += lines.length * 5 + 6;
+  const recibo = `Declaro que recebi da empresa ${orgNome}${orgCnpj ? ' (CNPJ: '+orgCnpj+')' : ''} a importância de R$ ${fmtMoney(calc.liquido)} (${valorExtenso}), referente ao salário do mês de ${mesNome}/${ano}, na função de ${f.cargo || 'não definido'}.`;
+  const lines = doc.splitTextToSize(recibo, pw - 10);
+  doc.text(lines, lm + 5, y);
+  y += lines.length * 5 + 8;
 
   doc.setFontSize(9);
-  doc.text(dataFolha, rm, y, { align: 'right' });
-  y += 14;
+  doc.text(dataFolha, rm - 5, y, { align: 'right' });
+  y += 16;
 
-  // Assinatura
-  doc.line(lm + pw/2 - 40, y, lm + pw/2 + 40, y);
-  y += 4;
-  doc.setFont('helvetica', 'normal');
-  doc.text(f.nome || '', lm + pw/2, y, { align: 'center' });
+  // Linha de assinatura
+  const sigX = lm + pw/2;
+  doc.setLineWidth(0.4);
+  doc.setDrawColor(100,100,120);
+  doc.line(sigX - 50, y, sigX + 50, y);
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5);
+  doc.text(f.nome || '', sigX, y + 4, { align: 'center' });
+  doc.setFontSize(7.5);
+  doc.setTextColor(130,130,150);
+  doc.text('Assinatura do Funcionário', sigX, y + 8, { align: 'center' });
+  doc.setTextColor(...COR_TEXTO);
 
   if (save) {
-    doc.save(`${(f.nome||'Funcionario').replace(/\s+/g,'_')}_-_Folha_de_Pagamento_${mesNome}_${ano}.pdf`);
+    const nomeSalvo = `${(f.nome||'Funcionario').replace(/\s+/g,'_')}_-_Folha_de_Pagamento_${mesNome}_${ano}.pdf`;
+    doc.save(nomeSalvo);
     toast('PDF gerado!', 'success');
     closeModal('modal-folha-detalhe');
   }
@@ -4567,7 +4640,21 @@ function renderAcerto() {
     container.innerHTML = `<div class="empty-state"><div class="icon">🤝</div><h3>Nenhum par configurado</h3><p>Crie um par para começar os registros</p></div>`;
     return;
   }
-  const todosLancamentos = getCol('lancamentos').getAll();
+  // Usar Firebase diretamente para garantir dados frescos
+  carregarERenderAcerto(container);
+}
+async function carregarERenderAcerto(container) {
+  let todosLancamentos = [];
+  try {
+    if (db && currentOrg) {
+      const snap = await db.collection('orgs').doc(currentOrg.id).collection('lancamentos').get();
+      todosLancamentos = snap.docs.map(d => ({id: d.id, ...d.data()}));
+    } else {
+      todosLancamentos = getCol('lancamentos').getAll();
+    }
+  } catch(e) {
+    todosLancamentos = getCol('lancamentos').getAll();
+  }
   container.innerHTML = acertoPares.map(par => {
     const lances = todosLancamentos.filter(l => l.parId === par.id)
       .sort((a,b) => (b.data||'').localeCompare(a.data||''));
@@ -4753,7 +4840,10 @@ async function salvarLancamento() {
     data: document.getElementById('lancData').value,
     descricao: document.getElementById('lancDescricao').value
   };
-  await fsAdd('lancamentos', data);
+  const novoLanc = await fsAdd('lancamentos', data);
+  // Adicionar ao array local para renderizar imediatamente
+  if (!window._lancamentosCache) window._lancamentosCache = [];
+  window._lancamentosCache.push(novoLanc || {...data, id: Date.now().toString()});
   // Garantir que as pessoas do par estão na lista
   const parAtual = acertoPares.find(p => p.id === parId);
   if (parAtual) {
@@ -5839,8 +5929,8 @@ function exportRelatorioExcel() {
 
   const ws = XLSX.utils.json_to_sheet(data);
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, `Relatório ${mesRef}`);
-  XLSX.writeFile(wb, `Relatorio_${mesRef.replace('/','_')}_CadernoGestor.xlsx`);
+  XLSX.utils.book_append_sheet(wb, ws, `Relatorio_${mesRef.replace('/','_')}`);
+  XLSX.writeFile(wb, `Relatorio_${mesRef.replace('/','_')}.xlsx`);
   toast('Excel exportado!', 'success');
 }
 
