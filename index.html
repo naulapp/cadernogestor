@@ -8264,20 +8264,71 @@ const DASH_WIDGETS = {
     }
   },
   calculadora: {
-    label: '🧮 Calculadora Rápida',
-    descricao: 'Acesso rápido à calculadora com fita',
+    label: '🧮 Calculadora',
+    descricao: 'Calculadora com fita de papel integrada no dashboard',
     padrao: false,
     render: () => {
       return `<div class="section-card" style="margin-bottom:16px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
           <div class="section-card-title" style="margin:0">🧮 CALCULADORA</div>
-          <button class="btn btn-primary btn-sm" onclick="navigate('calculadora')">Abrir calculadora →</button>
+          <div style="display:flex;gap:6px">
+            <button class="btn btn-outline btn-sm" onclick="calcNovaDash()" title="Nova fita (Esc)">🗑️</button>
+            <button class="btn btn-outline btn-sm" onclick="calcImprimirDash('a4')">🖨️ A4</button>
+            <button class="btn btn-outline btn-sm" onclick="calcImprimirDash('cupom')">🧾</button>
+            <button class="btn btn-outline btn-sm" onclick="navigate('calculadora')">↗ Expandir</button>
+          </div>
         </div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button class="btn btn-outline btn-sm" style="flex:1" onclick="navigate('calculadora');setTimeout(()=>calcFn('+'),200)">➕ Nova soma</button>
-          <button class="btn btn-outline btn-sm" style="flex:1" onclick="navigate('calculadora');setTimeout(()=>calcNova(),200)">🗑️ Nova fita</button>
+
+        <!-- Layout: fita + teclado -->
+        <div style="display:grid;grid-template-columns:1fr 200px;gap:12px">
+
+          <!-- FITA -->
+          <div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+              <span style="font-size:0.72rem;font-weight:700;color:var(--text3)">FITA</span>
+              <span id="dashCalcTotal" style="font-family:var(--mono);font-size:1rem;font-weight:700;color:var(--accent2)">0,00</span>
+            </div>
+            <div id="dashCalcFita" style="font-family:var(--mono);font-size:0.78rem;min-height:80px;max-height:200px;overflow-y:auto;border:1px solid var(--border);border-radius:6px;padding:6px;background:var(--bg3)">
+              <p style="color:var(--text3);font-size:0.72rem;text-align:center;margin:12px 0">Nenhuma operação</p>
+            </div>
+          </div>
+
+          <!-- TECLADO COMPACTO -->
+          <div>
+            <!-- Display -->
+            <div style="background:var(--bg3);border-radius:6px;padding:6px 10px;margin-bottom:6px;text-align:right;border:1px solid var(--border)">
+              <div id="dashCalcDisplay" style="font-family:var(--mono);font-size:1.4rem;font-weight:700;color:var(--text)">0</div>
+              <div id="dashCalcOp" style="font-size:0.65rem;color:var(--text3);min-height:12px"></div>
+            </div>
+            <!-- Grid 4x5 compacto -->
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px">
+              <button class="calc-btn calc-fn" style="font-size:0.72rem;padding:7px 2px" onclick="dashCalcFn('%')">%</button>
+              <button class="calc-btn calc-fn" style="font-size:0.72rem;padding:7px 2px" onclick="dashCalcFn('CE')">CE</button>
+              <button class="calc-btn calc-fn" style="font-size:0.72rem;padding:7px 2px" onclick="dashCalcFn('C')">C</button>
+              <button class="calc-btn calc-op" style="font-size:0.85rem;padding:7px 2px" onclick="dashCalcFn('÷')">÷</button>
+
+              <button class="calc-btn" style="padding:7px 2px" onclick="dashCalcNum('7')">7</button>
+              <button class="calc-btn" style="padding:7px 2px" onclick="dashCalcNum('8')">8</button>
+              <button class="calc-btn" style="padding:7px 2px" onclick="dashCalcNum('9')">9</button>
+              <button class="calc-btn calc-op" style="padding:7px 2px" onclick="dashCalcFn('×')">×</button>
+
+              <button class="calc-btn" style="padding:7px 2px" onclick="dashCalcNum('4')">4</button>
+              <button class="calc-btn" style="padding:7px 2px" onclick="dashCalcNum('5')">5</button>
+              <button class="calc-btn" style="padding:7px 2px" onclick="dashCalcNum('6')">6</button>
+              <button class="calc-btn calc-op calc-minus" style="padding:7px 2px" onclick="dashCalcFn('-')">−</button>
+
+              <button class="calc-btn" style="padding:7px 2px" onclick="dashCalcNum('1')">1</button>
+              <button class="calc-btn" style="padding:7px 2px" onclick="dashCalcNum('2')">2</button>
+              <button class="calc-btn" style="padding:7px 2px" onclick="dashCalcNum('3')">3</button>
+              <button class="calc-btn calc-op calc-plus" style="padding:7px 2px" onclick="dashCalcFn('+')">+</button>
+
+              <button class="calc-btn calc-fn" style="font-size:0.65rem;padding:7px 2px" onclick="dashCalcFn('SUB')">SUB</button>
+              <button class="calc-btn" style="padding:7px 2px" onclick="dashCalcNum('0')">0</button>
+              <button class="calc-btn" style="padding:7px 2px" onclick="dashCalcNum(',')">.</button>
+              <button class="calc-btn calc-eq" style="padding:7px 2px" onclick="dashCalcFn('=')">=</button>
+            </div>
+          </div>
         </div>
-        <div style="font-size:0.78rem;color:var(--text3);margin-top:8px">Total atual: <strong style="font-family:var(--mono)">R$ ${fmtMoney(calcEstado?.totalAtual||0)}</strong></div>
       </div>`;
     }
   },
@@ -9634,6 +9685,190 @@ function getFuncionariosOrdenados(filtro='', cargoFiltro='', ordemAZ=true) {
   });
   return lista;
 }
+// =====================================================
+// CALCULADORA DO DASHBOARD — estado próprio
+// =====================================================
+let dashCalcEstado = {
+  display: '0', acumulador: null, operacao: null,
+  novoNumero: true, fita: [], totalAtual: 0
+};
+
+function dashCalcNum(n) {
+  const s = dashCalcEstado;
+  if (n === ',' || n === '.') {
+    if (s.display.includes(',')) return;
+    if (s.novoNumero) { s.display = '0,'; s.novoNumero = false; }
+    else s.display += ',';
+  } else {
+    if (s.novoNumero) { s.display = n; s.novoNumero = false; }
+    else { s.display = s.display === '0' ? n : s.display + n; }
+  }
+  dashCalcRender();
+}
+
+function dashCalcValor() {
+  return parseFloat(dashCalcEstado.display.replace(',', '.')) || 0;
+}
+
+function dashCalcFn(op) {
+  const s = dashCalcEstado;
+  const val = dashCalcValor();
+
+  if (op === 'C') { s.display = '0'; s.novoNumero = true; dashCalcRender(); return; }
+  if (op === 'CE') {
+    s.display = '0'; s.acumulador = null; s.operacao = null; s.novoNumero = true;
+    const opEl = document.getElementById('dashCalcOp');
+    if (opEl) opEl.textContent = '';
+    dashCalcRender(); return;
+  }
+  if (op === 'SUB') {
+    s.fita.push({ tipo: 'subtotal', valor: s.totalAtual });
+    dashCalcRenderFita(); return;
+  }
+  if (op === '%') {
+    const pct = s.acumulador !== null ? s.acumulador * val / 100 : val / 100;
+    s.display = String(pct).replace('.', ',');
+    dashCalcRender(); return;
+  }
+
+  if (['+', '-', '×', '÷'].includes(op)) {
+    if (s.operacao && !s.novoNumero) {
+      dashCalcExecutar(val);
+    } else if (s.acumulador === null) {
+      s.acumulador = val;
+      s.totalAtual = val;
+      s.fita.push({ tipo: 'entrada', op: '', valor: val });
+      dashCalcRenderFita();
+    }
+    s.operacao = op;
+    s.novoNumero = true;
+    const opEl = document.getElementById('dashCalcOp');
+    if (opEl) opEl.textContent = `${fmtMoney(s.acumulador)} ${op}`;
+    dashCalcRender(); return;
+  }
+
+  if (op === '=') {
+    if (s.operacao && !s.novoNumero) dashCalcExecutar(val);
+    s.operacao = null; s.novoNumero = true;
+    const opEl = document.getElementById('dashCalcOp');
+    if (opEl) opEl.textContent = '';
+    dashCalcRender();
+  }
+}
+
+function dashCalcExecutar(val) {
+  const s = dashCalcEstado;
+  const acc = s.acumulador;
+  let res = acc;
+  if (s.operacao === '+') res = acc + val;
+  if (s.operacao === '-') res = acc - val;
+  if (s.operacao === '×') res = acc * val;
+  if (s.operacao === '÷') res = val !== 0 ? acc / val : 0;
+  res = Math.round(res * 100) / 100;
+  s.fita.push({ tipo: 'entrada', op: s.operacao, valor: val, resultado: res });
+  s.acumulador = res;
+  s.totalAtual = res;
+  s.display = String(res).replace('.', ',');
+  dashCalcRenderFita();
+}
+
+function dashCalcRender() {
+  const s = dashCalcEstado;
+  const el = document.getElementById('dashCalcDisplay');
+  const tot = document.getElementById('dashCalcTotal');
+  if (el) el.textContent = calcFormatDisplay(s.display);
+  if (tot) tot.textContent = fmtMoney(s.totalAtual);
+}
+
+function dashCalcRenderFita() {
+  const el = document.getElementById('dashCalcFita');
+  if (!el) return;
+  const s = dashCalcEstado;
+  if (s.fita.length === 0) {
+    el.innerHTML = '<p style="color:var(--text3);font-size:0.72rem;text-align:center;margin:12px 0">Nenhuma operação</p>';
+    dashCalcRender(); return;
+  }
+  el.innerHTML = s.fita.map((linha, i) => {
+    if (linha.tipo === 'subtotal') {
+      return `<div style="display:flex;justify-content:space-between;padding:2px 0;border-top:1px solid var(--navy);font-weight:700;color:var(--navy);font-size:0.72rem">
+        <span>SUB</span><span>R$ ${fmtMoney(linha.valor)}</span></div>`;
+    }
+    const cor = linha.op === '+' ? 'var(--green)' : linha.op === '-' ? 'var(--red)' : 'var(--text)';
+    return `<div style="display:flex;align-items:center;gap:4px;padding:2px 0;border-bottom:1px solid var(--border);font-size:0.72rem">
+      <span style="width:14px;font-weight:700;color:${cor};flex-shrink:0">${linha.op || '='}</span>
+      <span style="flex:1;color:${cor}">${fmtMoney(linha.valor)}</span>
+      ${linha.resultado !== undefined ? `<span style="font-weight:700;color:var(--accent2)">= ${fmtMoney(linha.resultado)}</span>` : ''}
+      <button onclick="dashCalcRemoverLinha(${i})" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:10px;padding:0 2px;line-height:1">✕</button>
+    </div>`;
+  }).join('');
+  // Auto-scroll para baixo
+  el.scrollTop = el.scrollHeight;
+  dashCalcRender();
+}
+
+function dashCalcRemoverLinha(idx) {
+  dashCalcEstado.fita.splice(idx, 1);
+  dashCalcRenderFita();
+}
+
+function calcNovaDash() {
+  dashCalcEstado = { display:'0', acumulador:null, operacao:null, novoNumero:true, fita:[], totalAtual:0 };
+  dashCalcRender();
+  dashCalcRenderFita();
+}
+
+function calcImprimirDash(tipo) {
+  // Usa a mesma função da calculadora principal mas com o estado do dashboard
+  const estadoBackup = calcEstado;
+  calcEstado = dashCalcEstado;
+  calcImprimir(tipo);
+  calcEstado = estadoBackup;
+}
+
+// Sincronizar teclado com calculadora do dashboard quando dashboard estiver ativo
+function calcHandleKeyboardDash(e) {
+  // Só quando dashboard está ativo E calculadora do dashboard está visível
+  const dashPage = document.getElementById('page-dashboard');
+  const dashFita = document.getElementById('dashCalcFita');
+  if (!dashPage?.classList.contains('active') || !dashFita) return;
+
+  const active = document.activeElement;
+  if (active && ['INPUT','TEXTAREA','SELECT'].includes(active.tagName)) return;
+
+  const key = e.key;
+  if (key >= '0' && key <= '9') { e.preventDefault(); dashCalcNum(key); return; }
+  if (key === ',' || key === '.') { e.preventDefault(); dashCalcNum(','); return; }
+  if (key === '+') { e.preventDefault(); dashCalcFn('+'); return; }
+  if (key === '-') { e.preventDefault(); dashCalcFn('-'); return; }
+  if (key === '*') { e.preventDefault(); dashCalcFn('×'); return; }
+  if (key === '/') { e.preventDefault(); dashCalcFn('÷'); return; }
+  if (key === 'Enter' || key === '=') { e.preventDefault(); dashCalcFn('='); return; }
+  if (key === 'Backspace') {
+    e.preventDefault();
+    const s = dashCalcEstado;
+    s.display = s.display.length > 1 ? s.display.slice(0,-1) : '0';
+    dashCalcRender(); return;
+  }
+  if (key === 'Escape') { e.preventDefault(); calcNovaDash(); return; }
+}
+
+// Adicionar ao listener de teclado existente
+document.addEventListener('keydown', calcHandleKeyboardDash);
+
+// Quando renderDashboard é chamado, inicializar displays
+// Hook via navigate — já chama renderDashboard internamente
+// Usamos MutationObserver leve para detectar quando dashCalcFita aparece
+(function() {
+  const obs = new MutationObserver(() => {
+    if (document.getElementById('dashCalcFita')) {
+      dashCalcRenderFita();
+    }
+  });
+  document.addEventListener('DOMContentLoaded', () => {
+    obs.observe(document.getElementById('dashConteudo') || document.body, { childList: true, subtree: true });
+  });
+})();
+
 // Service worker for PWA
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
