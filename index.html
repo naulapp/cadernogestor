@@ -1302,7 +1302,7 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
       </div>
       <div class="form-group">
         <label class="form-label">CNPJ (opcional)</label>
-        <input type="text" class="form-input" id="orgCnpj" placeholder="00.000.000/0001-00">
+        <input type="text" class="form-input" id="orgCnpj" placeholder="00.000.000/0001-00" oninput="maskCnpj(this)" maxlength="18">
       </div>
       <div class="form-group">
         <label class="form-label">Cidade/UF</label>
@@ -1334,7 +1334,7 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
       <div class="dropdown">
         <div class="avatar" id="userAvatar" onclick="toggleDropdown('userMenu')">?</div>
         <div class="dropdown-menu" id="userMenu">
-          <div class="dropdown-item" onclick="navigate('configuracoes')">⚙️ Configurações</div>
+          <div class="dropdown-item" onclick="navigate('configuracoes')">🏢 Dados da Empresa</div>
           <div class="dropdown-item" onclick="navigate('equipe')">👥 Equipe</div>
           <div class="dropdown-item danger" onclick="doLogout()">🚪 Sair</div>
         </div>
@@ -1366,14 +1366,14 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
       </div>
 
       <div class="nav-section-title">Financeiro</div>
+      <div class="nav-item" onclick="navigate('acerto')" id="nav-acerto">
+        <span class="icon">🤝</span> Acerto de Contas Pessoais
+      </div>
       <div class="nav-item" onclick="navigate('vales')" id="nav-vales">
         <span class="icon">💵</span> Adiantamentos Salariais
       </div>
       <div class="nav-item" onclick="navigate('emprestimos')" id="nav-emprestimos">
         <span class="icon">💰</span> Empréstimos a Funcionários
-      </div>
-      <div class="nav-item" onclick="navigate('acerto')" id="nav-acerto">
-        <span class="icon">🤝</span> Acerto de Contas Pessoais
       </div>
 
       <div class="nav-section-title">Gestão</div>
@@ -1387,7 +1387,7 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
         <span class="icon">🔑</span> Equipe & Acessos
       </div>
       <div class="nav-item" onclick="navigate('configuracoes')" id="nav-configuracoes">
-        <span class="icon">⚙️</span> Configurações
+        <span class="icon">🏢</span> Dados da Empresa
       </div>
     </div>
 
@@ -1595,15 +1595,29 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
             </div>
             <div class="form-group" style="grid-column:1/-1">
               <label class="form-label">Dias de funcionamento</label>
-              <select class="form-input" id="escalaDiasFuncionamento" multiple size="7">
-                <option value="0">Domingo</option>
-                <option value="1" selected>Segunda</option>
-                <option value="2" selected>Terca</option>
-                <option value="3" selected>Quarta</option>
-                <option value="4" selected>Quinta</option>
-                <option value="5" selected>Sexta</option>
-                <option value="6">Sabado</option>
-              </select>
+              <div id="escalaDiasFuncionamento" style="display:flex;gap:10px;flex-wrap:wrap;padding:10px;background:var(--bg2);border-radius:8px">
+                <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.85rem">
+                  <input type="checkbox" value="0" style="width:16px;height:16px"> Domingo
+                </label>
+                <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.85rem">
+                  <input type="checkbox" value="1" checked style="width:16px;height:16px"> Segunda
+                </label>
+                <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.85rem">
+                  <input type="checkbox" value="2" checked style="width:16px;height:16px"> Terça
+                </label>
+                <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.85rem">
+                  <input type="checkbox" value="3" checked style="width:16px;height:16px"> Quarta
+                </label>
+                <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.85rem">
+                  <input type="checkbox" value="4" checked style="width:16px;height:16px"> Quinta
+                </label>
+                <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.85rem">
+                  <input type="checkbox" value="5" checked style="width:16px;height:16px"> Sexta
+                </label>
+                <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.85rem">
+                  <input type="checkbox" value="6" style="width:16px;height:16px"> Sábado
+                </label>
+              </div>
             </div>
           </div>
         </div>
@@ -1649,12 +1663,24 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
               <input type="number" class="form-input" id="escalaAno" value="2026">
             </div>
             <button class="btn btn-primary" onclick="generateEscala()" style="height:42px">Gerar escala</button>
-            <button class="btn btn-outline" onclick="printTodasEscalas()" style="height:42px">🖨️ Imprimir Todos</button>
-            <button class="btn btn-success" onclick="downloadTodasEscalasPdf()" style="height:42px">📥 Baixar Todos (PDF)</button>
+            <div id="escalaBotoesPos" style="display:none;display:flex;gap:8px;flex-wrap:wrap">
+              <button class="btn btn-outline" onclick="printEscalasSelecionadas()" style="height:42px">🖨️ Imprimir</button>
+              <button class="btn btn-success" onclick="downloadEscalasSelecionadasPdf()" style="height:42px">📥 Baixar PDF</button>
+            </div>
           </div>
         </div>
 
         <div id="escalaResumo"></div>
+        <div id="escalaSelecao" style="display:none" class="section-card">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+            <div class="section-card-title" style="margin:0">👥 SELECIONAR PARA IMPRIMIR / BAIXAR</div>
+            <div style="display:flex;gap:6px">
+              <button class="btn btn-outline btn-sm" onclick="toggleTodosEscala(true)">Todos</button>
+              <button class="btn btn-outline btn-sm" onclick="toggleTodosEscala(false)">Nenhum</button>
+            </div>
+          </div>
+          <div id="escalaCheckList" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+        </div>
         <div id="escalaAlertas"></div>
         <div id="escalaPreview"></div>
       </div>
@@ -1868,6 +1894,8 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
             <button class="btn btn-outline btn-sm" id="parExportBtn" onclick="">📥 Exportar</button>
             <button class="btn btn-outline btn-sm" id="parConsolidarBtn" onclick="">✅ Consolidar</button>
             <button class="btn btn-primary btn-sm" id="parLancarBtn" onclick="">➕ Lançamento</button>
+            <button class="btn btn-outline btn-sm" id="parExcluirBtn" onclick=""
+              style="border-color:var(--red);color:var(--red)">🗑️ Excluir par</button>
           </div>
         </div>
 
@@ -1878,11 +1906,23 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
         <div class="section-card">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
             <div class="section-card-title" style="margin:0">📋 LANÇAMENTOS</div>
-            <div style="display:flex;gap:8px">
-              <input type="month" class="form-input" id="parFiltroMes" style="width:160px"
-                onchange="renderParLancamentos()">
-              <button class="btn btn-outline btn-sm" onclick="document.getElementById('parFiltroMes').value='';renderParLancamentos()">Todos</button>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">
+              <div class="form-group" style="margin:0">
+                <label class="form-label" style="font-size:0.72rem">De</label>
+                <input type="date" class="form-input" id="parFiltroDe" style="width:140px" onchange="renderParLancamentos()">
+              </div>
+              <div class="form-group" style="margin:0">
+                <label class="form-label" style="font-size:0.72rem">Até</label>
+                <input type="date" class="form-input" id="parFiltroAte" style="width:140px" onchange="renderParLancamentos()">
+              </div>
             </div>
+          </div>
+          <!-- Filtros rápidos -->
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+            <button class="btn btn-outline btn-sm" onclick="filtrarParPeriodo('este_mes')">Este mês</button>
+            <button class="btn btn-outline btn-sm" onclick="filtrarParPeriodo('mes_passado')">Mês passado</button>
+            <button class="btn btn-outline btn-sm" onclick="filtrarParPeriodo('este_ano')">Este ano</button>
+            <button class="btn btn-outline btn-sm" onclick="filtrarParPeriodo('todos')">Todos</button>
           </div>
           <div id="parLancamentosList"></div>
         </div>
@@ -1948,7 +1988,7 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
       <div class="page" id="page-configuracoes">
         <div class="page-header">
           <div>
-            <div class="page-title">Configurações</div>
+            <div class="page-title">Dados da Empresa</div>
             <div class="page-sub">Empresa e preferências</div>
           </div>
           <div style="display:flex;gap:8px">
@@ -1966,7 +2006,7 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
             </div>
             <div class="form-group">
               <label class="form-label">CNPJ</label>
-              <input type="text" class="form-input" id="cfgCnpj">
+              <input type="text" class="form-input" id="cfgCnpj" oninput="maskCnpj(this)" maxlength="18">
             </div>
             <div class="form-group">
               <label class="form-label">Cidade/UF</label>
@@ -1982,10 +2022,7 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
         <div class="section-card">
           <div class="section-card-title">Padrões de folha</div>
           <div class="form-grid form-grid-2">
-            <div class="form-group">
-              <label class="form-label">INSS padrão (R$)</label>
-              <input type="number" class="form-input" id="cfgInss" placeholder="207,00">
-            </div>
+
 
           </div>
         </div>
@@ -3399,12 +3436,16 @@ function editarFuncionario(id) {
 }
 
 async function excluirFuncionario(id) {
-  if (!await confirmar('Excluir funcionário?', 'Esta ação não pode ser desfeita.')) return;
+  if (!await confirmar('Excluir funcionário?', 'Esta ação pode ser desfeita em seguida.')) return;
+  const backup = {...funcionarios.find(f=>f.id===id)};
   await fsDelete('funcionarios', id);
   funcionarios = funcionarios.filter(f => f.id !== id);
-  renderFuncionarios();
-  renderDashboard();
-  toast('Funcionário removido', 'info');
+  pushUndo({ descricao: `Excluir funcionário ${backup?.nome||''}`, reverter: async () => {
+    const novo = await fsAdd('funcionarios', backup);
+    funcionarios.push(novo); renderFuncionarios(); renderDashboard();
+  }});
+  renderFuncionarios(); renderDashboard();
+  toast('Excluído (desfazer disponível)', 'success');
 }
 
 function limparFormFuncionario() {
@@ -3658,12 +3699,16 @@ async function registrarPagamento(id) {
 }
 
 async function excluirEmprestimo(id) {
-  if (!await confirmar('Excluir empréstimo?', 'Todos os dados deste empréstimo serão removidos.')) return;
+  if (!await confirmar('Excluir empréstimo?', 'Esta ação pode ser desfeita em seguida.')) return;
+  const backup = {...emprestimos.find(e=>e.id===id)};
   await fsDelete('emprestimos', id);
   emprestimos = emprestimos.filter(e => e.id !== id);
-  renderEmprestimos();
-  renderDashboard();
-  toast('Empréstimo removido', 'info');
+  pushUndo({ descricao: `Excluir empréstimo ${backup?.descricao||''}`, reverter: async () => {
+    const novo = await fsAdd('emprestimos', backup);
+    emprestimos.push(novo); renderEmprestimos(); renderDashboard();
+  }});
+  renderEmprestimos(); renderDashboard();
+  toast('Excluído (desfazer disponível)', 'success');
 }
 
 // =====================================================
@@ -3767,10 +3812,16 @@ async function marcarValeDescontado(id) {
 }
 
 async function excluirVale(id) {
-  if (!await confirmar('Excluir vale?', '')) return;
+  if (!await confirmar('Excluir adiantamento?', 'Esta ação pode ser desfeita em seguida.')) return;
+  const backup = {...vales.find(v=>v.id===id)};
   await fsDelete('vales', id);
   vales = vales.filter(v => v.id !== id);
+  pushUndo({ descricao: `Excluir adiantamento ${backup?.descricao||''}`, reverter: async () => {
+    const novo = await fsAdd('vales', backup);
+    vales.push(novo); renderVales(); renderDashboard();
+  }});
   renderVales();
+  toast('Excluído (desfazer disponível)', 'success');
 }
 
 // =====================================================
@@ -4500,7 +4551,16 @@ function gerarPdfFolhaCompleto(doc, params, startY = 10, save = false) {
   doc.setTextColor(...COR_TEXTO);
   doc.text(f.nome || '—', lm + 5, y + 14);
   doc.text(f.cpf || '—', lm + 80, y + 14);
-  doc.text((f.cargo || '—').substring(0, 28), lm + 130, y + 14);
+  const cargoText = f.cargo || '—';
+  if (cargoText.length > 28) {
+    doc.setFontSize(8);
+    const cargoLines = doc.splitTextToSize(cargoText, 60);
+    doc.text(cargoLines[0], lm + 130, y + 11);
+    if (cargoLines[1]) doc.text(cargoLines[1], lm + 130, y + 16);
+    doc.setFontSize(10);
+  } else {
+    doc.text(cargoText, lm + 130, y + 14);
+  }
   y += 24;
 
   // ── PROVENTOS ───────────────────────────────────────
@@ -4747,7 +4807,6 @@ async function carregarERenderAcerto(container) {
         <div style="font-weight:700;font-size:1.05rem">🤝 ${par.pessoaA} ↔ ${par.pessoaB}</div>
         <div style="display:flex;gap:6px" onclick="event.stopPropagation()">
           <button class="btn btn-primary btn-sm" onclick="abrirPaginaPar('${par.id}')">Ver detalhes →</button>
-          <button class="btn-icon" onclick="excluirPar('${par.id}')">🗑️</button>
         </div>
       </div>
 
@@ -4901,10 +4960,18 @@ async function salvarLancamento() {
 }
 
 async function excluirPar(id) {
-  if (!await confirmar('Excluir par?', 'Todos os lançamentos deste par serão removidos.')) return;
+  if (!await confirmar('Excluir par?', 'Todos os lançamentos deste par serão removidos. Isso pode ser desfeito.')) return;
+  const backup = acertoPares.find(p=>p.id===id);
   await fsDelete('acertoPares', id);
   acertoPares = acertoPares.filter(p => p.id !== id);
+  pushUndo({ descricao: `Excluir par ${backup?.pessoaA||''} ↔ ${backup?.pessoaB||''}`, reverter: async () => {
+    const novo = await fsAdd('acertoPares', backup);
+    acertoPares.push(novo);
+    renderAcerto(); if (parAtualId === id) navigate('acerto');
+  }});
+  navigate('acerto');
   renderAcerto();
+  toast('Par excluído (desfazer disponível)', 'success');
 }
 
 function verLancamentos(parId) {
@@ -4998,7 +5065,7 @@ async function salvarConfig() {
   else localDB.setOrg(currentOrg.id, currentOrg);
   localStorage.setItem('cgOrgNome', update.nome);
   document.getElementById('currentOrgBadge').textContent = '🏢 ' + update.nome;
-  toast('Configurações salvas!', 'success');
+  toast('Dados da empresa salvos!', 'success');
 }
 
 // =====================================================
@@ -5060,7 +5127,12 @@ function renderEscalaPage() {
   const diasEl = document.getElementById('escalaDiasFuncionamento');
   if (diasEl) {
     Array.from(diasEl.options).forEach(opt => {
-      opt.selected = settings.diasFuncionamento.includes(parseInt(opt.value, 10));
+      // Suporte a checkboxes e select
+      if (opt.tagName === 'INPUT') {
+        opt.checked = settings.diasFuncionamento.includes(parseInt(opt.value, 10));
+      } else {
+        opt.selected = settings.diasFuncionamento.includes(parseInt(opt.value, 10));
+      }
     });
   }
   const now = new Date();
@@ -5245,8 +5317,9 @@ function buildEscalaFuncionario(funcionario, regra, settings, mes, ano, index, t
     if (restanteSemana <= 0) continue;
     let minutosTrabalho = Math.min(jornadaPadraoMin, restanteSemana);
     const lacunaCobertura = Math.max(0, janelaEmpresaMin - jornadaPadraoMin);
-    if (regra.podeHoraExtra && (settings.prioridade === 'cobertura' || totalEquipe <= settings.coberturaMinima)) {
-      minutosTrabalho += Math.min(limiteExtraMin, lacunaCobertura, Math.max(0, restanteSemana - minutosTrabalho + limiteExtraMin));
+    // Sempre adicionar horas extras se o funcionário tem limite definido
+    if (regra.podeHoraExtra && limiteExtraMin > 0) {
+      minutosTrabalho += Math.min(limiteExtraMin, janelaEmpresaMin - minutosTrabalho);
     }
     minutosTrabalho = Math.min(minutosTrabalho, janelaEmpresaMin);
     if (minutosTrabalho < 240 && dias.length > 0) continue;
@@ -5348,6 +5421,7 @@ function renderEscalaResultado() {
     ? `<div class="section-card"><div class="section-card-title">Alertas</div>${escalaGerada.alertas.map(alerta => `<div class="escala-alert"><strong>Atencao:</strong> ${alerta}</div>`).join('')}</div>`
     : `<div class="section-card"><div class="section-card-title">Alertas</div><div class="empty-state"><div class="icon">OK</div><h3>Nenhum alerta critico</h3><p>A escala foi montada dentro dos limites configurados.</p></div></div>`;
   // renderEscalaPreview is now a no-op
+  renderEscalaCheckList();
 }
 
 function renderEscalaPreview() {
@@ -5519,6 +5593,15 @@ function fmtData(d) {
   if (!d) return '—';
   const [y,m,day] = d.split('-');
   return `${day}/${m}/${y}`;
+}
+
+function maskCnpj(el) {
+  let v = el.value.replace(/\D/g,'').substring(0,14);
+  if (v.length > 12) v = v.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/,'$1.$2.$3/$4-$5');
+  else if (v.length > 8) v = v.replace(/(\d{2})(\d{3})(\d{3})(\d+)/,'$1.$2.$3/$4');
+  else if (v.length > 5) v = v.replace(/(\d{2})(\d{3})(\d+)/,'$1.$2.$3');
+  else if (v.length > 2) v = v.replace(/(\d{2})(\d+)/,'$1.$2');
+  el.value = v;
 }
 
 function maskCpf(el) {
@@ -7831,6 +7914,7 @@ function abrirPaginaPar(parId) {
   document.getElementById('parLancarBtn').onclick = () => openLancamentoPar(parId);
   document.getElementById('parExportBtn').onclick = () => abrirExportarAcerto(parId);
   document.getElementById('parConsolidarBtn').onclick = () => consolidarPeriodoPar(parId);
+  document.getElementById('parExcluirBtn').onclick = () => excluirPar(parId);
 
   renderParPage(parId);
   navigate('acerto-par');
@@ -7885,15 +7969,15 @@ function renderParPage(parId) {
 function renderParLancamentos() {
   const par = acertoPares.find(p => p.id === parAtualId);
   if (!par) return;
-  const filtroMes = document.getElementById('parFiltroMes')?.value || '';
+  const filtroDe = document.getElementById('parFiltroDe')?.value || '';
+  const filtroAte = document.getElementById('parFiltroAte')?.value || '';
   const periodoAtual = par.consolidadoEm || null;
 
   let lances = lancamentosCache.filter(l => l.parId === parAtualId
     && (!periodoAtual || (l.data||'') > periodoAtual));
 
-  if (filtroMes) {
-    lances = lances.filter(l => l.data && l.data.startsWith(filtroMes));
-  }
+  if (filtroDe) lances = lances.filter(l => !l.data || l.data >= filtroDe);
+  if (filtroAte) lances = lances.filter(l => !l.data || l.data <= filtroAte);
 
   lances.sort((a,b) => (b.data||'').localeCompare(a.data||''));
 
@@ -8004,11 +8088,132 @@ async function consolidarPeriodoPar(parId) {
   const idx = acertoPares.findIndex(p=>p.id===parId);
   if (idx>=0) Object.assign(acertoPares[idx], updates);
 
+  const parBackup = {...acertoPares.find(p=>p.id===parId)};
+  const consolidacoesAntes = parBackup.consolidacoes ? [...parBackup.consolidacoes.slice(0,-1)] : [];
+  pushUndo({ descricao: `Consolidar período ${par.pessoaA} ↔ ${par.pessoaB}`, reverter: async () => {
+    const reverts = { consolidadoEm: consolidacoesAntes.length > 0 ? consolidacoesAntes[consolidacoesAntes.length-1]?.data||null : null, consolidacoes: consolidacoesAntes };
+    if (db && currentOrg) await db.collection('orgs').doc(currentOrg.id).collection('acertoPares').doc(parId).update(reverts);
+    else getCol('acertoPares').update(parId, reverts);
+    const pidx = acertoPares.findIndex(p=>p.id===parId);
+    if (pidx>=0) Object.assign(acertoPares[pidx], reverts);
+    renderParPage(parId); renderAcerto();
+  }});
   renderParPage(parId);
   renderAcerto();
-  toast('Período consolidado! Saldo zerado.', 'success');
+  toast('Período consolidado! (desfazer disponível)', 'success');
 }
 
+
+// =====================================================
+// ESCALA — seleção para imprimir/baixar
+// =====================================================
+function renderEscalaCheckList() {
+  if (!escalaGerada) return;
+  const el = document.getElementById('escalaCheckList');
+  const selEl = document.getElementById('escalaSelecao');
+  const btnsEl = document.getElementById('escalaBotoesPos');
+  if (!el) return;
+  if (selEl) selEl.style.display = 'block';
+  if (btnsEl) btnsEl.style.display = 'flex';
+  el.innerHTML = escalaGerada.equipe.map(item => `
+    <label style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg2);border-radius:8px;cursor:pointer">
+      <input type="checkbox" id="escCb_${item.funcionario.id}" checked style="width:16px;height:16px">
+      <span style="font-size:0.85rem">${item.funcionario.nome}</span>
+      <span style="font-size:0.75rem;color:var(--text3)">${item.totalHorasMes}h (${item.totalExtrasMes}h extras)</span>
+    </label>
+  `).join('');
+}
+
+function toggleTodosEscala(checked) {
+  document.querySelectorAll('[id^="escCb_"]').forEach(cb => cb.checked = checked);
+}
+
+function getEscalaSelecionados() {
+  if (!escalaGerada) return [];
+  return escalaGerada.equipe.filter(item => {
+    const cb = document.getElementById(`escCb_${item.funcionario.id}`);
+    return !cb || cb.checked;
+  });
+}
+
+function printEscalasSelecionadas() {
+  const selecionados = getEscalaSelecionados();
+  if (!selecionados.length) { toast('Selecione ao menos um funcionário', 'error'); return; }
+  if (selecionados.length === 1) {
+    printEscalaFuncionario(selecionados[0].funcionario.id);
+    return;
+  }
+  printTodasEscalas(selecionados);
+}
+
+function downloadEscalasSelecionadasPdf() {
+  const selecionados = getEscalaSelecionados();
+  if (!selecionados.length) { toast('Selecione ao menos um funcionário', 'error'); return; }
+  if (selecionados.length === 1) {
+    downloadEscalaPdfFuncionario(selecionados[0].funcionario.id);
+    return;
+  }
+  downloadTodasEscalasPdf(selecionados);
+}
+
+// =====================================================
+// FILTROS PERÍODO — Acerto de Contas
+// =====================================================
+function filtrarParPeriodo(tipo) {
+  const hoje = new Date();
+  let de, ate;
+  if (tipo === 'este_mes') {
+    de = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+    ate = new Date(hoje.getFullYear(), hoje.getMonth()+1, 0);
+  } else if (tipo === 'mes_passado') {
+    de = new Date(hoje.getFullYear(), hoje.getMonth()-1, 1);
+    ate = new Date(hoje.getFullYear(), hoje.getMonth(), 0);
+  } else if (tipo === 'este_ano') {
+    de = new Date(hoje.getFullYear(), 0, 1);
+    ate = new Date(hoje.getFullYear(), 11, 31);
+  } else {
+    document.getElementById('parFiltroDe').value = '';
+    document.getElementById('parFiltroAte').value = '';
+    renderParLancamentos();
+    return;
+  }
+  document.getElementById('parFiltroDe').value = de.toISOString().slice(0,10);
+  document.getElementById('parFiltroAte').value = ate.toISOString().slice(0,10);
+  renderParLancamentos();
+}
+
+// =====================================================
+// UNDO GLOBAL — botão flutuante em TODAS as ações
+// =====================================================
+function pushUndoGlobal(descricao, reverterFn) {
+  pushUndo({ descricao, reverter: reverterFn });
+}
+
+// Wrapper para excluir com undo
+async function excluirComUndo(descricao, deleteFn, undoFn) {
+  await deleteFn();
+  pushUndoGlobal(descricao, undoFn);
+}
+
+// =====================================================
+// VOLTAR AO TOPO — botão flutuante
+// =====================================================
+function adicionarBotaoTopo() {
+  if (document.getElementById('btnVoltarTopo')) return;
+  const btn = document.createElement('button');
+  btn.id = 'btnVoltarTopo';
+  btn.innerHTML = '▲';
+  btn.title = 'Voltar ao topo';
+  btn.style.cssText = 'position:fixed;bottom:16px;right:16px;width:42px;height:42px;border-radius:50%;background:var(--navy);color:white;border:none;font-size:1rem;cursor:pointer;z-index:8999;box-shadow:0 4px 14px rgba(0,0,0,0.3);display:none;font-family:var(--font)';
+  btn.onclick = () => window.scrollTo({top:0,behavior:'smooth'});
+  document.body.appendChild(btn);
+  window.addEventListener('scroll', () => {
+    btn.style.display = window.scrollY > 200 ? 'flex' : 'none';
+    btn.style.alignItems = 'center';
+    btn.style.justifyContent = 'center';
+  });
+}
+document.addEventListener('DOMContentLoaded', adicionarBotaoTopo);
 // Service worker for PWA
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
