@@ -3104,26 +3104,34 @@ async function doGoogleLogin() {
   try {
     const provider = new firebase.auth.GoogleAuthProvider();
     provider.setCustomParameters({ prompt: 'select_account' });
-    // No mobile, usar redirect direto (mais confiável que popup)
-    const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
-    if (isMobile) {
-      await auth.signInWithRedirect(provider);
-      // Página vai recarregar — getRedirectResult captura no load
-    } else {
+
+    // Detectar se está rodando como PWA (standalone) ou browser normal
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches
+      || window.navigator.standalone === true
+      || document.referrer.includes('android-app://');
+
+    // No PWA standalone: popup é obrigatório pois redirect perde o contexto
+    // No browser mobile: também popup (mais moderno e confiável)
+    // Só usar redirect se popup for bloqueado
+    try {
       await auth.signInWithPopup(provider);
+    } catch(popupErr) {
+      if (popupErr.code === 'auth/popup-blocked') {
+        // Popup bloqueado pelo browser — usar redirect como fallback
+        if (!isStandalone) {
+          await auth.signInWithRedirect(provider);
+        } else {
+          // No PWA, popup bloqueado é um problema sério
+          toast('Permita popups para fazer login com Google no app instalado', 'error');
+        }
+      } else if (popupErr.code === 'auth/popup-closed-by-user') {
+        // Usuário fechou — não mostrar erro
+      } else {
+        throw popupErr;
+      }
     }
   } catch(e) {
-    // Se popup falhar, tentar redirect
-    if (e.code === 'auth/popup-blocked' || e.code === 'auth/popup-closed-by-user') {
-      try {
-        const provider2 = new firebase.auth.GoogleAuthProvider();
-        await auth.signInWithRedirect(provider2);
-      } catch(e2) {
-        toast('Erro ao fazer login: ' + e2.message, 'error');
-      }
-    } else {
-      toast('Erro Google: ' + e.message, 'error');
-    }
+    toast('Erro ao fazer login com Google: ' + (e.message || e.code), 'error');
   }
 }
 
@@ -3454,6 +3462,7 @@ function navigate(page) {
   if (page === 'historico-fin') renderHistoricoFin();
   if (page === 'historico-folha') renderHistoricoFolhas();
   if (page === 'folha') { const d=new Date(); document.getElementById('folhaMes').value=d.getMonth()+1; document.getElementById('folhaAno').value=d.getFullYear(); }
+  if (page === 'dashboard') setTimeout(() => { if (document.getElementById('dashCalcFita')) dashCalcRenderFita(); }, 80);
   const n = document.getElementById('nav-' + page);
   if (n) n.classList.add('active');
   // Close dropdown
@@ -8179,17 +8188,28 @@ const DASH_WIDGETS = {
         const credor  = saldo > 0 ? par.pessoaB : par.pessoaA;
         const quitado = Math.abs(saldo) < 0.01;
         const ultimoLanc = lances[0];
-        return `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px;background:var(--bg2);border-radius:8px;margin-bottom:6px;gap:10px;flex-wrap:wrap;cursor:pointer"
-          onclick="abrirPaginaPar('${par.id}')">
-          <div style="flex:1">
-            <div style="font-weight:600;font-size:0.88rem">${par.pessoaA} ↔ ${par.pessoaB}</div>
-            ${ultimoLanc ? `<div style="font-size:0.72rem;color:var(--text3)">${ultimoLanc.de} deve • ${ultimoLanc.data?fmtData(ultimoLanc.data):''}</div>` : ''}
-          </div>
-          <div style="text-align:right">
-            <div style="font-family:var(--mono);font-weight:700;color:${quitado?'var(--green)':'var(--yellow)'}">
+        return `<div style="background:var(--bg2);border-radius:8px;margin-bottom:6px;overflow:hidden">
+          <!-- Linha principal clicável -->
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;gap:8px;cursor:pointer"
+            onclick="abrirPaginaPar('${par.id}')">
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:600;font-size:0.85rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${par.pessoaA} ↔ ${par.pessoaB}</div>
+              <div style="font-size:0.7rem;color:var(--text3)">${quitado?'✅ Quitado':devedor+' deve'}</div>
+            </div>
+            <div style="font-family:var(--mono);font-weight:700;font-size:0.95rem;color:${quitado?'var(--green)':'var(--yellow)'}">
               R$ ${fmtMoney(Math.abs(saldo))}
             </div>
-            <div style="font-size:0.7rem;color:var(--text3)">${quitado?'✅ Quitado':devedor+' deve'}</div>
+          </div>
+          <!-- Botões rápidos de lançamento -->
+          <div style="display:flex;border-top:1px solid var(--border)">
+            <button style="flex:1;padding:5px 4px;font-size:0.72rem;font-weight:600;background:none;border:none;border-right:1px solid var(--border);cursor:pointer;color:var(--red);font-family:var(--font)"
+              onclick="openLancamentoPar('${par.id}','${par.pessoaA}')">
+              ${par.pessoaA} deve
+            </button>
+            <button style="flex:1;padding:5px 4px;font-size:0.72rem;font-weight:600;background:none;border:none;cursor:pointer;color:var(--red);font-family:var(--font)"
+              onclick="openLancamentoPar('${par.id}','${par.pessoaB}')">
+              ${par.pessoaB} deve
+            </button>
           </div>
         </div>`;
       }).join('');
@@ -9855,19 +9875,7 @@ function calcHandleKeyboardDash(e) {
 // Adicionar ao listener de teclado existente
 document.addEventListener('keydown', calcHandleKeyboardDash);
 
-// Quando renderDashboard é chamado, inicializar displays
-// Hook via navigate — já chama renderDashboard internamente
-// Usamos MutationObserver leve para detectar quando dashCalcFita aparece
-(function() {
-  const obs = new MutationObserver(() => {
-    if (document.getElementById('dashCalcFita')) {
-      dashCalcRenderFita();
-    }
-  });
-  document.addEventListener('DOMContentLoaded', () => {
-    obs.observe(document.getElementById('dashConteudo') || document.body, { childList: true, subtree: true });
-  });
-})();
+// Dashboard calc init handled in navigate()
 
 // Service worker for PWA
 if ('serviceWorker' in navigator) {
