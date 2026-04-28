@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-title" content="CadernoGestor">
 <!-- Open Graph (WhatsApp, Facebook) -->
 <meta property="og:title" content="CadernoGestor">
-<meta property="og:description" content="Saia do papel. Sem sair do caderno. Folha de pagamento, empréstimos e acertos para pequenas empresas.">
+<meta property="og:description" content="Saia do papel. Sem sair do caderno. Folha de pagamento, gestão financeira para pequenas empresas.">
 <meta property="og:image" content="https://naulapp.github.io/cadernogestor/logo.png">
 <meta property="og:url" content="https://naulapp.github.io/cadernogestor/">
 <meta property="og:type" content="website">
@@ -694,7 +694,7 @@ tr:hover td { background: rgba(108,99,255,0.04); }
 .folha-value-num.neg { color: var(--red); }
 .folha-value-num.total { color: var(--accent2); font-size: 1.1rem; }
 
-/* ACERTO MÚTUO */
+/* ACERTO DE CONTAS PESSOAIS */
 .acerto-card {
   background: var(--card);
   border: 1px solid var(--border);
@@ -1367,13 +1367,13 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
 
       <div class="nav-section-title">Financeiro</div>
       <div class="nav-item" onclick="navigate('emprestimos')" id="nav-emprestimos">
-        <span class="icon">💰</span> Empréstimos
+        <span class="icon">💰</span> Empréstimos a Funcionários
       </div>
       <div class="nav-item" onclick="navigate('vales')" id="nav-vales">
-        <span class="icon">🎫</span> Vales
+        <span class="icon">💵</span> Adiantamentos Salariais
       </div>
       <div class="nav-item" onclick="navigate('acerto')" id="nav-acerto">
-        <span class="icon">🤝</span> Controle Financeiro Pessoal
+        <span class="icon">🤝</span> Acerto de Contas Pessoais
       </div>
 
       <div class="nav-section-title">Gestão</div>
@@ -1530,7 +1530,7 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
         <div id="folhaList"></div>
       </div>
 
-      <!-- ===== EMPRÉSTIMOS ===== -->
+      <!-- ===== EMPRÉSTIMOS A FUNCIONÁRIOS ===== -->
       <div class="page" id="page-escala">
         <div class="page-header">
           <div>
@@ -1662,7 +1662,7 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
       <div class="page" id="page-emprestimos">
         <div class="page-header">
           <div>
-            <div class="page-title">Empréstimos</div>
+            <div class="page-title">Empréstimos a Funcionários</div>
             <div class="page-sub">Parcelados descontados na folha</div>
           </div>
           <div style="display:flex;gap:8px"><button class="btn btn-primary btn-sm" onclick="openEmprestimoModal()">➕ Novo empréstimo</button></div>
@@ -1670,7 +1670,7 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
 
         <div class="table-wrap">
           <div class="table-header">
-            <div class="table-title">Empréstimos ativos</div>
+            <div class="table-title">Empréstimos a Funcionários — Ativos</div>
             <input type="text" class="search-input" placeholder="🔍 Buscar..." oninput="filterEmprestimos(this.value)">
           </div>
           <table>
@@ -1693,16 +1693,16 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
         </div>
       </div>
 
-      <!-- ===== VALES ===== -->
+      <!-- ===== ADIANTAMENTOS SALARIAIS ===== -->
       <div class="page" id="page-vales">
         <div class="page-header">
           <div>
-            <div class="page-title">Vales</div>
-            <div class="page-sub">Registro e controle de vales</div>
+            <div class="page-title">Adiantamentos Salariais</div>
+            <div class="page-sub">Adiantamentos antecipados ao funcionário</div>
           </div>
           <div style="display:flex;gap:8px">
-            <button class="btn btn-outline btn-sm" onclick="openModal('modal-vale-lote')">📋 Lançar em lote</button>
-            <button class="btn btn-primary btn-sm" onclick="openModal('modal-vale')">➕ Registrar vale</button>
+            <button class="btn btn-outline btn-sm" onclick="openModal('modal-vale-lote')">📋 Adiantamentos em Lote</button>
+            <button class="btn btn-primary btn-sm" onclick="openModal('modal-vale')">➕ Registrar Adiantamento</button>
           </div>
         </div>
 
@@ -1731,7 +1731,7 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
 
         <div class="table-wrap">
           <div class="table-header">
-            <div class="table-title" id="valesTituloTabela">Vales</div>
+            <div class="table-title" id="valesTituloTabela">Adiantamentos Salariais</div>
             <div style="font-size:0.82rem;color:var(--text3)" id="valesTotalFiltro"></div>
           </div>
           <table>
@@ -1747,7 +1747,7 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
               </tr>
             </thead>
             <tbody id="tabelaVales">
-              <tr><td colspan="7"><div class="empty-state"><div class="icon">🎫</div><h3>Nenhum vale</h3></div></td></tr>
+              <tr><td colspan="7"><div class="empty-state"><div class="icon">🎫</div><h3>Nenhum adiantamento</h3></div></td></tr>
             </tbody>
           </table>
         </div>
@@ -1768,10 +1768,10 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
         <!-- Saldo devedor -->
         <div class="cards-grid" id="fichaCards" style="margin-bottom:16px"></div>
 
-        <!-- Empréstimos -->
+        <!-- Empréstimos a Funcionários -->
         <div class="section-card" style="margin-bottom:16px">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-            <div class="section-card-title" style="margin:0">💰 EMPRÉSTIMOS</div>
+            <div class="section-card-title" style="margin:0">💰 EMPRÉSTIMOS A FUNCIONÁRIOS</div>
           </div>
           <div id="fichaEmprestimos"></div>
         </div>
@@ -1779,7 +1779,7 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
         <!-- Vales -->
         <div class="section-card" style="margin-bottom:16px">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-            <div class="section-card-title" style="margin:0">🎫 VALES PENDENTES</div>
+            <div class="section-card-title" style="margin:0">💵 ADIANTAMENTOS PENDENTES</div>
           </div>
           <div id="fichaVales"></div>
         </div>
@@ -1856,12 +1856,12 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
         </div>
       </div>
 
-      <!-- ===== ACERTO MÚTUO ===== -->
+      <!-- ===== ACERTO DE CONTAS PESSOAIS ===== -->
       <div class="page" id="page-acerto">
         <div class="page-header">
           <div>
-            <div class="page-title">Controle Fin. Pessoal</div>
-            <div class="page-sub">Empréstimos entre pessoas — saldo líquido</div>
+            <div class="page-title">Acerto de Contas Pessoais</div>
+            <div class="page-sub">Registro de contas e dívidas pessoais</div>
           </div>
           <div style="display:flex;gap:10px">
             <button class="btn btn-outline btn-sm" onclick="openModal('modal-acerto-par')">🔗 Novo par</button>
@@ -1873,7 +1873,7 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
           <div class="empty-state">
             <div class="icon">🤝</div>
             <h3>Nenhum par configurado</h3>
-            <p>Crie um par (ex: você e marido) para começar a registrar empréstimos mútuos</p>
+            <p>Crie um par para começar a registrar contas e dívidas entre pessoas</p>
           </div>
         </div>
       </div>
@@ -1966,7 +1966,7 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
       <div class="mobile-nav-item active" onclick="navigate('dashboard')"><span class="icon">📊</span>Início</div>
       <div class="mobile-nav-item" onclick="navigate('folha')"><span class="icon">📋</span>Folha</div>
       <div class="mobile-nav-item" onclick="navigate('emprestimos')"><span class="icon">💰</span>Emprést.</div>
-      <div class="mobile-nav-item" onclick="navigate('vales')"><span class="icon">🎫</span>Vales</div>
+      <div class="mobile-nav-item" onclick="navigate('vales')"><span class="icon">💵</span>Adiantamentos</div>
       <div class="mobile-nav-item" onclick="navigate('relatorio')"><span class="icon">📈</span>Relatório</div>
       <div class="mobile-nav-item" onclick="navigate('acerto')"><span class="icon">🤝</span>Acerto</div>
     </div>
@@ -2288,7 +2288,7 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
 <div class="modal-overlay" id="modal-emprestimo">
   <div class="modal">
     <div class="modal-header">
-      <div class="modal-title" id="empTituloModal">Novo Empréstimo</div>
+      <div class="modal-title" id="empTituloModal">Novo Empréstimo a Funcionário</div>
       <div class="modal-close" onclick="closeModal('modal-emprestimo')">✕</div>
     </div>
     <div class="modal-body">
@@ -2352,7 +2352,7 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
 <div class="modal-overlay" id="modal-vale">
   <div class="modal">
     <div class="modal-header">
-      <div class="modal-title" id="valeTituloModal">Registrar Vale</div>
+      <div class="modal-title" id="valeTituloModal">Registrar Adiantamento</div>
       <div class="modal-close" onclick="closeModal('modal-vale')">✕</div>
     </div>
     <div class="modal-body">
@@ -2409,7 +2409,7 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
 <div class="modal-overlay" id="modal-vale-lote">
   <div class="modal" style="max-width:620px">
     <div class="modal-header">
-      <div class="modal-title">Lançar Vales em Lote</div>
+      <div class="modal-title">Adiantamentos em Lote</div>
       <div class="modal-close" onclick="closeModal('modal-vale-lote')">✕</div>
     </div>
     <div class="modal-body">
@@ -2485,7 +2485,7 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
           <select class="form-input" id="lancPar"></select>
         </div>
         <div class="form-group">
-          <label class="form-label">Quem emprestou *</label>
+          <label class="form-label">Quem deve *</label>
           <select class="form-input" id="lancDe"></select>
         </div>
         <div class="form-grid form-grid-2">
@@ -2527,6 +2527,35 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
   </div>
 </div>
 
+
+<!-- MODAL EXPORTAR ACERTO DE CONTAS -->
+<div class="modal-overlay" id="modal-exportar-acerto">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header">
+      <div class="modal-title">📥 Exportar Acerto de Contas</div>
+      <div class="modal-close" onclick="closeModal('modal-exportar-acerto')">✕</div>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="exportAcertoParId">
+      <div class="form-grid form-grid-2">
+        <div class="form-group">
+          <label class="form-label">Data inicial</label>
+          <input type="date" class="form-input" id="exportAcertoDe">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Data final</label>
+          <input type="date" class="form-input" id="exportAcertoAte">
+        </div>
+      </div>
+      <p style="color:var(--text3);font-size:0.8rem;margin-top:4px">Deixe em branco para exportar todo o histórico.</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline btn-sm" onclick="closeModal('modal-exportar-acerto')">Cancelar</button>
+      <button class="btn btn-outline btn-sm" onclick="exportarAcertoExcel()">📊 Excel</button>
+      <button class="btn btn-primary btn-sm" onclick="exportarAcertoPDF()">📄 PDF</button>
+    </div>
+  </div>
+</div>
 <!-- BOTÕES FLUTUANTES FOLHA -->
 <div id="floatFolhaButtons" style="display:none">
   <button onclick="window.scrollTo({top:0,behavior:'smooth'})">▲ Topo</button>
@@ -2632,6 +2661,7 @@ let grupos = [];
 let emprestimos = [];
 let vales = [];
 let acertoPares = [];
+let lancamentosCache = []; // cache de lançamentos do Firebase
 let escalaSettings = [];
 let escalaRules = [];
 let escalaGerada = null;
@@ -3087,6 +3117,7 @@ async function loadAllData() {
       fsGetAll('funcionarios'), fsGetAll('grupos'), fsGetAll('emprestimos'),
       fsGetAll('vales'), fsGetAll('acertoPares')
     ]);
+    lancamentosCache = await fsGetAll('lancamentos');
   } catch(e) {
     console.warn('Erro ao carregar dados:', e.message);
     // Tentar carregar do localStorage como fallback
@@ -3169,7 +3200,7 @@ function openModal(id) {
       document.getElementById('valeValorParc').value = '';
       const funcSel = document.getElementById('valeFuncionario');
       if (funcSel) funcSel.value = '';
-      document.getElementById('valeTituloModal').textContent = 'Registrar Vale';
+      document.getElementById('valeTituloModal').textContent = 'Registrar Adiantamento';
       toggleValeParcelas();
     }
   }
@@ -3497,7 +3528,7 @@ async function excluirGrupo(id) {
 }
 
 // =====================================================
-// EMPRÉSTIMOS
+// EMPRÉSTIMOS A FUNCIONÁRIOS
 // =====================================================
 function renderEmprestimos(filter='') {
   const tbody = document.getElementById('tabelaEmprestimos');
@@ -3566,7 +3597,7 @@ async function salvarEmprestimo() {
   } else {
     const novo = await fsAdd('emprestimos', {...data, pago:0, parcelasPagas:0, status:'ativo'});
     emprestimos.push(novo);
-    toast('Empréstimo registrado!', 'success');
+    toast('Empréstimo a funcionário registrado!', 'success');
   }
   closeModal('modal-emprestimo');
   renderEmprestimos();
@@ -3602,7 +3633,7 @@ async function excluirEmprestimo(id) {
 }
 
 // =====================================================
-// VALES
+// ADIANTAMENTOS SALARIAIS
 // =====================================================
 function renderVales() {
   const tbody = document.getElementById('tabelaVales');
@@ -3638,7 +3669,7 @@ function renderVales() {
   if (el) el.textContent = lista.length > 0 ? `${lista.length} registro(s) — Total: R$ ${fmtMoney(totalFiltro)}` : '';
 
   if (lista.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="icon">🎫</div><h3>Nenhum vale encontrado</h3></div></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="icon">🎫</div><h3>Nenhum adiantamento encontrado</h3></div></td></tr>`;
     return;
   }
   tbody.innerHTML = lista.map(v => {
@@ -3648,7 +3679,7 @@ function renderVales() {
     return `<tr>
       <td><strong>${func?.nome || v.funcionarioNome || '—'}</strong></td>
       <td style="font-family:var(--mono);font-size:0.82rem">${v.data?fmtData(v.data):'—'}</td>
-      <td>${v.descricao||'Vale'}</td>
+      <td>${v.descricao||'Adiantamento'}</td>
       <td class="mono" style="color:${isPendente?'var(--red)':'var(--text3)'}">R$ ${fmtMoney(v.valor)}</td>
       <td style="font-size:0.78rem">${parcelasInfo}</td>
       <td><span class="badge ${isPendente?'badge-yellow':'badge-gray'}">${isPendente?'Pendente':'Descontado'}</span></td>
@@ -3681,14 +3712,14 @@ async function salvarVale() {
     await fsUpdate('vales', id, data);
     const idx = vales.findIndex(v => v.id===id);
     if (idx>=0) vales[idx] = {...vales[idx], ...data};
-    toast('Vale atualizado!', 'success');
+    toast('Adiantamento atualizado!', 'success');
   } else {
     const novo = await fsAdd('vales', data);
     vales.push(novo);
-    toast('Vale registrado!', 'success');
+    toast('Adiantamento registrado!', 'success');
   }
   document.getElementById('valeId').value = '';
-  document.getElementById('valeTituloModal').textContent = 'Registrar Vale';
+  document.getElementById('valeTituloModal').textContent = 'Registrar Adiantamento';
   closeModal('modal-vale');
   renderVales();
 }
@@ -3731,7 +3762,7 @@ async function loadFolha() {
     return;
   }
 
-  // Buscar vales pendentes (todos, não só do mês — gestor decide quais descontar)
+  // Buscar adiantamentos pendentes (todos, não só do mês — gestor decide quais descontar)
   const valesMes = vales.filter(v => v.status !== 'descontado');
   const empAtivos = emprestimos.filter(e => e.status === 'ativo' || !e.status);
 
@@ -3968,7 +3999,7 @@ function buildFolhaCard(f, d) {
       <!-- DESCONTOS -->
       <div style="font-size:0.78rem;font-weight:700;color:var(--red);margin:10px 0 6px">▼ DESCONTOS SELECIONÁVEIS</div>
       ${d.descontoEmprestimos.length>0?`
-      <div style="font-size:0.78rem;font-weight:600;color:var(--text2);margin-bottom:4px">EMPRÉSTIMOS:</div>
+      <div style="font-size:0.78rem;font-weight:600;color:var(--text2);margin-bottom:4px">EMPRÉSTIMOS A FUNCIONÁRIOS:</div>
       ${d.descontoEmprestimos.map((e,i)=>`
       <label style="display:flex;align-items:center;gap:8px;padding:6px;background:var(--bg2);border-radius:6px;margin-bottom:4px;cursor:pointer">
         <input type="checkbox" ${e.selecionado!==false?'checked':''} style="flex-shrink:0"
@@ -3979,7 +4010,7 @@ function buildFolhaCard(f, d) {
       </label>`).join('')}`:``}
 
       ${d.descontoVales.length>0?`
-      <div style="font-size:0.78rem;font-weight:600;color:var(--text2);margin-bottom:4px;margin-top:6px">VALES:</div>
+      <div style="font-size:0.78rem;font-weight:600;color:var(--text2);margin-bottom:4px;margin-top:6px">ADIANTAMENTOS:</div>
       ${d.descontoVales.map((v,i)=>`
       <label style="display:flex;align-items:center;gap:8px;padding:6px;background:var(--bg2);border-radius:6px;margin-bottom:4px;cursor:pointer">
         <input type="checkbox" ${v.selecionado!==false?'checked':''} style="flex-shrink:0"
@@ -4070,7 +4101,7 @@ function abrirFolhaFuncionario(funcId) {
     <p style="color:var(--text3);font-size:0.78rem;margin-bottom:10px">✅ = será incluído no PDF e baixado automaticamente ao confirmar</p>
 
     ${d.descontoEmprestimos.length > 0 ? `
-    <div style="font-size:0.8rem;font-weight:600;color:var(--text2);margin-bottom:6px">EMPRÉSTIMOS:</div>
+    <div style="font-size:0.8rem;font-weight:600;color:var(--text2);margin-bottom:6px">EMPRÉSTIMOS A FUNCIONÁRIOS:</div>
     ${d.descontoEmprestimos.map((e,i) => {
       const emp = emprestimos.find(x=>x.id===e.id);
       const restante = emp ? ((emp.total||0)-(emp.pago||0)) : e.valor;
@@ -4091,7 +4122,7 @@ function abrirFolhaFuncionario(funcId) {
     }).join('')}` : ''}
 
     ${d.descontoVales.length > 0 ? `
-    <div style="font-size:0.8rem;font-weight:600;color:var(--text2);margin-bottom:6px;margin-top:10px">VALES:</div>
+    <div style="font-size:0.8rem;font-weight:600;color:var(--text2);margin-bottom:6px;margin-top:10px">ADIANTAMENTOS:</div>
     ${d.descontoVales.map((v,i) => {
       const valeObj = vales.find(x=>x.id===v.id);
       const abatido = valeObj?.abatimentos?.reduce((s,a)=>s+a.valor,0)||0;
@@ -4100,7 +4131,7 @@ function abrirFolhaFuncionario(funcId) {
         <input type="checkbox" id="val_sel_${v.id}" ${v.selecionado!==false?'checked':''}
           onchange="folhaDetalhe['${funcId}'].descontoVales[${i}].selecionado=this.checked;recalcFolhaCard('${funcId}')">
         <div style="flex:1;min-width:200px">
-          <div style="font-size:0.85rem;font-weight:600">${(v.label||'Vale').toUpperCase()}${v.data?' — '+fmtData(v.data):''}</div>
+          <div style="font-size:0.85rem;font-weight:600">${(v.label||'Adiantamento').toUpperCase()}${v.data?' — '+fmtData(v.data):''}</div>
           <div style="font-size:0.75rem;color:var(--text3)">Original: R$ ${fmtMoney(v.valor)}${abatido>0?' • Já abatido: R$ '+fmtMoney(abatido)+' • Restante: R$ '+fmtMoney(restante):''}</div>
         </div>
         <div style="display:flex;align-items:center;gap:6px">
@@ -4110,7 +4141,7 @@ function abrirFolhaFuncionario(funcId) {
             oninput="folhaDetalhe['${funcId}'].descontoVales[${i}].valorPagar=Math.min(parseFloat(this.value)||0,${restante});this.value=folhaDetalhe['${funcId}'].descontoVales[${i}].valorPagar;recalcFolhaCard('${funcId}')">
         </div>
       </div>`;
-    }).join('')}` : '<p style="color:var(--text3);font-size:0.82rem">Nenhum vale pendente neste mês.</p>'}
+    }).join('')}` : '<p style="color:var(--text3);font-size:0.82rem">Nenhum adiantamento pendente neste mês.</p>'}
 
     <!-- OUTROS DESCONTOS -->
     <div id="fd-extra-descontos" style="margin-top:8px">
@@ -4277,7 +4308,7 @@ function buildFolhaDetalheForm(funcId, d) {
         <input type="number" class="form-input" id="fd-inss" value="${d.inssValor||0}" step="0.01">
       </div>
       <div class="form-group">
-        <label class="form-label">Vale quinzena (R$)</label>
+        <label class="form-label">Adiantamento quinzena (R$)</label>
         <input type="number" class="form-input" id="fd-valequinzena" value="${d.valeQuinzena||0}" step="0.01">
       </div>
       <div class="form-group">
@@ -4397,7 +4428,7 @@ function gerarPdfFolhaCompleto(doc, params, startY = 10, save = false) {
 
   // ── CABEÇALHO EMPRESA ──────────────────────────────
   doc.setFillColor(...COR_PRIMARIA);
-  doc.rect(lm, y, pw, 22, 'F');
+  doc.rect(lm, y, pw, 22, 'FD');
 
   doc.setTextColor(255,255,255);
   doc.setFont('helvetica', 'bold');
@@ -4441,7 +4472,7 @@ function gerarPdfFolhaCompleto(doc, params, startY = 10, save = false) {
   // ── PROVENTOS ───────────────────────────────────────
   // Header
   doc.setFillColor(...COR_SECUNDARIA);
-  doc.rect(lm, y, pw, 8, 'F');
+  doc.rect(lm, y, pw, 8, 'FD');
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(9);
   doc.setTextColor(255,255,255);
@@ -4464,7 +4495,7 @@ function gerarPdfFolhaCompleto(doc, params, startY = 10, save = false) {
 
   proventos.forEach((row, i) => {
     doc.setFillColor(i % 2 === 0 ? 255 : 248, i % 2 === 0 ? 255 : 250, i % 2 === 0 ? 255 : 255);
-    doc.rect(lm, y, pw, 7, 'F');
+    doc.rect(lm, y, pw, 7, 'FD');
     doc.setDrawColor(...COR_BORDA);
     doc.line(lm, y+7, rm, y+7);
     doc.setFont('helvetica', 'normal'); doc.setFontSize(9);
@@ -4478,7 +4509,7 @@ function gerarPdfFolhaCompleto(doc, params, startY = 10, save = false) {
 
   // Total proventos
   doc.setFillColor(230, 245, 235);
-  doc.rect(lm, y, pw, 8, 'F');
+  doc.rect(lm, y, pw, 8, 'FD');
   doc.setFont('helvetica', 'bold'); doc.setFontSize(10);
   doc.text('TOTAL DE PROVENTOS', lm + 5, y + 5.5);
   doc.setTextColor(...COR_SECUNDARIA);
@@ -4488,7 +4519,7 @@ function gerarPdfFolhaCompleto(doc, params, startY = 10, save = false) {
 
   // ── DESCONTOS ───────────────────────────────────────
   doc.setFillColor(...COR_VERMELHO);
-  doc.rect(lm, y, pw, 8, 'F');
+  doc.rect(lm, y, pw, 8, 'FD');
   doc.setFont('helvetica', 'bold'); doc.setFontSize(9);
   doc.setTextColor(255,255,255);
   doc.text('DESCONTOS', lm + 5, y + 5.5);
@@ -4505,7 +4536,7 @@ function gerarPdfFolhaCompleto(doc, params, startY = 10, save = false) {
     descontos.push([`${e.numero}ª Parcela — Empréstimo: ${e.label}`, fmtMoney(e.valorPagar||e.valor)]);
   });
   (d.descontoVales||[]).filter(v=>v.selecionado!==false).forEach(v => {
-    const label = (v.label||v.descricao||'Vale') + (v.data ? ` (${fmtData(v.data)})` : '');
+    const label = (v.label||v.descricao||'Adiantamento') + (v.data ? ` (${fmtData(v.data)})` : '');
     descontos.push([label, fmtMoney(v.valorPagar||v.valor)]);
   });
   if ((d.faltas||0) > 0) {
@@ -4516,7 +4547,7 @@ function gerarPdfFolhaCompleto(doc, params, startY = 10, save = false) {
 
   descontos.forEach((row, i) => {
     doc.setFillColor(i % 2 === 0 ? 255 : 255, i % 2 === 0 ? 255 : 248, i % 2 === 0 ? 255 : 248);
-    doc.rect(lm, y, pw, 7, 'F');
+    doc.rect(lm, y, pw, 7, 'FD');
     doc.setDrawColor(...COR_BORDA);
     doc.line(lm, y+7, rm, y+7);
     doc.setFont('helvetica', 'normal'); doc.setFontSize(9);
@@ -4537,7 +4568,7 @@ function gerarPdfFolhaCompleto(doc, params, startY = 10, save = false) {
 
   // Total descontos
   doc.setFillColor(255, 235, 235);
-  doc.rect(lm, y, pw, 8, 'F');
+  doc.rect(lm, y, pw, 8, 'FD');
   doc.setFont('helvetica', 'bold'); doc.setFontSize(10);
   doc.text('TOTAL DE DESCONTOS', lm + 5, y + 5.5);
   doc.setTextColor(...COR_VERMELHO);
@@ -4547,7 +4578,7 @@ function gerarPdfFolhaCompleto(doc, params, startY = 10, save = false) {
 
   // ── LÍQUIDO ─────────────────────────────────────────
   doc.setFillColor(...COR_PRIMARIA);
-  doc.rect(lm, y, pw, 14, 'F');
+  doc.rect(lm, y, pw, 14, 'FD');
   doc.setTextColor(255,255,255);
   doc.setFont('helvetica', 'bold'); doc.setFontSize(11);
   doc.text('VALOR LÍQUIDO A RECEBER', lm + 6, y + 9);
@@ -4631,7 +4662,7 @@ function gerarTodosPDFs() {
 }
 
 // =====================================================
-// ACERTO MÚTUO
+// ACERTO DE CONTAS PESSOAIS
 // =====================================================
 function renderAcerto() {
   const container = document.getElementById('acertoPares');
@@ -4644,17 +4675,18 @@ function renderAcerto() {
   carregarERenderAcerto(container);
 }
 async function carregarERenderAcerto(container) {
-  let todosLancamentos = [];
+  // Recarregar do Firebase sempre para garantir dados frescos
   try {
     if (db && currentOrg) {
       const snap = await db.collection('orgs').doc(currentOrg.id).collection('lancamentos').get();
-      todosLancamentos = snap.docs.map(d => ({id: d.id, ...d.data()}));
+      lancamentosCache = snap.docs.map(d => ({id: d.id, ...d.data()}));
     } else {
-      todosLancamentos = getCol('lancamentos').getAll();
+      lancamentosCache = getCol('lancamentos').getAll();
     }
   } catch(e) {
-    todosLancamentos = getCol('lancamentos').getAll();
+    lancamentosCache = getCol('lancamentos').getAll();
   }
+  const todosLancamentos = lancamentosCache;
   container.innerHTML = acertoPares.map(par => {
     const lances = todosLancamentos.filter(l => l.parId === par.id)
       .sort((a,b) => (b.data||'').localeCompare(a.data||''));
@@ -4674,7 +4706,7 @@ async function carregarERenderAcerto(container) {
         <div style="font-weight:700;font-size:1.05rem">${par.pessoaA} ↔ ${par.pessoaB}</div>
         <div style="display:flex;gap:6px;flex-wrap:wrap">
           <button class="btn btn-primary btn-sm" onclick="openLancamentoPar('${par.id}')">➕ Lançamento</button>
-          <button class="btn btn-outline btn-sm" onclick="exportarAcertoPar('${par.id}')">📥 Exportar</button>
+          <button class="btn btn-outline btn-sm" onclick="abrirExportarAcerto('${par.id}')">📥 Exportar</button>
           <button class="btn-icon" onclick="excluirPar('${par.id}')">🗑️</button>
         </div>
       </div>
@@ -4723,36 +4755,12 @@ async function excluirLancamento(lancId, parId) {
   } else {
     getCol('lancamentos').delete(lancId);
   }
+  lancamentosCache = lancamentosCache.filter(l => l.id !== lancId);
   renderAcerto();
   toast('Lançamento excluído', 'success');
 }
 
-async function exportarAcertoPar(parId) {
-  const par = acertoPares.find(p => p.id === parId);
-  if (!par) return;
-  const lances = getCol('lancamentos').getAll().filter(l => l.parId === parId)
-    .sort((a,b) => (a.data||'').localeCompare(b.data||''));
-
-  // Gerar CSV
-  const linhas = [
-    ['Data','De','Descrição','Valor (R$)'],
-    ...lances.map(l => [
-      l.data || '',
-      l.de || '',
-      l.descricao || '',
-      (l.valor||0).toFixed(2).replace('.',',')
-    ])
-  ];
-  const csv = linhas.map(r => r.map(v => '"' + String(v).replace(/"/g,'""') + '"').join(';')).join('\r\n');
-  const blob = new Blob(['\uFEFF'+csv], { type: 'text/csv;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `acerto_${par.pessoaA}_${par.pessoaB}.csv`;
-  a.click();
-  URL.revokeObjectURL(url);
-  toast('Exportado!', 'success');
-}
+// exportarAcertoPar movido para export_fns
 
 function populateLancPar() {
   const sel = document.getElementById('lancPar');
@@ -4793,7 +4801,7 @@ async function salvarPar() {
   toast('Par criado!', 'success');
 }
 
-// Lista de pessoas do acerto mútuo
+// Lista de pessoas do acerto de contas pessoais
 let acertoPessoas = JSON.parse(localStorage.getItem('cgAcertoPessoas') || '[]');
 
 function cadastrarPessoaAcerto(selectId) {
@@ -4841,9 +4849,8 @@ async function salvarLancamento() {
     descricao: document.getElementById('lancDescricao').value
   };
   const novoLanc = await fsAdd('lancamentos', data);
-  // Adicionar ao array local para renderizar imediatamente
-  if (!window._lancamentosCache) window._lancamentosCache = [];
-  window._lancamentosCache.push(novoLanc || {...data, id: Date.now().toString()});
+  // Adicionar ao cache local imediatamente
+  lancamentosCache.push(novoLanc || {...data, id: Date.now().toString()});
   // Garantir que as pessoas do par estão na lista
   const parAtual = acertoPares.find(p => p.id === parId);
   if (parAtual) {
@@ -4872,7 +4879,7 @@ async function excluirPar(id) {
 function verLancamentos(parId) {
   const par = acertoPares.find(p => p.id === parId);
   if (!par) return;
-  const lances = getCol('lancamentos').getAll().filter(l => l.parId === parId);
+  const lances = lancamentosCache.filter(l => l.parId === parId);
   if (lances.length === 0) { toast('Nenhum lançamento ainda', 'info'); return; }
   const html = `<table><thead><tr><th>Data</th><th>De</th><th>Valor</th><th>Descrição</th></tr></thead><tbody>
     ${lances.map(l => `<tr>
@@ -5920,7 +5927,7 @@ function exportRelatorioExcel() {
       'Salário Bruto': salario,
       'INSS': inss,
       'Vale Quinzena': valeQ,
-      'Parcelas Empréstimos': empF,
+      'Parcelas Emp. Funcionários': empF,
       'Vales do Mês': valesF,
       'Total Descontos': descontos,
       'Líquido': salario - descontos
@@ -6381,13 +6388,13 @@ function renderFichaConteudo(funcId) {
   const totalDev = totalEmp + totalVales;
 
   document.getElementById('fichaCards').innerHTML = `
-    <div class="stat-card"><div class="stat-label">Empréstimos em aberto</div><div class="stat-value red" style="font-size:1.2rem">R$ ${fmtMoney(totalEmp)}</div></div>
-    <div class="stat-card"><div class="stat-label">Vales pendentes</div><div class="stat-value yellow" style="font-size:1.2rem">R$ ${fmtMoney(totalVales)}</div></div>
+    <div class="stat-card"><div class="stat-label">Empréstimos a Funcionários em Aberto</div><div class="stat-value red" style="font-size:1.2rem">R$ ${fmtMoney(totalEmp)}</div></div>
+    <div class="stat-card"><div class="stat-label">Adiantamentos pendentes</div><div class="stat-value yellow" style="font-size:1.2rem">R$ ${fmtMoney(totalVales)}</div></div>
     <div class="stat-card"><div class="stat-label">SALDO DEVEDOR</div><div class="stat-value ${totalDev>0?'red':'green'}" style="font-size:1.3rem">R$ ${fmtMoney(totalDev)}</div></div>
     <div class="stat-card"><div class="stat-label">Salário base</div><div class="stat-value accent" style="font-size:1.2rem">R$ ${fmtMoney(f.salario||0)}</div></div>
   `;
 
-  // EMPRÉSTIMOS — com botão de detalhe e pagamento
+  // EMPRÉSTIMOS A FUNCIONÁRIOS — com botão de detalhe e pagamento
   const empEl = document.getElementById('fichaEmprestimos');
   if (empAtivos.length === 0) {
     empEl.innerHTML = '<p style="color:var(--text3);font-size:0.85rem">Nenhum empréstimo ativo.</p>';
@@ -6422,7 +6429,7 @@ function renderFichaConteudo(funcId) {
   const valesFunc = vales.filter(v => v.funcionarioId===funcId).sort((a,b)=>(b.data||'').localeCompare(a.data||''));
   const valesEl = document.getElementById('fichaVales');
   if (valesFunc.filter(v=>v.status!=='descontado').length === 0) {
-    valesEl.innerHTML = '<p style="color:var(--text3);font-size:0.85rem">Nenhum vale pendente.</p>';
+    valesEl.innerHTML = '<p style="color:var(--text3);font-size:0.85rem">Nenhum adiantamento pendente.</p>';
   } else {
     valesEl.innerHTML = valesFunc.filter(v=>v.status!=='descontado').map(v => {
       const abatido = (v.abatimentos||[]).reduce((s,a)=>s+a.valor,0);
@@ -6430,7 +6437,7 @@ function renderFichaConteudo(funcId) {
       return `<div style="background:var(--bg2);border-radius:10px;padding:14px;margin-bottom:10px">
         <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap">
           <div style="flex:1">
-            <div style="font-weight:600;font-size:0.9rem">${v.descricao||'Vale'}${v.data?' — '+fmtData(v.data):''}</div>
+            <div style="font-weight:600;font-size:0.9rem">${v.descricao||'Adiantamento'}${v.data?' — '+fmtData(v.data):''}</div>
             <div style="margin-top:6px;display:flex;gap:16px;flex-wrap:wrap">
               <div><div style="font-size:0.72rem;color:var(--text3)">Original</div><div style="font-family:var(--mono)">R$ ${fmtMoney(v.valor)}</div></div>
               ${abatido>0?`<div><div style="font-size:0.72rem;color:var(--text3)">Abatido</div><div style="font-family:var(--mono);color:var(--green)">R$ ${fmtMoney(abatido)}</div></div>`:''}
@@ -6478,7 +6485,7 @@ async function fichaAbaterVale(valeId, funcId) {
   const abatido = (v.abatimentos||[]).reduce((s,a)=>s+a.valor,0);
   const restante = Math.max(0,(v.valor||0)-abatido);
 
-  document.getElementById('confirmarTitulo').textContent = `Pagamento de vale — ${v.descricao||'Vale'}`;
+  document.getElementById('confirmarTitulo').textContent = `Pagamento de vale — ${v.descricao||'Adiantamento'}`;
   document.getElementById('confirmarMsg').innerHTML = `
     <div style="margin-bottom:10px">
       <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>Valor original:</span><strong>R$ ${fmtMoney(v.valor)}</strong></div>
@@ -6561,7 +6568,7 @@ function atualizarResumoFunc() {
     <div style="display:flex;justify-content:space-between;margin-top:6px;padding-top:6px;border-top:1px solid var(--border);font-weight:700;color:var(--green)"><span>TOTAL BRUTO</span><span style="font-family:var(--mono)">R$ ${fmtMoney(totalBruto)}</span></div>
     <div style="display:flex;justify-content:space-between;margin-top:4px;color:var(--text3);font-size:0.8rem"><span>Hora extra (${pctHE}%)</span><span style="font-family:var(--mono)">R$ ${fmtMoney(horaExtra)}/h</span></div>
     <div style="display:flex;justify-content:space-between;margin-top:4px;color:var(--red);font-size:0.8rem"><span>INSS desconto</span><span style="font-family:var(--mono)">- R$ ${fmtMoney(inss)}</span></div>
-    ${valeQ>0?`<div style="display:flex;justify-content:space-between;margin-top:4px;color:var(--red);font-size:0.8rem"><span>Vale quinzena</span><span style="font-family:var(--mono)">- R$ ${fmtMoney(valeQ)}</span></div>`:''}
+    ${valeQ>0?`<div style="display:flex;justify-content:space-between;margin-top:4px;color:var(--red);font-size:0.8rem"><span>Adiantamento quinzena</span><span style="font-family:var(--mono)">- R$ ${fmtMoney(valeQ)}</span></div>`:''}
     <div style="display:flex;justify-content:space-between;margin-top:6px;padding-top:6px;border-top:1px solid var(--border);font-weight:700;color:var(--accent2)"><span>LÍQUIDO ESTIMADO</span><span style="font-family:var(--mono)">R$ ${fmtMoney(totalBruto-inss-valeQ)}</span></div>
   `;
 }
@@ -6593,7 +6600,7 @@ function editarVale(id) {
   const v = vales.find(x => x.id===id);
   if (!v) return;
   document.getElementById('valeId').value = v.id;
-  document.getElementById('valeTituloModal').textContent = 'Editar Vale';
+  document.getElementById('valeTituloModal').textContent = 'Editar Adiantamento';
   document.getElementById('valeFuncionario').value = v.funcionarioId;
   document.getElementById('valeData').value = v.data || '';
   document.getElementById('valeValor').value = v.valor || '';
@@ -6653,7 +6660,7 @@ async function salvarValesLote() {
 }
 
 // =====================================================
-// EMPRÉSTIMOS — editar e registrar parcela melhorado
+// EMPRÉSTIMOS A FUNCIONÁRIOS — editar e registrar parcela melhorado
 // =====================================================
 function openEmprestimoModal(id) {
   document.getElementById('empId').value = id || '';
@@ -6915,7 +6922,7 @@ function renderHistoricoFin() {
   if (valesEl) {
     const todos = vales.sort((a,b) => (b.data||'').localeCompare(a.data||''));
     if (todos.length === 0) {
-      valesEl.innerHTML = '<p style="color:var(--text3);font-size:0.85rem">Nenhum vale.</p>';
+      valesEl.innerHTML = '<p style="color:var(--text3);font-size:0.85rem">Nenhum adiantamento.</p>';
     } else {
       valesEl.innerHTML = `<table><thead><tr><th>Data</th><th>Funcionário</th><th>Descrição</th><th>Valor</th><th>Abatido</th><th>Restante</th><th>Status</th></tr></thead>
         <tbody>${todos.map(v => {
@@ -6925,7 +6932,7 @@ function renderHistoricoFin() {
           return `<tr>
             <td style="font-size:0.8rem">${v.data?fmtData(v.data):'—'}</td>
             <td>${func?.nome||'—'}</td>
-            <td>${v.descricao||'Vale'}</td>
+            <td>${v.descricao||'Adiantamento'}</td>
             <td class="mono">R$ ${fmtMoney(v.valor)}</td>
             <td class="mono" style="color:var(--green)">R$ ${fmtMoney(abatido)}</td>
             <td class="mono" style="color:${rest>0?'var(--red)':'var(--text3)'}">R$ ${fmtMoney(rest)}</td>
@@ -7042,7 +7049,7 @@ async function confirmarGerarPdf(funcId) {
   if ((d.descontoEmprestimos||[]).filter(e=>e.selecionado!==false).length === 0 &&
       (d.descontoVales||[]).filter(v=>v.selecionado!==false).length === 0 &&
       emprestimos.some(e=>e.funcionarioId===funcId && (e.status==='ativo'||!e.status))) {
-    alertas.push('Existem empréstimos/vales mas nenhum está selecionado para desconto');
+    alertas.push('Existem empréstimos/adiantamentos mas nenhum está selecionado para desconto');
   }
 
   if (alertas.length > 0) {
@@ -7071,11 +7078,11 @@ const TODAS_PERMISSOES = {
     acoes: ['ver', 'gerar', 'editar', 'pdf', 'consolidar']
   },
   emprestimos: {
-    label: 'Empréstimos',
+    label: 'Empréstimos a Funcionários',
     acoes: ['ver', 'cadastrar', 'editar', 'excluir']
   },
   vales: {
-    label: 'Vales',
+    label: 'Adiantamentos Salariais',
     acoes: ['ver', 'cadastrar', 'editar', 'excluir', 'lote']
   },
   pagamentos: {
@@ -7091,7 +7098,7 @@ const TODAS_PERMISSOES = {
     acoes: ['ver', 'exportar_excel']
   },
   acerto: {
-    label: 'Controle Fin. Pessoal',
+    label: 'Acerto de Contas Pessoais',
     acoes: ['ver', 'cadastrar_par', 'lancar', 'excluir']
   },
   equipe: {
@@ -7383,8 +7390,8 @@ const DASH_WIDGETS = {
     padrao: true,
     render: () => {
       const btns = [
-        { label: '🎫 Lançar Vale', action: "openModal('modal-vale')" },
-        { label: '📋 Vales em Lote', action: "openModal('modal-vale-lote')" },
+        { label: '🎫 Adiantamento', action: "openModal('modal-vale')" },
+        { label: '📋 Adiantamentos em Lote', action: "openModal('modal-vale-lote')" },
         { label: '🤝 Novo Lançamento', action: "openModal('modal-lancamento')" },
         { label: '🔗 Novo Par', action: "openModal('modal-acerto-par')" },
         { label: '💰 Novo Empréstimo', action: "openEmprestimoModal()" },
@@ -7413,11 +7420,11 @@ const DASH_WIDGETS = {
           <div class="stat-value accent">${funcAtivos}</div>
         </div>
         <div class="stat-card" style="cursor:pointer" onclick="navigate('emprestimos')">
-          <div class="stat-label">Empréstimos em aberto</div>
+          <div class="stat-label">Empréstimos a Funcionários em Aberto</div>
           <div class="stat-value yellow">R$ ${fmtMoney(totalAberto)}</div>
         </div>
         <div class="stat-card" style="cursor:pointer" onclick="navigate('vales')">
-          <div class="stat-label">Vales pendentes</div>
+          <div class="stat-label">Adiantamentos pendentes</div>
           <div class="stat-value red">R$ ${fmtMoney(totalVales)}</div>
         </div>
         <div class="stat-card" style="cursor:pointer" onclick="navigate('historico-folha')">
@@ -7428,13 +7435,13 @@ const DASH_WIDGETS = {
     }
   },
   acerto: {
-    label: '🤝 Controle Fin. Pessoal',
+    label: '🤝 Acerto de Contas Pessoais',
     descricao: 'Resumo dos saldos entre os pares cadastrados',
-    padrao: true,
+    padrao: false,
     render: () => {
       if (acertoPares.length === 0) {
         return `<div class="section-card" style="margin-bottom:16px">
-          <div class="section-card-title">🤝 ACERTO MÚTUO</div>
+          <div class="section-card-title">🤝 ACERTO DE CONTAS PESSOAIS</div>
           <div class="empty-state" style="padding:20px">
             <div class="icon" style="font-size:32px">🤝</div>
             <h3>Nenhum par cadastrado</h3>
@@ -7442,9 +7449,8 @@ const DASH_WIDGETS = {
           </div>
         </div>`;
       }
-      const lancamentos = getCol('lancamentos').getAll();
       const rows = acertoPares.map(par => {
-        const lances = lancamentos.filter(l => l.parId === par.id);
+        const lances = lancamentosCache.filter(l => l.parId === par.id);
         const totalAB = lances.filter(l=>l.de===par.pessoaA).reduce((s,l)=>s+l.valor,0);
         const totalBA = lances.filter(l=>l.de===par.pessoaB).reduce((s,l)=>s+l.valor,0);
         const saldo = totalAB - totalBA;
@@ -7466,7 +7472,7 @@ const DASH_WIDGETS = {
       }).join('');
       return `<div class="section-card" style="margin-bottom:16px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-          <div class="section-card-title" style="margin:0">🤝 ACERTO MÚTUO</div>
+          <div class="section-card-title" style="margin:0">🤝 ACERTO DE CONTAS PESSOAIS</div>
           <div style="display:flex;gap:6px">
             <button class="btn btn-outline btn-sm" onclick="navigate('acerto')">Ver todos</button>
             <button class="btn btn-primary btn-sm" onclick="openModal('modal-lancamento')">➕ Lançar</button>
@@ -7477,18 +7483,18 @@ const DASH_WIDGETS = {
     }
   },
   valesPendentes: {
-    label: '🎫 Vales Pendentes',
+    label: '💵 Adiantamentos Salariais Pendentes',
     descricao: 'Lista dos vales ainda não descontados',
     padrao: false,
     render: () => {
       const pend = vales.filter(v=>v.status!=='descontado').slice(0,5);
       if (pend.length === 0) return `<div class="section-card" style="margin-bottom:16px">
-        <div class="section-card-title">🎫 VALES PENDENTES</div>
-        <p style="color:var(--text3);font-size:0.85rem">Nenhum vale pendente.</p>
+        <div class="section-card-title">🎫 ADIANTAMENTOS PENDENTES</div>
+        <p style="color:var(--text3);font-size:0.85rem">Nenhum adiantamento pendente.</p>
       </div>`;
       return `<div class="section-card" style="margin-bottom:16px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-          <div class="section-card-title" style="margin:0">🎫 VALES PENDENTES</div>
+          <div class="section-card-title" style="margin:0">💵 ADIANTAMENTOS PENDENTES</div>
           <button class="btn btn-outline btn-sm" onclick="navigate('vales')">Ver todos</button>
         </div>
         <table><thead><tr><th>Funcionário</th><th>Descrição</th><th>Valor</th><th>Data</th></tr></thead>
@@ -7496,7 +7502,7 @@ const DASH_WIDGETS = {
           const f=funcionarios.find(fn=>fn.id===v.funcionarioId);
           return `<tr>
             <td>${f?.nome||'—'}</td>
-            <td>${v.descricao||'Vale'}</td>
+            <td>${v.descricao||'Adiantamento'}</td>
             <td class="mono" style="color:var(--red)">R$ ${fmtMoney(v.valor)}</td>
             <td style="font-size:0.78rem">${v.data?fmtData(v.data):'—'}</td>
           </tr>`;
@@ -7506,18 +7512,18 @@ const DASH_WIDGETS = {
     }
   },
   emprestimosResumo: {
-    label: '💰 Empréstimos Resumo',
+    label: '💰 Empréstimos a Funcionários Resumo',
     descricao: 'Lista dos empréstimos ativos com saldo devedor',
     padrao: false,
     render: () => {
       const ativos = emprestimos.filter(e=>e.status==='ativo'||!e.status).slice(0,5);
       if (ativos.length === 0) return `<div class="section-card" style="margin-bottom:16px">
-        <div class="section-card-title">💰 EMPRÉSTIMOS</div>
+        <div class="section-card-title">💰 EMPRÉSTIMOS A FUNCIONÁRIOS</div>
         <p style="color:var(--text3);font-size:0.85rem">Nenhum empréstimo ativo.</p>
       </div>`;
       return `<div class="section-card" style="margin-bottom:16px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-          <div class="section-card-title" style="margin:0">💰 EMPRÉSTIMOS ATIVOS</div>
+          <div class="section-card-title" style="margin:0">💰 EMPRÉSTIMOS A FUNCIONÁRIOS — ATIVOS</div>
           <button class="btn btn-outline btn-sm" onclick="navigate('emprestimos')">Ver todos</button>
         </div>
         <table><thead><tr><th>Funcionário</th><th>Descrição</th><th>Restante</th><th>Próx. Parcela</th></tr></thead>
@@ -7617,6 +7623,157 @@ function resetarDashboard() {
   localStorage.removeItem('cgDashConfig');
   openDashConfig();
   toast('Configuração resetada para o padrão', 'info');
+}
+
+
+// =====================================================
+// EXPORTAR ACERTO DE CONTAS
+// =====================================================
+function abrirExportarAcerto(parId) {
+  document.getElementById('exportAcertoParId').value = parId;
+  // Datas padrão: último mês
+  const hoje = new Date();
+  const primeiroDia = new Date(hoje.getFullYear(), hoje.getMonth()-1, 1);
+  const ultimoDia = new Date(hoje.getFullYear(), hoje.getMonth(), 0);
+  document.getElementById('exportAcertoDe').value = primeiroDia.toISOString().slice(0,10);
+  document.getElementById('exportAcertoAte').value = ultimoDia.toISOString().slice(0,10);
+  openModal('modal-exportar-acerto');
+}
+
+function filtrarLancamentosExport() {
+  const parId = document.getElementById('exportAcertoParId').value;
+  const de = document.getElementById('exportAcertoDe').value;
+  const ate = document.getElementById('exportAcertoAte').value;
+  return lancamentosCache
+    .filter(l => {
+      if (l.parId !== parId) return false;
+      if (de && l.data && l.data < de) return false;
+      if (ate && l.data && l.data > ate) return false;
+      return true;
+    })
+    .sort((a,b) => (a.data||'').localeCompare(b.data||''));
+}
+
+function exportarAcertoExcel() {
+  if (typeof XLSX === 'undefined') { toast('Biblioteca Excel não carregada', 'error'); return; }
+  const parId = document.getElementById('exportAcertoParId').value;
+  const par = acertoPares.find(p => p.id === parId);
+  if (!par) return;
+  const lances = filtrarLancamentosExport();
+  const data = lances.map(l => ({
+    'Data': l.data || '',
+    'Quem Deve': l.de || '',
+    'Descrição': l.descricao || '',
+    'Valor (R$)': (l.valor||0).toFixed(2).replace('.',',')
+  }));
+  const ws = XLSX.utils.json_to_sheet(data);
+  const wb = XLSX.utils.book_new();
+  const nomeAba = `${par.pessoaA}_${par.pessoaB}`.substring(0,28);
+  XLSX.utils.book_append_sheet(wb, ws, nomeAba);
+  XLSX.writeFile(wb, `AcertoContas_${par.pessoaA}_${par.pessoaB}.xlsx`);
+  closeModal('modal-exportar-acerto');
+  toast('Excel exportado!', 'success');
+}
+
+function exportarAcertoPDF() {
+  const parId = document.getElementById('exportAcertoParId').value;
+  const par = acertoPares.find(p => p.id === parId);
+  if (!par) return;
+  const lances = filtrarLancamentosExport();
+  const de = document.getElementById('exportAcertoDe').value;
+  const ate = document.getElementById('exportAcertoAte').value;
+  const periodo = de && ate ? `${fmtData(de)} a ${fmtData(ate)}` : 'Todo o histórico';
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const lm = 14, pw = 182, rm = lm + pw;
+  let y = 14;
+
+  // Cabeçalho
+  doc.setFillColor(27,45,107);
+  doc.rect(lm, y, pw, 20, 'FD');
+  doc.setTextColor(255,255,255);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(13);
+  doc.text('ACERTO DE CONTAS PESSOAIS', lm+6, y+8);
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'normal');
+  doc.text(`${par.pessoaA} ↔ ${par.pessoaB}`, lm+6, y+14);
+  doc.text(`Período: ${periodo}`, rm-6, y+14, { align:'right' });
+  doc.setTextColor(30,30,45);
+  y += 26;
+
+  // Calcular totais do período
+  const totalAB = lances.filter(l=>l.de===par.pessoaA).reduce((s,l)=>s+l.valor,0);
+  const totalBA = lances.filter(l=>l.de===par.pessoaB).reduce((s,l)=>s+l.valor,0);
+  const saldo = totalAB - totalBA;
+  const devedor = saldo > 0 ? par.pessoaB : par.pessoaA;
+  const credor  = saldo > 0 ? par.pessoaA : par.pessoaB;
+
+  // Cards resumo
+  doc.setFillColor(245,248,252);
+  doc.rect(lm, y, pw/3-2, 16, 'FD');
+  doc.rect(lm+pw/3, y, pw/3-2, 16, 'FD');
+  doc.rect(lm+pw*2/3, y, pw/3, 16, 'FD');
+  doc.setFontSize(7); doc.setTextColor(100,110,130);
+  doc.text(par.pessoaA+' pagou', lm+pw/6, y+5, {align:'center'});
+  doc.text(par.pessoaB+' pagou', lm+pw/2, y+5, {align:'center'});
+  doc.text('SALDO', lm+pw*5/6, y+5, {align:'center'});
+  doc.setFontSize(10); doc.setFont('helvetica','bold');
+  doc.setTextColor(46,158,79);
+  doc.text(`R$ ${fmtMoney(totalAB)}`, lm+pw/6, y+12, {align:'center'});
+  doc.setTextColor(46,158,79);
+  doc.text(`R$ ${fmtMoney(totalBA)}`, lm+pw/2, y+12, {align:'center'});
+  doc.setTextColor(Math.abs(saldo)<0.01?46:200, Math.abs(saldo)<0.01?158:100, Math.abs(saldo)<0.01?79:30);
+  doc.text(`R$ ${fmtMoney(Math.abs(saldo))}`, lm+pw*5/6, y+12, {align:'center'});
+  doc.setTextColor(30,30,45);
+  y += 22;
+
+  if (Math.abs(saldo) > 0.01) {
+    doc.setFontSize(8);
+    doc.text(`${devedor} deve R$ ${fmtMoney(Math.abs(saldo))} para ${credor}`, lm+pw/2, y, {align:'center'});
+    y += 8;
+  }
+
+  // Tabela lançamentos
+  doc.setFillColor(46,158,79);
+  doc.rect(lm, y, pw, 8, 'FD');
+  doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(8);
+  doc.text('DATA', lm+15, y+5, {align:'center'});
+  doc.text('QUEM DEVE', lm+50, y+5, {align:'center'});
+  doc.text('DESCRIÇÃO', lm+115, y+5, {align:'center'});
+  doc.text('VALOR', rm-8, y+5, {align:'right'});
+  doc.setTextColor(30,30,45);
+  y += 8;
+
+  lances.forEach((l, i) => {
+    if (y > 270) { doc.addPage(); y = 14; }
+    doc.setFillColor(i%2===0 ? 255:248, i%2===0 ? 255:250, i%2===0 ? 255:255);
+    doc.rect(lm, y, pw, 7, 'FD');
+    doc.setFont('helvetica','normal'); doc.setFontSize(8);
+    doc.text(l.data ? fmtData(l.data) : '—', lm+15, y+5, {align:'center'});
+    doc.text(l.de||'—', lm+50, y+5, {align:'center'});
+    const desc = (l.descricao||'—').substring(0,40);
+    doc.text(desc, lm+115, y+5, {align:'center'});
+    doc.setFont('helvetica','bold'); doc.setTextColor(46,158,79);
+    doc.text(`R$ ${fmtMoney(l.valor)}`, rm-4, y+5, {align:'right'});
+    doc.setTextColor(30,30,45);
+    y += 7;
+  });
+
+  if (lances.length === 0) {
+    doc.setFontSize(9); doc.setTextColor(150,150,160);
+    doc.text('Nenhum lançamento no período selecionado.', lm+pw/2, y+8, {align:'center'});
+  }
+
+  doc.save(`AcertoContas_${par.pessoaA}_${par.pessoaB}.pdf`);
+  closeModal('modal-exportar-acerto');
+  toast('PDF exportado!', 'success');
+}
+
+// Velha função mantida por compatibilidade
+async function exportarAcertoPar(parId) {
+  abrirExportarAcerto(parId);
 }
 
 // Service worker for PWA
