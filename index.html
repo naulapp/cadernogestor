@@ -1201,6 +1201,38 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
 }
 #floatFolhaButtons button:hover { opacity: 0.9; }
 
+
+/* CALCULADORA */
+.calc-btn {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 6px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--text);
+  transition: all 0.1s;
+  font-family: var(--font);
+}
+.calc-btn:hover { background: var(--bg3); }
+.calc-btn:active { transform: scale(0.95); }
+.calc-btn.calc-op { background: rgba(27,45,107,0.12); color: var(--navy); }
+.calc-btn.calc-minus { background: rgba(239,68,68,0.1); color: var(--red); }
+.calc-btn.calc-plus { background: rgba(46,158,79,0.12); color: var(--green); }
+.calc-btn.calc-eq { background: var(--accent2); color: white; border-color: var(--accent2); }
+.calc-btn.calc-fn { background: var(--bg3); color: var(--text2); font-size: 0.85rem; }
+.calc-linha { display:flex; align-items:center; gap:8px; padding:5px 0; border-bottom:1px solid var(--border); }
+.calc-linha .cl-op { width:18px; font-weight:700; text-align:center; }
+.calc-linha .cl-val { flex:1; text-align:right; font-family:var(--mono); font-weight:600; }
+.calc-linha .cl-desc { color:var(--text3); font-size:0.78rem; flex:2; }
+.calc-linha.cl-eq { background:rgba(46,158,79,0.06); font-weight:700; }
+.calc-linha.cl-sub { background:rgba(27,45,107,0.06); border-top:2px solid var(--navy); }
+@media print {
+  .calc-cupom { font-family: 'Courier New', monospace; font-size: 10px; width: 72mm; }
+  .calc-a4 { font-family: Arial, sans-serif; }
+}
+
 </style>
 </head>
 <body>
@@ -1377,6 +1409,12 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
       </div>
 
       <div class="nav-section-title">Gestão</div>
+      <div class="nav-item" onclick="navigate('calculadora')" id="nav-calculadora">
+        <span class="icon">🧮</span> Calculadora
+      </div>
+      <div class="nav-item" onclick="navigate('contratos')" id="nav-contratos">
+        <span class="icon">📝</span> Contratos
+      </div>
       <div class="nav-item" onclick="navigate('relatorio')" id="nav-relatorio">
         <span class="icon">📊</span> Relatório de Funcionários
       </div>
@@ -1438,6 +1476,7 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
           </div>
           <div style="display:flex;gap:8px">
             <button class="btn btn-outline btn-sm" onclick="exportFuncionariosExcel()">📊 Excel</button>
+            <button class="btn btn-outline btn-sm" onclick="exportFuncionariosPDF()">📄 PDF</button>
             <button class="btn btn-primary btn-sm" onclick="openModal('modal-funcionario')">➕ Novo funcionário</button>
           </div>
         </div>
@@ -1820,6 +1859,161 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
         <div class="section-card">
           <div class="section-card-title">📋 HISTÓRICO DE FOLHAS</div>
           <div id="fichaHistoricoFolhas"></div>
+        </div>
+      </div>
+
+      <!-- ===== CONTRATOS ===== -->
+      <div class="page" id="page-contratos">
+        <div class="page-header">
+          <div>
+            <div class="page-title">📝 Contratos</div>
+            <div class="page-sub">Templates prontos e personalizáveis</div>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="abrirNovoContrato()">➕ Novo contrato</button>
+        </div>
+
+        <!-- Templates -->
+        <div class="section-card" style="margin-bottom:16px">
+          <div class="section-card-title">📋 TEMPLATES DISPONÍVEIS</div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px" id="contratosTemplates">
+            <div class="stat-card" style="cursor:pointer;border:2px solid transparent;transition:border-color 0.2s"
+              onclick="usarTemplate('clt')">
+              <div style="font-size:2rem;margin-bottom:6px">👔</div>
+              <div style="font-weight:700">Contrato CLT</div>
+              <div style="font-size:0.75rem;color:var(--text3)">Contrato por prazo indeterminado</div>
+            </div>
+            <div class="stat-card" style="cursor:pointer;border:2px solid transparent" onclick="usarTemplate('temporario')">
+              <div style="font-size:2rem;margin-bottom:6px">⏳</div>
+              <div style="font-weight:700">Contrato Temporário</div>
+              <div style="font-size:0.75rem;color:var(--text3)">Prazo determinado</div>
+            </div>
+            <div class="stat-card" style="cursor:pointer;border:2px solid transparent" onclick="usarTemplate('estagio')">
+              <div style="font-size:2rem;margin-bottom:6px">🎓</div>
+              <div style="font-weight:700">Estágio</div>
+              <div style="font-size:0.75rem;color:var(--text3)">Com supervisão e instituição</div>
+            </div>
+            <div class="stat-card" style="cursor:pointer;border:2px solid transparent" onclick="usarTemplate('servico')">
+              <div style="font-size:2rem;margin-bottom:6px">🔧</div>
+              <div style="font-weight:700">Prestação de Serviço</div>
+              <div style="font-size:0.75rem;color:var(--text3)">PF ou PJ</div>
+            </div>
+            <div class="stat-card" style="cursor:pointer;border:2px solid transparent" onclick="usarTemplate('fornecimento')">
+              <div style="font-size:2rem;margin-bottom:6px">📦</div>
+              <div style="font-weight:700">Fornecimento</div>
+              <div style="font-size:0.75rem;color:var(--text3)">Compra recorrente</div>
+            </div>
+            <div class="stat-card" style="cursor:pointer;border:2px solid transparent" onclick="usarTemplate('compra_venda')">
+              <div style="font-size:2rem;margin-bottom:6px">🛒</div>
+              <div style="font-weight:700">Compra e Venda</div>
+              <div style="font-size:0.75rem;color:var(--text3)">Transação única</div>
+            </div>
+            <div class="stat-card" style="cursor:pointer;border:2px solid transparent" onclick="usarTemplate('emprestimo_func')">
+              <div style="font-size:2rem;margin-bottom:6px">💰</div>
+              <div style="font-weight:700">Termo de Empréstimo</div>
+              <div style="font-size:0.75rem;color:var(--text3)">Adiantamento a funcionário</div>
+            </div>
+            <div class="stat-card" style="cursor:pointer;border:2px solid transparent" onclick="usarTemplate('rescisao')">
+              <div style="font-size:2rem;margin-bottom:6px">📄</div>
+              <div style="font-weight:700">Termo de Rescisão</div>
+              <div style="font-size:0.75rem;color:var(--text3)">Com verbas rescisórias</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Contratos salvos -->
+        <div class="section-card">
+          <div class="section-card-title">📁 CONTRATOS GERADOS</div>
+          <div id="contratosLista"><p style="color:var(--text3);font-size:0.85rem">Nenhum contrato gerado ainda.</p></div>
+        </div>
+      </div>
+
+      <!-- MODAL GERAR CONTRATO -->
+      <div class="modal-overlay" id="modal-contrato">
+        <div class="modal" style="max-width:720px">
+          <div class="modal-header">
+            <div class="modal-title" id="contratoModalTitulo">Gerar Contrato</div>
+            <div class="modal-close" onclick="closeModal('modal-contrato')">✕</div>
+          </div>
+          <div class="modal-body" id="contratoModalBody"></div>
+          <div class="modal-footer">
+            <button class="btn btn-outline btn-sm" onclick="closeModal('modal-contrato')">Cancelar</button>
+            <button class="btn btn-outline btn-sm" onclick="previewContrato()">👁️ Preview</button>
+            <button class="btn btn-primary btn-sm" onclick="gerarContratoPDF()">📄 Gerar PDF</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== CALCULADORA ===== -->
+      <div class="page" id="page-calculadora">
+        <div class="page-header">
+          <div>
+            <div class="page-title">🧮 Calculadora</div>
+            <div class="page-sub">Fita de papel com histórico de operações</div>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-outline btn-sm" onclick="calcNova()">🗑️ Nova fita</button>
+            <button class="btn btn-outline btn-sm" onclick="calcImprimir('a4')">🖨️ A4</button>
+            <button class="btn btn-outline btn-sm" onclick="calcImprimir('cupom')">🧾 Cupom</button>
+            <button class="btn btn-primary btn-sm" onclick="calcSalvarFita()">💾 Salvar fita</button>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 280px;gap:16px;align-items:start" id="calcLayout">
+          <!-- FITA -->
+          <div class="section-card" style="min-height:400px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+              <div class="section-card-title" style="margin:0">📄 FITA DE CÁLCULO</div>
+              <div id="calcTotalDisplay" style="font-family:var(--mono);font-size:1.4rem;font-weight:700;color:var(--accent2)">0,00</div>
+            </div>
+            <div id="calcFita" style="font-family:var(--mono);font-size:0.85rem;min-height:200px"></div>
+          </div>
+
+          <!-- TECLADO -->
+          <div class="section-card">
+            <!-- Display -->
+            <div style="background:var(--bg3);border-radius:8px;padding:10px 14px;margin-bottom:10px;text-align:right">
+              <div id="calcDisplay" style="font-family:var(--mono);font-size:1.8rem;font-weight:700;color:var(--text)">0</div>
+              <div id="calcOpDisplay" style="font-size:0.75rem;color:var(--text3);min-height:16px"></div>
+            </div>
+
+            <!-- Campo descrição -->
+            <input type="text" class="form-input" id="calcDesc" placeholder="Descrição (opcional)"
+              style="margin-bottom:10px;font-size:0.82rem">
+
+            <!-- Teclado numérico -->
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px">
+              <button class="calc-btn calc-fn" onclick="calcFn('%')">%</button>
+              <button class="calc-btn calc-fn" onclick="calcFn('CE')">CE</button>
+              <button class="calc-btn calc-fn" onclick="calcFn('C')">C</button>
+              <button class="calc-btn calc-op" onclick="calcFn('÷')">÷</button>
+
+              <button class="calc-btn" onclick="calcNum('7')">7</button>
+              <button class="calc-btn" onclick="calcNum('8')">8</button>
+              <button class="calc-btn" onclick="calcNum('9')">9</button>
+              <button class="calc-btn calc-op" onclick="calcFn('×')">×</button>
+
+              <button class="calc-btn" onclick="calcNum('4')">4</button>
+              <button class="calc-btn" onclick="calcNum('5')">5</button>
+              <button class="calc-btn" onclick="calcNum('6')">6</button>
+              <button class="calc-btn calc-op calc-minus" onclick="calcFn('-')">−</button>
+
+              <button class="calc-btn" onclick="calcNum('1')">1</button>
+              <button class="calc-btn" onclick="calcNum('2')">2</button>
+              <button class="calc-btn" onclick="calcNum('3')">3</button>
+              <button class="calc-btn calc-op calc-plus" onclick="calcFn('+')">+</button>
+
+              <button class="calc-btn calc-fn" onclick="calcFn('subtotal')">SUB</button>
+              <button class="calc-btn" onclick="calcNum('0')">0</button>
+              <button class="calc-btn" onclick="calcNum(',')">.</button>
+              <button class="calc-btn calc-eq" onclick="calcFn('=')">=</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Fitas salvas -->
+        <div class="section-card" style="margin-top:16px">
+          <div class="section-card-title">💾 FITAS SALVAS</div>
+          <div id="calcFitasSalvas"><p style="color:var(--text3);font-size:0.85rem">Nenhuma fita salva ainda.</p></div>
         </div>
       </div>
 
@@ -3232,6 +3426,8 @@ function navigate(page) {
   const p = document.getElementById('page-' + page);
   if (p) p.classList.add('active');
   if (page === 'relatorio') populateRelatorioGrupos();
+  if (page === 'calculadora') { calcRenderFita(); renderFitasSalvas(); }
+  if (page === 'contratos') renderContratosLista();
   if (page === 'historico-fin') renderHistoricoFin();
   if (page === 'historico-folha') renderHistoricoFolhas();
   if (page === 'folha') { const d=new Date(); document.getElementById('folhaMes').value=d.getMonth()+1; document.getElementById('folhaAno').value=d.getFullYear(); }
@@ -5929,6 +6125,7 @@ function gerarRelatorio() {
   const ano = parseInt(document.getElementById('relAno').value);
   const grupoFiltro = document.getElementById('relGrupo').value;
   const mesRef = `${String(mes).padStart(2,'0')}/${ano}`;
+  const mesRefHist = `${String(mes).padStart(2,'0')}/${ano}`;
   populateRelatorioGrupos();
 
   const ativos = funcionarios.filter(f => {
@@ -5938,60 +6135,185 @@ function gerarRelatorio() {
   });
 
   if (ativos.length === 0) {
-    document.getElementById('relatorioContent').innerHTML = `<div class="empty-state"><div class="icon">👥</div><h3>Nenhum funcionário</h3></div>`;
+    document.getElementById('relatorioContent').innerHTML = `<div class="empty-state"><div class="icon">👥</div><h3>Nenhum funcionário encontrado</h3><p>Verifique os filtros selecionados</p></div>`;
     return;
   }
 
-  const valesMes = vales.filter(v => {
-    if (!v.data) return false;
-    const d = new Date(v.data + 'T00:00:00');
-    return d.getMonth()+1 === mes && d.getFullYear() === ano && v.status !== 'descontado';
-  });
-  const empAtivos = emprestimos.filter(e => e.status === 'ativo' || !e.status);
+  // Verificar se existe histórico de folha para este mês
+  const historicoFolhas = getCol('historicoFolhas').getAll();
+  const folhaDoMes = historicoFolhas.find(h => h.mesRef === mesRefHist);
 
+  // Se não há folha consolidada para este mês, usar snapshot se existir
+  // Caso contrário mostrar aviso
+  if (!folhaDoMes && !folhaDetalhe[ativos[0]?.id]) {
+    // Verificar se folhaDetalhe tem dados para este mês
+    const mesAtual = new Date();
+    const mesAtualRef = `${String(mesAtual.getMonth()+1).padStart(2,'0')}/${mesAtual.getFullYear()}`;
+    const temFolhaCarregada = Object.keys(folhaDetalhe).length > 0;
+
+    if (!temFolhaCarregada) {
+      document.getElementById('relatorioContent').innerHTML = `
+        <div class="section-card" style="text-align:center;padding:32px">
+          <div style="font-size:3rem;margin-bottom:12px">📋</div>
+          <h3 style="margin-bottom:8px">Nenhuma folha gerada para ${mesRef}</h3>
+          <p style="color:var(--text3);margin-bottom:16px">Para gerar o relatório de um mês, você precisa primeiro gerar a Folha de Pagamento daquele período.</p>
+          <button class="btn btn-primary btn-sm" onclick="navigate('folha')">📋 Ir para Folha de Pagamento</button>
+        </div>`;
+      return;
+    }
+  }
+
+  // Se há folha carregada na memória (folhaDetalhe), usar esses dados
+  // Se há snapshot histórico, usar o snapshot
   let totalBruto = 0, totalDesc = 0, totalLiq = 0;
+  const rows = [];
 
-  const rows = ativos.map(f => {
-    const grupo = f.grupoId ? grupos.find(g => g.id === f.grupoId) : null;
-    const salario = grupo ? grupo.salario : (f.salario || 0);
-    const inss = grupo ? grupo.inss : (f.inss || 0);
-    const valeQ = grupo ? (grupo.valeQuinzena || 0) : 0;
-    const empF = empAtivos.filter(e => e.funcionarioId === f.id).reduce((s,e) => s + e.valorParcela, 0);
-    const valesF = valesMes.filter(v => v.funcionarioId === f.id).reduce((s,v) => s + v.valor, 0);
-    const bruto = salario;
-    const descontos = inss + valeQ + empF + valesF;
-    const liq = bruto - descontos;
-    totalBruto += bruto; totalDesc += descontos; totalLiq += liq;
+  for (const f of ativos) {
+    let bruto = 0, descontos = 0, liq = 0;
+    let fonte = 'sem dados';
+
+    // Prioridade 1: snapshot histórico
+    if (folhaDoMes?.snapshot) {
+      const snap = folhaDoMes.snapshot.find(s => s.funcionarioId === f.id || s.nome === f.nome);
+      if (snap) {
+        bruto = snap.totalProventos || 0;
+        descontos = snap.totalDescontos || 0;
+        liq = snap.liquido || 0;
+        fonte = 'consolidado';
+      }
+    }
+
+    // Prioridade 2: folhaDetalhe carregado na memória
+    if (bruto === 0 && folhaDetalhe[f.id]) {
+      const d = folhaDetalhe[f.id];
+      const calc = calcFolhaTotais(d);
+      bruto = calc.totalProventos;
+      descontos = calc.totalDescontos;
+      liq = calc.liquido;
+      fonte = 'em aberto';
+    }
+
+    // Não mostrar funcionários sem dados reais para o período
+    if (bruto === 0 && descontos === 0) continue;
+
+    totalBruto += bruto;
+    totalDesc += descontos;
+    totalLiq += liq;
+
     const alerta = liq < 0 ? '⚠️' : '';
-    return `<tr ${liq < 0 ? 'style="background:rgba(239,68,68,0.07)"' : ''}>
-      <td><span style="cursor:pointer;color:var(--accent2);text-decoration:underline" onclick="abrirFichaFuncionario('${f.id}')" title="Ver ficha completa"><strong>${f.nome}</strong></span>${f.observacoes ? ` <span title="${f.observacoes}" style="cursor:help;color:var(--text3);font-size:0.8rem">📝</span>` : ''}</td>
+    const badgeFonte = fonte === 'consolidado'
+      ? '<span class="badge badge-green" style="font-size:0.65rem">consolidado</span>'
+      : '<span class="badge badge-yellow" style="font-size:0.65rem">em aberto</span>';
+
+    rows.push(`<tr ${liq < 0 ? 'style="background:rgba(239,68,68,0.07)"' : ''}>
+      <td><span style="cursor:pointer;color:var(--accent2);text-decoration:underline" onclick="abrirFichaFuncionario('${f.id}')"><strong>${f.nome}</strong></span> ${badgeFonte}</td>
       <td>${f.cargo || '—'}</td>
       <td class="mono">R$ ${fmtMoney(bruto)}</td>
       <td class="mono" style="color:var(--red)">R$ ${fmtMoney(descontos)}</td>
       <td class="mono" style="color:${liq < 0 ? 'var(--red)' : 'var(--accent2)'}"><strong>${alerta} R$ ${fmtMoney(liq)}</strong></td>
-    </tr>`;
-  }).join('');
+    </tr>`);
+  }
+
+  if (rows.length === 0) {
+    document.getElementById('relatorioContent').innerHTML = `
+      <div class="section-card" style="text-align:center;padding:32px">
+        <div style="font-size:3rem;margin-bottom:12px">📋</div>
+        <h3 style="margin-bottom:8px">Sem dados para ${mesRef}</h3>
+        <p style="color:var(--text3);margin-bottom:16px">Não há folha de pagamento gerada ou consolidada para este período.</p>
+        <button class="btn btn-primary btn-sm" onclick="navigate('folha')">📋 Gerar Folha de Pagamento</button>
+      </div>`;
+    return;
+  }
 
   document.getElementById('relatorioContent').innerHTML = `
     <div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap">
-      <div class="stat-card" style="flex:1"><div class="stat-label">Total Bruto</div><div class="stat-value green" style="font-size:1.3rem">R$ ${fmtMoney(totalBruto)}</div></div>
-      <div class="stat-card" style="flex:1"><div class="stat-label">Total Descontos</div><div class="stat-value red" style="font-size:1.3rem">R$ ${fmtMoney(totalDesc)}</div></div>
-      <div class="stat-card" style="flex:1"><div class="stat-label">Total Líquido</div><div class="stat-value accent" style="font-size:1.3rem">R$ ${fmtMoney(totalLiq)}</div></div>
+      <div class="stat-card" style="flex:1"><div class="stat-label">Total Bruto</div><div class="stat-value green">R$ ${fmtMoney(totalBruto)}</div></div>
+      <div class="stat-card" style="flex:1"><div class="stat-label">Total Descontos</div><div class="stat-value red">R$ ${fmtMoney(totalDesc)}</div></div>
+      <div class="stat-card" style="flex:1"><div class="stat-label">Total Líquido</div><div class="stat-value accent">R$ ${fmtMoney(totalLiq)}</div></div>
+      <div class="stat-card" style="flex:1"><div class="stat-label">Funcionários</div><div class="stat-value">${rows.length}</div></div>
     </div>
     <div class="table-wrap">
       <div class="table-header">
         <div class="table-title">Relatório ${mesRef}</div>
-        <button class="btn btn-outline btn-sm" onclick="exportRelatorioExcel()">📊 Excel</button>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-outline btn-sm" onclick="exportRelatorioExcel()">📊 Excel</button>
+          <button class="btn btn-outline btn-sm" onclick="exportRelatorioPDF()">📄 PDF</button>
+        </div>
       </div>
       <table><thead><tr><th>Funcionário</th><th>Cargo</th><th>Bruto</th><th>Descontos</th><th>Líquido</th></tr></thead>
-      <tbody>${rows}</tbody>
+      <tbody>${rows.join('')}</tbody>
       <tfoot><tr style="background:var(--bg2)">
-        <td colspan="2"><strong>TOTAL</strong></td>
+        <td colspan="2"><strong>TOTAL (${rows.length} func.)</strong></td>
         <td class="mono"><strong>R$ ${fmtMoney(totalBruto)}</strong></td>
         <td class="mono" style="color:var(--red)"><strong>R$ ${fmtMoney(totalDesc)}</strong></td>
         <td class="mono" style="color:var(--accent2)"><strong>R$ ${fmtMoney(totalLiq)}</strong></td>
       </tr></tfoot></table>
     </div>`;
+}
+
+function exportRelatorioPDF() {
+  const mes = parseInt(document.getElementById('relMes')?.value);
+  const ano = parseInt(document.getElementById('relAno')?.value);
+  const mesRef = `${String(mes).padStart(2,'0')}/${ano}`;
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+  const lm = 14, pw = 269, rm = lm + pw;
+  let y = 14;
+
+  const COR = [27,45,107];
+  doc.setFillColor(...COR);
+  doc.rect(lm, y, pw, 18, 'FD');
+  doc.setTextColor(255,255,255);
+  doc.setFont('helvetica','bold'); doc.setFontSize(13);
+  doc.text('RELATÓRIO CONSOLIDADO DE FUNCIONÁRIOS', lm+6, y+8);
+  doc.setFontSize(9); doc.setFont('helvetica','normal');
+  doc.text(`Competência: ${mesRef} • ${currentOrg?.nome||''}`, lm+6, y+14);
+  doc.setTextColor(30,30,45); y += 24;
+
+  // Header da tabela
+  doc.setFillColor(46,158,79);
+  doc.rect(lm, y, pw, 8, 'FD');
+  doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(8);
+  doc.text('FUNCIONÁRIO', lm+5, y+5.5);
+  doc.text('CARGO', lm+80, y+5.5);
+  doc.text('BRUTO', lm+155, y+5.5);
+  doc.text('DESCONTOS', lm+190, y+5.5);
+  doc.text('LÍQUIDO', rm-5, y+5.5, {align:'right'});
+  doc.setTextColor(30,30,45); y += 8;
+
+  // Linhas
+  const tbody = document.querySelector('#relatorioContent tbody');
+  if (tbody) {
+    Array.from(tbody.rows).forEach((row, i) => {
+      const cells = Array.from(row.cells).map(td => (td.innerText||'').replace(/\n.*/,'').trim());
+      doc.setFillColor(i%2===0?255:248, i%2===0?255:250, i%2===0?255:255);
+      doc.rect(lm, y, pw, 7, 'FD');
+      doc.setFont('helvetica','normal'); doc.setFontSize(8);
+      doc.text((cells[0]||'').substring(0,32), lm+5, y+5);
+      doc.text((cells[1]||'').substring(0,22), lm+80, y+5);
+      doc.setFont('helvetica','bold');
+      doc.setTextColor(46,158,79);  doc.text(cells[2]||'', lm+155, y+5);
+      doc.setTextColor(200,30,30);  doc.text(cells[3]||'', lm+190, y+5);
+      doc.setTextColor(27,45,107);  doc.text(cells[4]||'', rm-5, y+5, {align:'right'});
+      doc.setTextColor(30,30,45); y += 7;
+      if (y > 195) { doc.addPage(); y = 14; }
+    });
+  }
+
+  // Rodapé totais
+  const tfoot = document.querySelector('#relatorioContent tfoot td');
+  if (tfoot) {
+    doc.setFillColor(27,45,107); doc.rect(lm, y, pw, 9, 'FD');
+    doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(9);
+    const totalCells = Array.from(document.querySelectorAll('#relatorioContent tfoot td')).map(td => td.innerText.trim());
+    doc.text(totalCells[0]||'TOTAL', lm+5, y+6);
+    doc.text(totalCells[2]||'', lm+155, y+6);
+    doc.text(totalCells[3]||'', lm+190, y+6);
+    doc.text(totalCells[4]||'', rm-5, y+6, {align:'right'});
+  }
+
+  doc.save(`Relatorio_${mesRef.replace('/','_')}.pdf`);
+  toast('PDF exportado!', 'success');
 }
 
 // =====================================================
@@ -8219,6 +8541,644 @@ function adicionarBotaoTopo() {
   });
 }
 document.addEventListener('DOMContentLoaded', adicionarBotaoTopo);
+
+function exportFuncionariosPDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const lm = 14, pw = 182, rm = lm + pw;
+  let y = 14;
+  doc.setFillColor(27,45,107); doc.rect(lm, y, pw, 18, 'FD');
+  doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(12);
+  doc.text('RELATÓRIO DE FUNCIONÁRIOS', lm+6, y+8);
+  doc.setFontSize(8); doc.setFont('helvetica','normal');
+  doc.text(`${currentOrg?.nome||''} • ${new Date().toLocaleDateString('pt-BR')}`, lm+6, y+14);
+  doc.setTextColor(30,30,45); y += 24;
+
+  doc.setFillColor(46,158,79); doc.rect(lm, y, pw, 8, 'FD');
+  doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(8);
+  ['NOME','CPF','CARGO','SALÁRIO','STATUS'].forEach((h, i) => {
+    const xs = [lm+3, lm+55, lm+90, lm+140, lm+168];
+    doc.text(h, xs[i], y+5.5);
+  });
+  doc.setTextColor(30,30,45); y += 8;
+
+  funcionarios.forEach((f, i) => {
+    const grupo = grupos.find(g => g.id === f.grupoId);
+    doc.setFillColor(i%2===0?255:248, i%2===0?255:250, i%2===0?255:255);
+    doc.rect(lm, y, pw, 7, 'FD');
+    doc.setFont('helvetica','normal'); doc.setFontSize(8);
+    doc.text((f.nome||'').substring(0,24), lm+3, y+5);
+    doc.text(f.cpf||'—', lm+55, y+5);
+    doc.text((f.cargo||grupo?.nome||'—').substring(0,18), lm+90, y+5);
+    doc.setFont('helvetica','bold'); doc.setTextColor(46,158,79);
+    doc.text(`R$ ${fmtMoney(f.salario||0)}`, lm+140, y+5);
+    doc.setTextColor(f.ativo!==false?46:200, f.ativo!==false?158:30, f.ativo!==false?79:30);
+    doc.text(f.ativo!==false?'Ativo':'Inativo', lm+168, y+5);
+    doc.setTextColor(30,30,45); y += 7;
+    if (y > 270) { doc.addPage(); y = 14; }
+  });
+
+  doc.save('Funcionarios.pdf');
+  toast('PDF exportado!', 'success');
+}
+
+
+// =====================================================
+// CALCULADORA — FITA DE PAPEL
+// =====================================================
+let calcEstado = {
+  display: '0',
+  acumulador: null,
+  operacao: null,
+  novoNumero: true,
+  fita: [],
+  totalAtual: 0
+};
+
+function calcNum(n) {
+  if (n === ',' || n === '.') {
+    if (calcEstado.display.includes(',')) return;
+    if (calcEstado.novoNumero) { calcEstado.display = '0,'; calcEstado.novoNumero = false; return calcRender(); }
+    calcEstado.display += ',';
+  } else {
+    if (calcEstado.novoNumero) { calcEstado.display = n; calcEstado.novoNumero = false; }
+    else { if (calcEstado.display === '0') calcEstado.display = n; else calcEstado.display += n; }
+  }
+  calcRender();
+}
+
+function calcValor() {
+  return parseFloat(calcEstado.display.replace(',','.')) || 0;
+}
+
+function calcFn(op) {
+  const val = calcValor();
+  const desc = document.getElementById('calcDesc')?.value || '';
+
+  if (op === 'C') { calcEstado.display = '0'; calcEstado.novoNumero = true; calcRender(); return; }
+  if (op === 'CE') { calcEstado = { display:'0', acumulador:null, operacao:null, novoNumero:true, fita:[...calcEstado.fita], totalAtual: calcEstado.totalAtual }; calcRender(); return; }
+
+  if (op === '%') {
+    const pct = calcEstado.acumulador !== null ? calcEstado.acumulador * val / 100 : val / 100;
+    calcEstado.display = String(pct).replace('.',',');
+    calcRender(); return;
+  }
+
+  if (op === 'subtotal') {
+    calcEstado.fita.push({ tipo:'subtotal', valor: calcEstado.totalAtual, desc: 'Subtotal' });
+    calcRenderFita(); return;
+  }
+
+  if (['+','-','×','÷'].includes(op)) {
+    if (calcEstado.operacao && !calcEstado.novoNumero) {
+      // Executar operação anterior
+      calcExecutar(val, desc);
+    } else {
+      if (calcEstado.acumulador === null) {
+        calcEstado.acumulador = val;
+        calcEstado.totalAtual = val;
+        calcEstado.fita.push({ tipo: 'entrada', op: '', valor: val, desc });
+        if (desc) document.getElementById('calcDesc').value = '';
+        calcRenderFita();
+      }
+    }
+    calcEstado.operacao = op;
+    calcEstado.novoNumero = true;
+    document.getElementById('calcOpDisplay').textContent = `${fmtMoney(calcEstado.acumulador)} ${op}`;
+    calcRender(); return;
+  }
+
+  if (op === '=') {
+    if (calcEstado.operacao && !calcEstado.novoNumero) {
+      calcExecutar(val, desc);
+    }
+    calcEstado.operacao = null;
+    calcEstado.novoNumero = true;
+    document.getElementById('calcOpDisplay').textContent = '';
+    calcRender();
+  }
+}
+
+function calcExecutar(val, desc) {
+  const acc = calcEstado.acumulador;
+  const opSim = calcEstado.operacao;
+  let resultado = acc;
+  if (opSim === '+') resultado = acc + val;
+  if (opSim === '-') resultado = acc - val;
+  if (opSim === '×') resultado = acc * val;
+  if (opSim === '÷') resultado = val !== 0 ? acc / val : 0;
+
+  calcEstado.fita.push({ tipo:'entrada', op: opSim, valor: val, resultado, desc });
+  if (desc) document.getElementById('calcDesc').value = '';
+  calcEstado.acumulador = resultado;
+  calcEstado.totalAtual = resultado;
+  calcEstado.display = String(Math.round(resultado*100)/100).replace('.',',');
+  calcRenderFita();
+}
+
+function calcRender() {
+  const el = document.getElementById('calcDisplay');
+  const tot = document.getElementById('calcTotalDisplay');
+  if (el) el.textContent = calcEstado.display.length > 12
+    ? calcEstado.display.substring(0,12)+'…'
+    : calcEstado.display;
+  if (tot) tot.textContent = fmtMoney(calcEstado.totalAtual);
+}
+
+function calcRenderFita() {
+  const el = document.getElementById('calcFita');
+  if (!el) return;
+  if (calcEstado.fita.length === 0) {
+    el.innerHTML = '<p style="color:var(--text3);font-size:0.82rem;text-align:center;padding:20px">Nenhuma operação ainda</p>';
+    return;
+  }
+  el.innerHTML = calcEstado.fita.map((linha, i) => {
+    if (linha.tipo === 'subtotal') {
+      return `<div class="calc-linha cl-sub">
+        <span class="cl-op" style="color:var(--navy)">SUB</span>
+        <span class="cl-desc">Subtotal</span>
+        <span class="cl-val" style="color:var(--navy)">R$ ${fmtMoney(linha.valor)}</span>
+      </div>`;
+    }
+    const cor = linha.op==='+' ? 'var(--green)' : linha.op==='-' ? 'var(--red)' : 'var(--text)';
+    return `<div class="calc-linha ${linha.resultado!==undefined?'cl-eq':''}">
+      <span class="cl-op" style="color:${cor}">${linha.op||'='}</span>
+      <span class="cl-desc">${linha.desc||''}</span>
+      <span class="cl-val" style="color:${cor}">R$ ${fmtMoney(linha.valor)}</span>
+      ${linha.resultado!==undefined ? `<span style="font-family:var(--mono);font-weight:700;color:var(--accent2);min-width:80px;text-align:right">= R$ ${fmtMoney(linha.resultado)}</span>` : ''}
+      <button class="btn-icon" style="font-size:11px;opacity:0.5" onclick="calcRemoverLinha(${i})">✕</button>
+    </div>`;
+  }).join('');
+  calcRender();
+}
+
+function calcRemoverLinha(idx) {
+  calcEstado.fita.splice(idx, 1);
+  calcRenderFita();
+}
+
+function calcNova() {
+  calcEstado = { display:'0', acumulador:null, operacao:null, novoNumero:true, fita:[], totalAtual:0 };
+  calcRender(); calcRenderFita();
+}
+
+function calcImprimir(tipo) {
+  const orgNome = currentOrg?.nome || 'Empresa';
+  const data = new Date().toLocaleDateString('pt-BR');
+  const hora = new Date().toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'});
+  const total = fmtMoney(calcEstado.totalAtual);
+
+  const linhas = calcEstado.fita.map(l => {
+    if (l.tipo === 'subtotal') return `<tr style="border-top:2px solid #333"><td colspan="2" style="font-weight:bold">SUBTOTAL</td><td style="text-align:right;font-weight:bold">R$ ${fmtMoney(l.valor)}</td></tr>`;
+    const cor = l.op==='+' ? 'green' : l.op==='-' ? 'red' : '#333';
+    return `<tr><td style="color:${cor};font-weight:700">${l.op||'='}</td><td>${l.desc||''}</td><td style="text-align:right;color:${cor}">R$ ${fmtMoney(l.valor)}</td></tr>`;
+  }).join('');
+
+  const cupomW = tipo==='cupom' ? 'width:72mm;' : '';
+  const html = `<!DOCTYPE html><html><head><title>Calculadora — ${orgNome}</title>
+  <style>
+    body{font-family:${tipo==='cupom'?'Courier New,monospace':'Arial,sans-serif'};${cupomW}padding:${tipo==='cupom'?'4mm':'20px'};font-size:${tipo==='cupom'?'9px':'11px'}}
+    table{width:100%;border-collapse:collapse}
+    td{padding:${tipo==='cupom'?'2px 3px':'5px 8px'};border-bottom:1px dashed #ddd}
+    .total{font-size:${tipo==='cupom'?'12px':'16px'};font-weight:700;border-top:2px solid #333;padding-top:8px}
+    h3{text-align:center;margin:0 0 8px}
+    .info{text-align:center;color:#666;font-size:${tipo==='cupom'?'8px':'10px'};margin-bottom:10px}
+    @media print{@page{size:${tipo==='cupom'?'80mm auto':'A4'};margin:${tipo==='cupom'?'3mm':'15mm'}}}
+  </style></head><body>
+  <h3>${orgNome}</h3>
+  <div class="info">${data} ${hora}</div>
+  <table>${linhas}
+    <tr class="total"><td colspan="2">TOTAL</td><td style="text-align:right">R$ ${total}</td></tr>
+  </table>
+  </body></html>`;
+
+  const popup = window.open('','_blank');
+  popup.document.write(html);
+  popup.document.close();
+  popup.onload = () => { popup.focus(); popup.print(); };
+}
+
+async function calcSalvarFita() {
+  const nome = prompt('Nome para esta fita:');
+  if (!nome?.trim()) return;
+  const fita = {
+    nome: nome.trim(),
+    data: new Date().toISOString().slice(0,10),
+    total: calcEstado.totalAtual,
+    linhas: [...calcEstado.fita]
+  };
+  await fsAdd('calculadoraFitas', fita);
+  toast('Fita salva!', 'success');
+  renderFitasSalvas();
+}
+
+async function renderFitasSalvas() {
+  const el = document.getElementById('calcFitasSalvas');
+  if (!el) return;
+  const fitas = await fsGetAll('calculadoraFitas');
+  if (!fitas || fitas.length === 0) {
+    el.innerHTML = '<p style="color:var(--text3);font-size:0.85rem">Nenhuma fita salva ainda.</p>';
+    return;
+  }
+  el.innerHTML = fitas.sort((a,b)=>(b.data||'').localeCompare(a.data||'')).map(f => `
+    <div style="display:flex;align-items:center;gap:10px;padding:8px;background:var(--bg2);border-radius:8px;margin-bottom:6px">
+      <div style="flex:1">
+        <div style="font-weight:600;font-size:0.88rem">${f.nome}</div>
+        <div style="font-size:0.75rem;color:var(--text3)">${f.data?fmtData(f.data):''} • ${f.linhas?.length||0} operações</div>
+      </div>
+      <div style="font-family:var(--mono);font-weight:700;color:var(--accent2)">R$ ${fmtMoney(f.total)}</div>
+      <button class="btn btn-outline btn-sm" onclick="calcCarregarFita('${f.id}')">Carregar</button>
+      <button class="btn-icon" onclick="calcExcluirFita('${f.id}')">🗑️</button>
+    </div>`).join('');
+}
+
+async function calcCarregarFita(id) {
+  const fitas = await fsGetAll('calculadoraFitas');
+  const fita = fitas.find(f=>f.id===id);
+  if (!fita) return;
+  calcEstado.fita = fita.linhas || [];
+  calcEstado.totalAtual = fita.total || 0;
+  calcEstado.display = String(fita.total||0).replace('.',',');
+  calcRenderFita();
+  toast(`Fita "${fita.nome}" carregada!`, 'success');
+}
+
+async function calcExcluirFita(id) {
+  await fsDelete('calculadoraFitas', id);
+  renderFitasSalvas();
+  toast('Fita excluída', 'success');
+}
+
+// =====================================================
+// CONTRATOS — Templates e geração
+// =====================================================
+let contratoAtual = { tipo:'', campos:{} };
+
+const CONTRATOS_TEMPLATES = {
+  clt: {
+    titulo: 'Contrato de Trabalho — CLT',
+    campos: [
+      {id:'funcionarioId', label:'Funcionário', tipo:'select-funcionario'},
+      {id:'dataAdmissao', label:'Data de admissão', tipo:'date'},
+      {id:'salario', label:'Salário (R$)', tipo:'money'},
+      {id:'jornada', label:'Jornada semanal (horas)', tipo:'number', default:'44'},
+      {id:'localTrabalho', label:'Local de trabalho', tipo:'text'},
+      {id:'beneficios', label:'Benefícios (opcional)', tipo:'textarea'},
+    ]
+  },
+  temporario: {
+    titulo: 'Contrato de Trabalho Temporário',
+    campos: [
+      {id:'funcionarioId', label:'Funcionário', tipo:'select-funcionario'},
+      {id:'dataInicio', label:'Data de início', tipo:'date'},
+      {id:'dataFim', label:'Data de término', tipo:'date'},
+      {id:'salario', label:'Salário (R$)', tipo:'money'},
+      {id:'motivoContratacao', label:'Motivo da contratação temporária', tipo:'textarea'},
+    ]
+  },
+  estagio: {
+    titulo: 'Contrato de Estágio',
+    campos: [
+      {id:'nomeEstagiario', label:'Nome do estagiário', tipo:'text'},
+      {id:'cpfEstagiario', label:'CPF do estagiário', tipo:'text'},
+      {id:'instituicao', label:'Instituição de ensino', tipo:'text'},
+      {id:'curso', label:'Curso', tipo:'text'},
+      {id:'supervisor', label:'Supervisor responsável', tipo:'text'},
+      {id:'bolsa', label:'Valor da bolsa (R$)', tipo:'money'},
+      {id:'dataInicio', label:'Data de início', tipo:'date'},
+      {id:'dataFim', label:'Data de término', tipo:'date'},
+      {id:'cargaHoraria', label:'Carga horária diária (horas)', tipo:'number'},
+    ]
+  },
+  servico: {
+    titulo: 'Contrato de Prestação de Serviço',
+    campos: [
+      {id:'contratadoNome', label:'Nome/Razão Social do contratado', tipo:'text'},
+      {id:'contratadoCpfCnpj', label:'CPF/CNPJ do contratado', tipo:'text'},
+      {id:'descricaoServico', label:'Descrição do serviço', tipo:'textarea'},
+      {id:'valor', label:'Valor total (R$)', tipo:'money'},
+      {id:'prazo', label:'Prazo de execução', tipo:'text', placeholder:'Ex: 30 dias'},
+      {id:'formaPagamento', label:'Forma de pagamento', tipo:'text'},
+      {id:'dataInicio', label:'Data de início', tipo:'date'},
+    ]
+  },
+  fornecimento: {
+    titulo: 'Contrato de Fornecimento',
+    campos: [
+      {id:'fornecedorNome', label:'Nome/Razão Social do fornecedor', tipo:'text'},
+      {id:'fornecedorCnpj', label:'CNPJ do fornecedor', tipo:'text'},
+      {id:'produtoServico', label:'Produto/serviço fornecido', tipo:'textarea'},
+      {id:'valorMensal', label:'Valor mensal estimado (R$)', tipo:'money'},
+      {id:'prazoContrato', label:'Vigência do contrato', tipo:'text', placeholder:'Ex: 12 meses'},
+      {id:'condicoesPagamento', label:'Condições de pagamento', tipo:'text'},
+    ]
+  },
+  compra_venda: {
+    titulo: 'Contrato de Compra e Venda',
+    campos: [
+      {id:'vendedorNome', label:'Nome/Razão Social do vendedor', tipo:'text'},
+      {id:'vendedorCnpj', label:'CPF/CNPJ do vendedor', tipo:'text'},
+      {id:'descricaoBem', label:'Descrição do bem/produto', tipo:'textarea'},
+      {id:'valor', label:'Valor total (R$)', tipo:'money'},
+      {id:'formaPagamento', label:'Forma de pagamento', tipo:'text'},
+      {id:'dataEntrega', label:'Data de entrega', tipo:'date'},
+    ]
+  },
+  emprestimo_func: {
+    titulo: 'Termo de Empréstimo/Adiantamento a Funcionário',
+    campos: [
+      {id:'funcionarioId', label:'Funcionário', tipo:'select-funcionario'},
+      {id:'valor', label:'Valor (R$)', tipo:'money'},
+      {id:'parcelas', label:'Número de parcelas', tipo:'number'},
+      {id:'dataConcessao', label:'Data de concessão', tipo:'date'},
+      {id:'motivoEmprestimo', label:'Finalidade (opcional)', tipo:'text'},
+    ]
+  },
+  rescisao: {
+    titulo: 'Termo de Rescisão Contratual',
+    campos: [
+      {id:'funcionarioId', label:'Funcionário', tipo:'select-funcionario'},
+      {id:'dataRescisao', label:'Data da rescisão', tipo:'date'},
+      {id:'tipoRescisao', label:'Tipo de rescisão', tipo:'select',
+        opcoes:['Pedido de demissão','Demissão sem justa causa','Demissão com justa causa','Acordo mútuo (Lei 13.467)']},
+      {id:'avisoPrevio', label:'Aviso prévio', tipo:'select', opcoes:['Trabalhado','Indenizado','Dispensado']},
+      {id:'saldoSalario', label:'Saldo de salário (R$)', tipo:'money'},
+      {id:'fgts', label:'FGTS a recolher/sacar (R$)', tipo:'money'},
+    ]
+  }
+};
+
+function usarTemplate(tipo) {
+  const tmpl = CONTRATOS_TEMPLATES[tipo];
+  if (!tmpl) return;
+  contratoAtual = { tipo, campos: {} };
+  document.getElementById('contratoModalTitulo').textContent = tmpl.titulo;
+
+  const body = document.getElementById('contratoModalBody');
+  body.innerHTML = `
+    <p style="color:var(--text3);font-size:0.82rem;margin-bottom:16px">Preencha os campos abaixo. Os dados da empresa são preenchidos automaticamente.</p>
+    <div class="form-grid">
+      ${tmpl.campos.map(campo => renderCampoContrato(campo)).join('')}
+    </div>`;
+
+  // Popular selects de funcionário
+  tmpl.campos.filter(f => f.tipo === 'select-funcionario').forEach(f => {
+    const sel = document.getElementById(`cc_${f.id}`);
+    if (!sel) return;
+    sel.innerHTML = '<option value="">Selecione...</option>' +
+      funcionarios.filter(fn => fn.ativo !== false).map(fn =>
+        `<option value="${fn.id}">${fn.nome}</option>`).join('');
+  });
+
+  // Preencher data de hoje nos campos de data
+  tmpl.campos.filter(f => f.tipo === 'date').forEach(f => {
+    const el = document.getElementById(`cc_${f.id}`);
+    if (el && !el.value) el.value = new Date().toISOString().slice(0,10);
+  });
+
+  openModal('modal-contrato');
+}
+
+function renderCampoContrato(campo) {
+  const id = `cc_${campo.id}`;
+  if (campo.tipo === 'select-funcionario') {
+    return `<div class="form-group"><label class="form-label">${campo.label}</label><select class="form-input" id="${id}"></select></div>`;
+  }
+  if (campo.tipo === 'select') {
+    return `<div class="form-group"><label class="form-label">${campo.label}</label><select class="form-input" id="${id}">${campo.opcoes.map(o=>`<option value="${o}">${o}</option>`).join('')}</select></div>`;
+  }
+  if (campo.tipo === 'textarea') {
+    return `<div class="form-group" style="grid-column:1/-1"><label class="form-label">${campo.label}</label><textarea class="form-input" id="${id}" rows="3" placeholder="${campo.placeholder||''}" style="resize:vertical;font-family:var(--font)"></textarea></div>`;
+  }
+  if (campo.tipo === 'money') {
+    return `<div class="form-group"><label class="form-label">${campo.label}</label><div style="position:relative"><span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text3);pointer-events:none">R$</span><input type="number" class="form-input" id="${id}" step="0.01" placeholder="0,00" style="padding-left:34px" value="${campo.default||''}"></div></div>`;
+  }
+  return `<div class="form-group"><label class="form-label">${campo.label}</label><input type="${campo.tipo==='number'?'number':'text'}" class="form-input" id="${id}" placeholder="${campo.placeholder||''}" value="${campo.default||''}"></div>`;
+}
+
+function coletarCamposContrato() {
+  const tmpl = CONTRATOS_TEMPLATES[contratoAtual.tipo];
+  if (!tmpl) return {};
+  const dados = {};
+  tmpl.campos.forEach(campo => {
+    const el = document.getElementById(`cc_${campo.id}`);
+    if (!el) return;
+    dados[campo.id] = el.value;
+    // Para select-funcionario, guardar também o objeto
+    if (campo.tipo === 'select-funcionario' && el.value) {
+      dados[campo.id + '_obj'] = funcionarios.find(f => f.id === el.value);
+    }
+  });
+  return dados;
+}
+
+async function gerarContratoPDF() {
+  const tmpl = CONTRATOS_TEMPLATES[contratoAtual.tipo];
+  if (!tmpl) return;
+  const dados = coletarCamposContrato();
+  const org = currentOrg || { nome: 'EMPRESA', cnpj: '', cidade: '' };
+  const hoje = new Date();
+  const dataExtenso = hoje.toLocaleDateString('pt-BR', {day:'numeric',month:'long',year:'numeric'});
+  const cidade = org.cidade || '';
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const lm = 25, pw = 160, rm = lm + pw;
+  let y = 20;
+
+  // Cabeçalho
+  doc.setFont('helvetica','bold'); doc.setFontSize(11);
+  doc.text(org.nome.toUpperCase(), lm + pw/2, y, {align:'center'});
+  if (org.cnpj) {
+    y += 6; doc.setFont('helvetica','normal'); doc.setFontSize(9);
+    doc.text(`CNPJ: ${org.cnpj}`, lm + pw/2, y, {align:'center'});
+  }
+  y += 8;
+  doc.setLineWidth(0.8); doc.setDrawColor(27,45,107);
+  doc.line(lm, y, rm, y);
+  y += 8;
+
+  // Título
+  doc.setFont('helvetica','bold'); doc.setFontSize(12);
+  doc.text(tmpl.titulo.toUpperCase(), lm + pw/2, y, {align:'center'});
+  y += 12;
+
+  // Texto do contrato
+  const texto = gerarTextoContrato(contratoAtual.tipo, dados, org);
+  doc.setFont('helvetica','normal'); doc.setFontSize(9.5);
+  const linhas = doc.splitTextToSize(texto, pw);
+  linhas.forEach(linha => {
+    if (y > 260) { doc.addPage(); y = 20; }
+    doc.text(linha, lm, y);
+    y += 5.5;
+  });
+
+  // Assinaturas
+  y = Math.max(y + 15, 240);
+  if (y > 270) { doc.addPage(); y = 30; }
+  doc.setLineWidth(0.4); doc.setDrawColor(100,100,120);
+  doc.line(lm, y, lm+70, y);
+  doc.line(rm-70, y, rm, y);
+  doc.setFontSize(9);
+  const contratante = org.nome.substring(0,25);
+  const contratado = dados.funcionarioId_obj?.nome || dados.contratadoNome || dados.vendedorNome || dados.fornecedorNome || 'CONTRATADO(A)';
+  doc.text(contratante, lm+35, y+5, {align:'center'});
+  doc.text(contratado.substring(0,25), rm-35, y+5, {align:'center'});
+  doc.setFontSize(8); doc.setTextColor(130,130,150);
+  doc.text('CONTRATANTE', lm+35, y+9, {align:'center'});
+  doc.text('CONTRATADO(A)', rm-35, y+9, {align:'center'});
+  doc.setTextColor(30,30,45);
+  y += 16;
+  doc.setFontSize(9);
+  doc.text(`${cidade ? cidade + ', ' : ''}${dataExtenso}`, lm+pw/2, y, {align:'center'});
+
+  const nomePdf = `${tmpl.titulo.replace(/[\/:*?"<>|]/g,'_')}.pdf`;
+  doc.save(nomePdf);
+
+  // Salvar registro
+  await fsAdd('contratos', {
+    tipo: contratoAtual.tipo,
+    titulo: tmpl.titulo,
+    dados,
+    geradoEm: new Date().toISOString()
+  });
+
+  closeModal('modal-contrato');
+  renderContratosLista();
+  toast('Contrato gerado!', 'success');
+}
+
+function gerarTextoContrato(tipo, d, org) {
+  const func = d.funcionarioId_obj;
+  const empresa = `${org.nome}${org.cnpj ? ', inscrita no CNPJ sob o nº ' + org.cnpj : ''}${org.cidade ? ', com sede em ' + org.cidade : ''}`;
+
+  const textos = {
+    clt: `Pelo presente instrumento particular, ${empresa}, doravante denominada CONTRATANTE, e ${func?.nome||'___'}, portador(a) do CPF nº ${func?.cpf||'___'}, doravante denominado(a) CONTRATADO(A), têm justo e acordado o presente Contrato de Trabalho por Prazo Indeterminado, regido pela Consolidação das Leis do Trabalho (CLT), mediante as seguintes cláusulas e condições:
+
+CLÁUSULA 1ª — DA FUNÇÃO
+O(A) CONTRATADO(A) é admitido(a) para exercer a função de ${func?.cargo||'___'}, com ingresso em ${d.dataAdmissao ? fmtData(d.dataAdmissao) : '___'}, no local de trabalho: ${d.localTrabalho||'___'}.
+
+CLÁUSULA 2ª — DA REMUNERAÇÃO
+O(A) CONTRATADO(A) perceberá salário mensal de R$ ${fmtMoney(parseFloat(d.salario)||0)} (${numberToWords(parseFloat(d.salario)||0)}), pago até o 5º dia útil do mês subsequente ao vencido.
+
+CLÁUSULA 3ª — DA JORNADA DE TRABALHO
+A jornada de trabalho será de ${d.jornada||'44'} (${d.jornada||'quarenta e quatro'}) horas semanais, distribuídas de segunda-feira a sexta-feira, de acordo com o horário estabelecido pela CONTRATANTE.
+
+CLÁUSULA 4ª — DAS FÉRIAS E 13º SALÁRIO
+O(A) CONTRATADO(A) fará jus a férias anuais remuneradas acrescidas de 1/3 constitucional, bem como ao 13º salário, nos termos da legislação vigente.
+
+CLÁUSULA 5ª — DO FGTS E INSS
+A CONTRATANTE recolherá, mensalmente, o FGTS e contribuição previdenciária (INSS) sobre a remuneração do(a) CONTRATADO(A), nos percentuais legalmente estabelecidos.
+
+${d.beneficios ? `CLÁUSULA 6ª — DOS BENEFÍCIOS\n${d.beneficios}\n\n` : ''}CLÁUSULA ${d.beneficios?'7':'6'}ª — DA RESCISÃO
+O presente contrato poderá ser rescindido por qualquer das partes, mediante aviso prévio, de acordo com as disposições da CLT e legislação vigente.
+
+CLÁUSULA ${d.beneficios?'8':'7'}ª — DO FORO
+As partes elegem o foro da comarca de ${org.cidade||'___'} para dirimir quaisquer controvérsias oriundas deste contrato.
+
+E, por estarem assim justos e contratados, as partes assinam o presente instrumento em 2 (duas) vias de igual teor.`,
+
+    rescisao: `Pelo presente instrumento particular, ${empresa}, doravante denominada EMPREGADORA, e ${func?.nome||'___'}, portador(a) do CPF nº ${func?.cpf||'___'}, admitido(a) em ___ para exercer a função de ${func?.cargo||'___'}, doravante denominado(a) EMPREGADO(A), formalizam o distrato do contrato de trabalho, mediante as seguintes condições:
+
+CLÁUSULA 1ª — DA RESCISÃO
+Fica rescindido o contrato de trabalho em ${d.dataRescisao ? fmtData(d.dataRescisao) : '___'}, por ${d.tipoRescisao||'___'}.
+
+CLÁUSULA 2ª — DO AVISO PRÉVIO
+O aviso prévio foi: ${d.avisoPrevio||'___'}.
+
+CLÁUSULA 3ª — DAS VERBAS RESCISÓRIAS
+O(A) EMPREGADO(A) receberá as seguintes verbas rescisórias:
+— Saldo de salário: R$ ${fmtMoney(parseFloat(d.saldoSalario)||0)}
+— FGTS: R$ ${fmtMoney(parseFloat(d.fgts)||0)}
+${d.tipoRescisao?.includes('sem justa causa') ? '— Multa de 40% sobre FGTS conforme legislação vigente\n' : ''}
+CLÁUSULA 4ª — DA QUITAÇÃO
+Recebidas as verbas devidas, as partes dão plena, geral e irrevogável quitação de todos os direitos e obrigações decorrentes do contrato de trabalho ora rescindido, nada mais podendo reclamar, a qualquer título.
+
+E, por estarem assim justos e acordados, assinam o presente em 2 (duas) vias de igual teor.`,
+
+    servico: `Pelo presente instrumento particular, ${empresa}, doravante denominada CONTRATANTE, e ${d.contratadoNome||'___'}, inscrito(a) no CPF/CNPJ sob o nº ${d.contratadoCpfCnpj||'___'}, doravante denominado(a) CONTRATADO(A), têm entre si justo e contratado a prestação de serviços, mediante as seguintes cláusulas:
+
+CLÁUSULA 1ª — DO OBJETO
+O(A) CONTRATADO(A) prestará os seguintes serviços à CONTRATANTE: ${d.descricaoServico||'___'}.
+
+CLÁUSULA 2ª — DO VALOR E PAGAMENTO
+Pela prestação dos serviços, a CONTRATANTE pagará ao(à) CONTRATADO(A) o valor de R$ ${fmtMoney(parseFloat(d.valor)||0)} (${numberToWords(parseFloat(d.valor)||0)}), mediante ${d.formaPagamento||'___'}.
+
+CLÁUSULA 3ª — DO PRAZO
+Os serviços deverão ser executados no prazo de ${d.prazo||'___'}, contados a partir de ${d.dataInicio ? fmtData(d.dataInicio) : '___'}.
+
+CLÁUSULA 4ª — DA NATUREZA DOS SERVIÇOS
+O(A) CONTRATADO(A) prestará os serviços de forma autônoma, sem subordinação, não configurando vínculo empregatício entre as partes.
+
+CLÁUSULA 5ª — DO FORO
+Fica eleito o foro da comarca de ${org.cidade||'___'} para dirimir quaisquer controvérsias.
+
+E, por estarem assim justos e contratados, assinam o presente em 2 (duas) vias de igual teor.`,
+
+    emprestimo_func: `Pelo presente instrumento particular, ${empresa}, doravante denominada EMPREGADORA, e ${func?.nome||'___'}, portador(a) do CPF nº ${func?.cpf||'___'}, funcionário(a) da EMPREGADORA na função de ${func?.cargo||'___'}, doravante denominado(a) BENEFICIÁRIO(A), formalizam o presente Termo de Empréstimo, nas seguintes condições:
+
+CLÁUSULA 1ª — DO VALOR
+A EMPREGADORA concede ao(à) BENEFICIÁRIO(A) empréstimo/adiantamento no valor de R$ ${fmtMoney(parseFloat(d.valor)||0)} (${numberToWords(parseFloat(d.valor)||0)}), em ${d.dataConcessao ? fmtData(d.dataConcessao) : '___'}${d.motivoEmprestimo ? '\nFinalidade: ' + d.motivoEmprestimo : ''}
+
+CLÁUSULA 2ª — DA DEVOLUÇÃO
+O valor será descontado diretamente da folha de pagamento do(a) BENEFICIÁRIO(A), em ${d.parcelas||'___'} (${d.parcelas||'___'}) parcelas mensais iguais, iniciando-se no próximo pagamento.
+
+CLÁUSULA 3ª — DO RECONHECIMENTO DE DÍVIDA
+O(A) BENEFICIÁRIO(A) reconhece o débito e autoriza expressamente os descontos em folha de pagamento, nos termos do art. 462 da CLT.
+
+CLÁUSULA 4ª — DA RESCISÃO
+Em caso de rescisão contratual, o saldo devedor será integralmente descontado das verbas rescisórias devidas.
+
+E, por estarem assim justos e acordados, assinam o presente em 2 (duas) vias de igual teor.`,
+  };
+
+  // Templates restantes (fornecimento, compra_venda, temporario, estagio) - versão simplificada
+  const padrao = `Pelo presente instrumento, ${empresa} e ${d.contratadoNome||d.fornecedorNome||d.vendedorNome||func?.nome||'___'} ajustam entre si o presente contrato, tendo como objeto: ${d.descricaoBem||d.produtoServico||d.descricaoServico||'___'}.
+
+Valor: R$ ${fmtMoney(parseFloat(d.valor||d.valorMensal||d.bolsa||d.salario)||0)}
+Vigência: ${d.prazoContrato||d.prazo||''}
+Condições: ${d.condicoesPagamento||d.formaPagamento||''}
+
+As partes elegem o foro de ${org.cidade||'___'} para dirimir quaisquer controvérsias.`;
+
+  return textos[tipo] || padrao;
+}
+
+async function renderContratosLista() {
+  const el = document.getElementById('contratosLista');
+  if (!el) return;
+  const contratos = await fsGetAll('contratos');
+  if (!contratos || contratos.length === 0) {
+    el.innerHTML = '<p style="color:var(--text3);font-size:0.85rem">Nenhum contrato gerado ainda.</p>';
+    return;
+  }
+  el.innerHTML = contratos.sort((a,b)=>(b.geradoEm||'').localeCompare(a.geradoEm||'')).map(ct => `
+    <div style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--bg2);border-radius:8px;margin-bottom:6px">
+      <div style="font-size:1.5rem">📄</div>
+      <div style="flex:1">
+        <div style="font-weight:600;font-size:0.88rem">${ct.titulo}</div>
+        <div style="font-size:0.75rem;color:var(--text3)">${ct.geradoEm?new Date(ct.geradoEm).toLocaleDateString('pt-BR'):''}</div>
+      </div>
+      <button class="btn btn-outline btn-sm" onclick="usarTemplate('${ct.tipo}')">📋 Usar novamente</button>
+      <button class="btn-icon" onclick="excluirContrato('${ct.id}')">🗑️</button>
+    </div>`).join('');
+}
+
+async function excluirContrato(id) {
+  if (!await confirmar('Excluir contrato?','')) return;
+  await fsDelete('contratos', id);
+  renderContratosLista();
+}
+
+function abrirNovoContrato() {
+  document.getElementById('contratosTemplates').scrollIntoView({behavior:'smooth'});
+  toast('Escolha um template abaixo', 'info');
+}
+
+function previewContrato() {
+  toast('Preencha os campos e clique em Gerar PDF para visualizar', 'info');
+}
+
 // Service worker for PWA
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
