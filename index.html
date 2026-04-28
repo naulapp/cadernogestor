@@ -3080,7 +3080,6 @@ function updateOrgUI() {
   document.getElementById('cfgCnpj').value = currentOrg.cnpj || '';
   document.getElementById('cfgCidade').value = currentOrg.cidade || '';
   document.getElementById('cfgResponsavel').value = currentOrg.responsavel || '';
-  document.getElementById('cfgInss').value = currentOrg.inssDefault || '207';
 }
 
 // =====================================================
@@ -5058,7 +5057,6 @@ async function salvarConfig() {
     cnpj: document.getElementById('cfgCnpj').value,
     cidade: document.getElementById('cfgCidade').value,
     responsavel: document.getElementById('cfgResponsavel').value,
-    inssDefault: parseFloat(document.getElementById('cfgInss').value) || 207
   };
   Object.assign(currentOrg, update);
   if (db) await db.collection('orgs').doc(currentOrg.id).update(update);
@@ -5503,7 +5501,14 @@ function suggestHorario(regra, settings, minutosTrabalho, intervaloMin, index, t
 
 function getSelectedValues(selectId) {
   const el = document.getElementById(selectId);
-  return el ? Array.from(el.selectedOptions).map(opt => opt.value) : [];
+  if (!el) return [];
+  // Suporte para div com checkboxes (dias de funcionamento)
+  if (el.tagName === 'DIV') {
+    return Array.from(el.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
+  }
+  // select múltiplo tradicional
+  return Array.from(el.selectedOptions || el.options || [])
+    .filter(o => o.selected).map(opt => opt.value);
 }
 
 function labelTurno(turno) {
