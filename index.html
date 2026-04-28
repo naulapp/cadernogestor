@@ -5466,8 +5466,6 @@ async function generateEscala() {
     geradoEm: new Date().toISOString()
   };
   // preview select removed
-  previewSelect.innerHTML = '<option value="">Selecione...</option>' + resultadoEquipe.map(item => `<option value="${item.funcionario.id}">${item.funcionario.nome}</option>`).join('');
-  previewSelect.value = resultadoEquipe[0]?.funcionario.id || '';
   renderEscalaResultado();
   try {
     await fsAdd('monthlyScales', {
