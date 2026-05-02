@@ -22,7 +22,7 @@ let grupos = [];
 let emprestimos = [];
 let vales = [];
 let acertoPares = [];
-let lancamentosCache = []; // cache de lanÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§amentos do Firebase
+let lancamentosCache = []; // cache de lançamentos do Firebase
 let escalaSettings = [];
 let escalaRules = [];
 let escalaGerada = null;
@@ -33,10 +33,17 @@ let firebaseReady = false;
 // INIT
 // =====================================================
 window.addEventListener('load', async () => {
+  const splashFailSafe = setTimeout(() => {
+    const splash = document.getElementById('screen-splash');
+    if (splash?.classList.contains('active')) {
+      showScreen('auth');
+    }
+  }, 6000);
 
   // Se URL tem ?logout=1 ou ?trocar=1, fazer logout imediato antes de tudo
   const urlParams = new URLSearchParams(window.location.search);
   if (urlParams.get('logout') === '1' || urlParams.get('trocar') === '1') {
+    clearTimeout(splashFailSafe);
     clearAppLocalStorage();
     // Limpar param da URL sem recarregar
     window.history.replaceState({}, '', window.location.pathname);
@@ -65,8 +72,9 @@ window.addEventListener('load', async () => {
         console.warn('Redirect result error:', redirectErr.message);
       }
 
-      // DEPOIS: escutar mudanÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§as de auth normalmente
+      // DEPOIS: escutar mudanças de auth normalmente
       auth.onAuthStateChanged(async user => {
+        clearTimeout(splashFailSafe);
         if (user) {
           currentUser = user;
           const orgId = localStorage.getItem('cgOrgId');
@@ -90,7 +98,8 @@ window.addEventListener('load', async () => {
         }
       });
     } catch(e) {
-      console.warn('Firebase nÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o configurado, modo demo:', e.message);
+      clearTimeout(splashFailSafe);
+      console.warn('Firebase não configurado, modo demo:', e.message);
       showScreen('auth');
     }
   }, 1800);
@@ -135,7 +144,7 @@ async function doLogin() {
 
   if (!firebaseReady) {
     // Demo mode
-    currentUser = { uid: 'demo', email, displayName: 'UsuÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡rio Demo' };
+    currentUser = { uid: 'demo', email, displayName: 'Usuário Demo' };
     handleAfterAuth();
     return;
   }
@@ -170,7 +179,7 @@ async function doRegister() {
 
 async function doGoogleLogin() {
   if (!firebaseReady) {
-    currentUser = { uid: 'demo', email: 'demo@email.com', displayName: 'UsuÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡rio Demo' };
+    currentUser = { uid: 'demo', email: 'demo@email.com', displayName: 'Usuário Demo' };
     handleAfterAuth();
     return;
   }
@@ -178,27 +187,27 @@ async function doGoogleLogin() {
     const provider = new firebase.auth.GoogleAuthProvider();
     provider.setCustomParameters({ prompt: 'select_account' });
 
-    // Detectar se estÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ rodando como PWA (standalone) ou browser normal
+    // Detectar se está rodando como PWA (standalone) ou browser normal
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches
       || window.navigator.standalone === true
       || document.referrer.includes('android-app://');
 
-    // No PWA standalone: popup ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â© obrigatÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³rio pois redirect perde o contexto
-    // No browser mobile: tambÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©m popup (mais moderno e confiÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡vel)
-    // SÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³ usar redirect se popup for bloqueado
+    // No PWA standalone: popup é obrigatório pois redirect perde o contexto
+    // No browser mobile: também popup (mais moderno e confiável)
+    // Só usar redirect se popup for bloqueado
     try {
       await auth.signInWithPopup(provider);
     } catch(popupErr) {
       if (popupErr.code === 'auth/popup-blocked') {
-        // Popup bloqueado pelo browser ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â usar redirect como fallback
+        // Popup bloqueado pelo browser � usar redirect como fallback
         if (!isStandalone) {
           await auth.signInWithRedirect(provider);
         } else {
-          // No PWA, popup bloqueado ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â© um problema sÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©rio
+          // No PWA, popup bloqueado é um problema sério
           toast('Permita popups para fazer login com Google no app instalado', 'error');
         }
       } else if (popupErr.code === 'auth/popup-closed-by-user') {
-        // UsuÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡rio fechou ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â nÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o mostrar erro
+        // Usu�rio fechou � n�o mostrar erro
       } else {
         throw popupErr;
       }
@@ -208,11 +217,11 @@ async function doGoogleLogin() {
   }
 }
 
-// Busca automÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡tica de org pelo UID ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â resolve problema mobile
+// Busca autom�tica de org pelo UID � resolve problema mobile
 async function buscarOrgDoUsuario(uid) {
   if (!db || !uid) return;
   try {
-    // Buscar orgs onde o usuÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡rio ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â© membro
+    // Buscar orgs onde o usuário é membro
     const snap = await db.collection('orgs')
       .where('membroIds', 'array-contains', uid)
       .limit(1)
@@ -223,7 +232,7 @@ async function buscarOrgDoUsuario(uid) {
       localStorage.setItem('cgOrgId', org.id);
       localStorage.setItem('cgOrgNome', org.nome || '');
       currentOrg = org;
-      toast('OrganizaÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o encontrada: ' + org.nome, 'success');
+      toast('Organização encontrada: ' + org.nome, 'success');
       afterOrgLoad();
     } else {
       // Tentar pelo campo dono
@@ -237,7 +246,7 @@ async function buscarOrgDoUsuario(uid) {
         localStorage.setItem('cgOrgId', org.id);
         localStorage.setItem('cgOrgNome', org.nome || '');
         currentOrg = org;
-        toast('OrganizaÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o encontrada: ' + org.nome, 'success');
+        toast('Organização encontrada: ' + org.nome, 'success');
         afterOrgLoad();
       }
     }
@@ -253,7 +262,7 @@ function handleAfterAuth() {
     afterOrgLoad();
   } else {
     showScreen('setup');
-    // Mostrar email do usuÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡rio logado
+    // Mostrar email do usuário logado
     setTimeout(() => {
       const emailEl = document.getElementById('setupUserEmail');
       if (emailEl && currentUser) {
@@ -273,8 +282,8 @@ function doLogout() {
   showScreen('auth');
 }
 
-// VersÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o forÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ada ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â redireciona para URL com ?logout=1
-// Garante funcionar mesmo quando JS estÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ em estado inconsistente
+// Vers�o for�ada � redireciona para URL com ?logout=1
+// Garante funcionar mesmo quando JS está em estado inconsistente
 function doLogoutForce() {
   clearAppLocalStorage();
   window.location.href = window.location.pathname + '?logout=1';
@@ -302,7 +311,7 @@ async function createOrg() {
   const org = { nome, cnpj, cidade, invite, dono: uid,
     membroIds: [uid],
     adminIds: [uid],
-    membros: [{ uid, nome: currentUser?.displayName || 'VocÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âª', role: 'gestor', email: currentUser?.email || '' }],
+    membros: [{ uid, nome: currentUser?.displayName || 'Voc�', role: 'gestor', email: currentUser?.email || '' }],
     criadoEm: new Date().toISOString() };
 
   if (db) {
@@ -323,11 +332,11 @@ async function createOrg() {
 
 async function joinOrg() {
   const code = document.getElementById('inviteCode').value.trim().toUpperCase();
-  if (!code) { toast('Informe o cÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³digo de convite', 'error'); return; }
+  if (!code) { toast('Informe o código de convite', 'error'); return; }
 
   if (db) {
     const snap = await db.collection('orgs').where('invite', '==', code).get();
-    if (snap.empty) { toast('CÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³digo invÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡lido', 'error'); return; }
+    if (snap.empty) { toast('Código inválido', 'error'); return; }
     const doc = snap.docs[0];
     const org = { id: doc.id, ...doc.data() };
     // Adicionar como membro
@@ -346,7 +355,7 @@ async function joinOrg() {
     };
     afterOrgLoad();
   } else {
-    toast('Firebase nÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o configurado ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â use modo demo', 'error');
+    toast('Firebase n�o configurado � use modo demo', 'error');
   }
 }
 
@@ -375,8 +384,8 @@ function updateOrgUI() {
     emailEl.textContent = 'Conta: ' + (currentUser.email || currentUser.displayName || '');
   }
   if (!currentOrg) return;
-  document.getElementById('currentOrgBadge').textContent = 'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ ' + currentOrg.nome;
-  document.getElementById('inviteDisplay').textContent = currentOrg.invite || 'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â';
+  document.getElementById('currentOrgBadge').textContent = '🏢 ' + currentOrg.nome;
+  document.getElementById('inviteDisplay').textContent = currentOrg.invite || '�';
   const name = currentUser?.displayName || currentUser?.email || 'U';
   document.getElementById('userAvatar').textContent = name[0].toUpperCase();
   // Config fields
@@ -459,7 +468,7 @@ async function fsDelete(col, id) {
 // =====================================================
 // LOAD ALL DATA
 // =====================================================
-// MigraÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o automÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡tica: garante que membroIds existe na org
+// Migração automática: garante que membroIds existe na org
 async function garantirAcessosOrg() {
   if (!db || !currentOrg) return;
   try {
@@ -467,7 +476,7 @@ async function garantirAcessosOrg() {
     const doc = await orgRef.get();
     if (!doc.exists) return;
     const data = doc.data();
-    // Se membroIds nÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o existe, criar a partir de membros
+    // Se membroIds não existe, criar a partir de membros
     const membros = data.membros || currentOrg.membros || [];
     const membroIds = buildMemberIds(membros);
     const adminIds = buildAdminIds(membros);
@@ -484,13 +493,13 @@ async function garantirAcessosOrg() {
       currentOrg.adminIds = adminIds;
     }
   } catch(e) {
-    console.warn('NÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o foi possÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­vel verificar membroIds:', e.message);
+    console.warn('Não foi possível verificar membroIds:', e.message);
   }
 }
 
 async function loadAllData() {
   updateOrgUI();
-  // Garantir que membroIds existe na org (migraÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o automÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡tica)
+  // Garantir que membroIds existe na org (migração automática)
   await garantirAcessosOrg();
   try {
     [funcionarios, grupos, emprestimos, vales, acertoPares] = await Promise.all([
@@ -507,7 +516,7 @@ async function loadAllData() {
     vales = getCol('vales').getAll();
     acertoPares = getCol('acertoPares').getAll();
     if (e.code === 'permission-denied') {
-      toast('ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¯ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â PermissÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âµes do Firebase precisam ser atualizadas. Usando dados locais.', 'error');
+      toast('⚠️ Permissões do Firebase precisam ser atualizadas. Usando dados locais.', 'error');
     }
   }
   [escalaSettings, escalaRules] = await Promise.all([
@@ -574,7 +583,7 @@ function openModal(id) {
   if (id === 'modal-vale') {
     const vid = document.getElementById('valeId');
     if (vid && !vid.value) {
-      // Novo vale ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â limpar campos
+      // Novo vale � limpar campos
       document.getElementById('valeData').value = new Date().toISOString().slice(0,10);
       document.getElementById('valeValor').value = '';
       document.getElementById('valeDescricao').value = '';
@@ -612,16 +621,16 @@ document.addEventListener('click', e => {
 // =====================================================
 
 // =====================================================
-// FUNCIONÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂRIOS
+// FUNCIONÁRIOS
 // =====================================================
 let funcOrdemAZ = true;
 
 function toggleOrdemFuncionarios() {
   funcOrdemAZ = !funcOrdemAZ;
   const icon = document.getElementById('ordemFuncIcon');
-  if (icon) icon.textContent = funcOrdemAZ ? 'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¹Ã…â€œ' : 'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“';
+  if (icon) icon.textContent = funcOrdemAZ ? '↑' : '↓';
   const btn = document.querySelector('[onclick="toggleOrdemFuncionarios()"]');
-  if (btn) btn.textContent = `ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¦ ${funcOrdemAZ ? 'A-Z' : 'Z-A'}`;
+  if (btn) btn.textContent = `⇅ ${funcOrdemAZ ? 'A-Z' : 'Z-A'}`;
   renderFuncionarios(document.getElementById('funcBuscaInput')?.value || '');
 }
 

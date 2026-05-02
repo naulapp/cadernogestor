@@ -5,7 +5,7 @@ function renderEquipe() {
   const tbody = document.getElementById('tabelaEquipe');
   const membros = currentOrg?.membros || [];
   if (membros.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="5"><div class="empty-state"><div class="icon">ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¹Ã…â€œÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¥</div><h3>SÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³ vocÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âª</h3></div></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="5"><div class="empty-state"><div class="icon">👥</div><h3>Só você</h3></div></td></tr>`;
     return;
   }
   const roles = { gestor: 'Gestor', empregador: 'Empregador', funcionario: 'Funcionario' };
@@ -18,7 +18,7 @@ function renderEquipe() {
   </tr>`).join('');
 }
 
-// editarMembro e salvarMembro definidos abaixo com permissÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âµes granulares
+// editarMembro e salvarMembro definidos abaixo com permissões granulares
 
 function selectRole(role) {
   document.querySelectorAll('.role-option').forEach(r => r.classList.remove('active'));
@@ -32,28 +32,28 @@ function gerarConvite() {
   if (db) db.collection('orgs').doc(currentOrg.id).update({ invite: code });
   else localDB.setOrg(currentOrg.id, currentOrg);
   document.getElementById('inviteDisplay').textContent = code;
-  toast('Novo cÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³digo gerado: ' + code, 'success');
+  toast('Novo código gerado: ' + code, 'success');
 }
 
 function copyInvite() {
   const code = document.getElementById('inviteDisplay').textContent;
-  navigator.clipboard.writeText(code).then(() => toast('CÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³digo copiado!', 'success'));
+  navigator.clipboard.writeText(code).then(() => toast('Código copiado!', 'success'));
 }
 
 function openOrgSelector() {
-  const nome = prompt('Nome da organizaÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o:', currentOrg?.nome || '');
+  const nome = prompt('Nome da organiza��o:', currentOrg?.nome || '');
   if (nome && currentOrg) {
     currentOrg.nome = nome;
     if (db) db.collection('orgs').doc(currentOrg.id).update({ nome });
     else localDB.setOrg(currentOrg.id, currentOrg);
     localStorage.setItem('cgOrgNome', nome);
-    document.getElementById('currentOrgBadge').textContent = 'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ ' + nome;
+    document.getElementById('currentOrgBadge').textContent = '🏢 ' + nome;
     toast('Nome atualizado', 'success');
   }
 }
 
 // =====================================================
-// CONFIGURAÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¢ES
+// CONFIGURAÇÕES
 // =====================================================
 async function salvarConfig() {
   if (!currentOrg) return;
@@ -67,7 +67,7 @@ async function salvarConfig() {
   if (db) await db.collection('orgs').doc(currentOrg.id).update(update);
   else localDB.setOrg(currentOrg.id, currentOrg);
   localStorage.setItem('cgOrgNome', update.nome);
-  document.getElementById('currentOrgBadge').textContent = 'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ ' + update.nome;
+  document.getElementById('currentOrgBadge').textContent = '🏢 ' + update.nome;
   toast('Dados da empresa salvos!', 'success');
 }
 
@@ -324,7 +324,7 @@ function buildEscalaFuncionario(funcionario, regra, settings, mes, ano, index, t
     if (restanteSemana <= 0) continue;
     let minutosTrabalho = Math.min(jornadaPadraoMin, restanteSemana);
     const lacunaCobertura = Math.max(0, janelaEmpresaMin - jornadaPadraoMin);
-    // Sempre adicionar horas extras se o funcionÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡rio tem limite definido
+    // Sempre adicionar horas extras se o funcionário tem limite definido
     if (regra.podeHoraExtra && limiteExtraMin > 0) {
       minutosTrabalho += Math.min(limiteExtraMin, janelaEmpresaMin - minutosTrabalho);
     }
@@ -405,7 +405,7 @@ function renderEscalaResultado() {
       </div>
       <div style="margin-top:18px;overflow:auto">
         <table>
-          <thead><tr><th>FuncionÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡rio</th><th>Dias</th><th>Horas</th><th>Extras</th><th>Turno</th><th style="text-align:center">Folha de Ponto</th></tr></thead>
+          <thead><tr><th>Funcionário</th><th>Dias</th><th>Horas</th><th>Extras</th><th>Turno</th><th style="text-align:center">Folha de Ponto</th></tr></thead>
           <tbody>${escalaGerada.equipe.map(item => `
             <tr>
               <td>${item.funcionario.nome}</td>
@@ -415,9 +415,9 @@ function renderEscalaResultado() {
               <td>${labelTurno(item.regra.preferenciaTurno)}</td>
               <td style="text-align:center;white-space:nowrap">
                 <button class="btn-icon" title="Imprimir"
-                  onclick="printEscalaFuncionario('${item.funcionario.id}')">ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¨ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¯ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â</button>
+                  onclick="printEscalaFuncionario('${item.funcionario.id}')">🖨️</button>
                 <button class="btn-icon" title="Baixar PDF" style="margin-left:4px"
-                  onclick="downloadEscalaPdfFuncionario('${item.funcionario.id}')">ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¥</button>
+                  onclick="downloadEscalaPdfFuncionario('${item.funcionario.id}')">📥</button>
               </td>
             </tr>
           `).join('')}</tbody>
@@ -432,14 +432,14 @@ function renderEscalaResultado() {
 }
 
 function renderEscalaPreview() {
-  // Preview individual agora ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â© feito pelos botÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âµes ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¨ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¯ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â e ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¥ na tabela de funcionÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡rios
+  // Preview individual agora é feito pelos botões 🖨️ e 📥 na tabela de funcionários
   const previewEl = document.getElementById('escalaPreview');
   if (previewEl) previewEl.innerHTML = '';
 }
 
 function printEscalaPreview() {
-  // SubstituÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­do por printEscalaFuncionario(funcId) ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â use os botÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âµes na tabela
-  toast('Use os botÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âµes ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¨ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¯ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ao lado de cada funcionÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡rio na tabela', 'info');
+  // Substitu�do por printEscalaFuncionario(funcId) � use os bot�es na tabela
+  toast('Use os botões 🖨️ ao lado de cada funcionário na tabela', 'info');
   return;
   const area = null;
   if (!area) return;
@@ -472,8 +472,8 @@ function downloadEscalaPdf() {
   doc.text(`HORA EXTRA: ${item.totalExtrasMes}h`, 14, 48);
   doc.autoTable({
     startY: 54,
-    head: [['DATA', 'DIA', 'ENTRADA', 'SAÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂDA INT.', 'RETORNO', 'SAÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂDA', 'TOTAL', 'H. EXTRA']],
-    body: item.dias.map(dia => [fmtData(dia.data), dayNameShort(dia.diaSemana).toUpperCase(), dia.entrada, dia.saidaIntervalo, dia.retornoIntervalo, dia.saidaFinal, `${dia.horasPrevistas}h`, dia.horaExtraPrevista > 0 ? `${dia.horaExtraPrevista}h` : 'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â']),
+    head: [['DATA', 'DIA', 'ENTRADA', 'SAÍDA INT.', 'RETORNO', 'SAÍDA', 'TOTAL', 'H. EXTRA']],
+    body: item.dias.map(dia => [fmtData(dia.data), dayNameShort(dia.diaSemana).toUpperCase(), dia.entrada, dia.saidaIntervalo, dia.retornoIntervalo, dia.saidaFinal, `${dia.horasPrevistas}h`, dia.horaExtraPrevista > 0 ? `${dia.horaExtraPrevista}h` : '�']),
     styles: { fontSize: 8, cellPadding: 2.4 },
     headStyles: { fillColor: [15, 23, 42] }
   });
@@ -515,7 +515,7 @@ function getSelectedValues(selectId) {
   if (el.tagName === 'DIV') {
     return Array.from(el.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
   }
-  // select mÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âºltiplo tradicional
+  // select múltiplo tradicional
   return Array.from(el.selectedOptions || el.options || [])
     .filter(o => o.selected).map(opt => opt.value);
 }
@@ -530,7 +530,7 @@ function labelDiaSemana(dia) {
 }
 
 function dayNameShort(index) {
-  return ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab'][index] || 'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â';
+  return ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab'][index] || '�';
 }
 
 function daysInMonth(month, year) {
@@ -597,20 +597,20 @@ function formatMoneyBlur(el) {
   el.value = val.toFixed(2).replace('.',',');
 }
 
-// Retorna valor numÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©rico de input BRL formatado
+// Retorna valor numérico de input BRL formatado
 function parseMoneyInput(el) {
   return parseFloat((el?.value||'0').replace(/\./g,'').replace(',','.')) || 0;
 }
 
 
 function fmtData(d) {
-  if (!d) return 'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â';
+  if (!d) return '�';
   const [y,m,day] = d.split('-');
   return `${day}/${m}/${y}`;
 }
 
 function maskValorReais(el) {
-  // Remove tudo que nÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â© dÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­gito
+  // Remove tudo que não é dígito
   let v = el.value.replace(/\D/g, '');
   if (!v) { el.value = ''; return; }
   // Converter para centavos e formatar
@@ -641,7 +641,7 @@ function toast(msg, type='info') {
   const c = document.getElementById('toastContainer');
   const t = document.createElement('div');
   t.className = `toast ${type}`;
-  t.innerHTML = `<span>${type==='success'?'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¦':type==='error'?'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢':'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¾ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¹ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¯ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â'}</span> ${msg}`;
+  t.innerHTML = `<span>${type==='success'?'✅':type==='error'?'❌':'ℹ️'}</span> ${msg}`;
   c.appendChild(t);
   setTimeout(() => t.remove(), 3500);
 }
@@ -651,7 +651,7 @@ function numberToWords(num) {
   const n = Math.round(num * 100);
   const reais = Math.floor(n / 100);
   const centavos = n % 100;
-  const units = ['','um','dois','trÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âªs','quatro','cinco','seis','sete','oito','nove','dez','onze','doze','treze','quatorze','quinze','dezesseis','dezessete','dezoito','dezenove'];
+  const units = ['','um','dois','três','quatro','cinco','seis','sete','oito','nove','dez','onze','doze','treze','quatorze','quinze','dezesseis','dezessete','dezoito','dezenove'];
   const tens = ['','dez','vinte','trinta','quarenta','cinquenta','sessenta','setenta','oitenta','noventa'];
   const hundreds = ['','cento','duzentos','trezentos','quatrocentos','quinhentos','seiscentos','setecentos','oitocentos','novecentos'];
 
@@ -679,28 +679,28 @@ function numberToWords(num) {
 function toggleTheme() {
   const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
   document.documentElement.setAttribute('data-theme', isDark ? 'light' : 'dark');
-  document.getElementById('themeBtn').textContent = isDark ? 'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Â¹Ãƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¯ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â' : 'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Ãƒâ€šÃ‚Â¢';
+  document.getElementById('themeBtn').textContent = isDark ? '☀️' : '🌙';
   localStorage.setItem('cgTheme', isDark ? 'light' : 'dark');
 }
 
-// Aplicar tema salvo (padrÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o: light)
+// Aplicar tema salvo (padrão: light)
 (function() {
   const saved = localStorage.getItem('cgTheme') || 'light';
   document.documentElement.setAttribute('data-theme', saved);
   window.addEventListener('load', () => {
     const btn = document.getElementById('themeBtn');
-    if (btn) btn.textContent = saved === 'dark' ? 'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Ãƒâ€šÃ‚Â¢' : 'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Â¹Ãƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¯ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â';
+    if (btn) btn.textContent = saved === 'dark' ? '🌙' : '☀️';
   });
 })();
 
 // =====================================================
-// CARGO ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â HELPERS
+// CARGO � HELPERS
 // =====================================================
 let adicionaisGrupo = [];
 
 function calcGrupoCargaMensal() {
   const semanal = parseFloat(document.getElementById('grupoCargaSemanal').value) || 44;
-  // Carga mensal padrÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o CLT = (semanal / 6) * 30
+  // Carga mensal padrão CLT = (semanal / 6) * 30
   const mensal = Math.round((semanal / 6) * 30);
   document.getElementById('grupoCargaMensal').value = mensal;
   calcGrupoHoraExtra();
@@ -745,9 +745,9 @@ function removeAdicionalGrupo(idx) {
   renderAdicionaisGrupo();
 }
 
-// Lista de nomes de adicionais prÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©-cadastrados
+// Lista de nomes de adicionais pré-cadastrados
 let adicionaisNomes = JSON.parse(localStorage.getItem('cgAdicionaisNomes') || 'null') ||
-  ['Insalubridade','Periculosidade','Adicional Noturno','Hora Extra 50%','Hora Extra 100%','Adicional de FunÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o'];
+  ['Insalubridade','Periculosidade','Adicional Noturno','Hora Extra 50%','Hora Extra 100%','Adicional de Função'];
 
 function salvarAdicionaisNomes() {
   localStorage.setItem('cgAdicionaisNomes', JSON.stringify(adicionaisNomes));
@@ -777,7 +777,7 @@ function renderAdicional(lista, idx, onRemove, onUpdate) {
             step="${isValor?'0.01':'1'}"
             oninput="${onUpdate}[${idx}].${isValor?'valor':'pct'}=parseFloat(this.value)||0">
         </div>
-        <button class="btn-icon" onclick="${onRemove}(${idx})" style="height:42px;margin-bottom:0">ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¹Ã…â€œÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¯ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â</button>
+        <button class="btn-icon" onclick="${onRemove}(${idx})" style="height:42px;margin-bottom:0">🗑️</button>
       </div>
       <div style="display:flex;gap:16px;flex-wrap:wrap">
         <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.8rem">
@@ -829,7 +829,7 @@ function preencherAdicionaisGrupo(lista) {
 
 
 // =====================================================
-// ALERTAS DASHBOARD ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â vales e parcelas vencendo
+// ALERTAS DASHBOARD � vales e parcelas vencendo
 // =====================================================
 function renderAlertasDashboard() {
   const container = document.getElementById('dashAlertas');
@@ -845,28 +845,28 @@ function renderAlertasDashboard() {
     if (!v.data) return;
     const d = new Date(v.data + 'T00:00:00');
     const func = funcionarios.find(f => f.id === v.funcionarioId);
-    const nome = func?.nome || 'FuncionÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡rio';
+    const nome = func?.nome || 'Funcion�rio';
     const diasDiff = Math.floor((d - hoje) / 86400000);
-    if (diasDiff < 0) alertas.push({ tipo: 'red', msg: `Vale de ${nome} (R$ ${fmtMoney(v.valor)}) estÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ em atraso hÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ ${Math.abs(diasDiff)} dia(s)` });
+    if (diasDiff < 0) alertas.push({ tipo: 'red', msg: `Vale de ${nome} (R$ ${fmtMoney(v.valor)}) está em atraso há ${Math.abs(diasDiff)} dia(s)` });
     else if (diasDiff <= 3) alertas.push({ tipo: 'yellow', msg: `Vale de ${nome} (R$ ${fmtMoney(v.valor)}) vence em ${diasDiff === 0 ? 'hoje' : diasDiff + ' dia(s)'}` });
   });
 
-  // Parcelas de emprÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©stimos
+  // Parcelas de empréstimos
   const mesAtual = hoje.getMonth() + 1;
   const anoAtual = hoje.getFullYear();
   emprestimos.filter(e => e.status === 'ativo' || !e.status).forEach(e => {
     const func = funcionarios.find(f => f.id === e.funcionarioId);
-    const nome = func?.nome || 'FuncionÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡rio';
+    const nome = func?.nome || 'Funcion�rio';
     const restante = (e.total || 0) - (e.pago || 0);
     if (restante > 0 && restante <= e.valorParcela) {
-      alertas.push({ tipo: 'green', msg: `ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ltima parcela de ${nome} ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ${e.descricao} (R$ ${fmtMoney(restante)})` });
+      alertas.push({ tipo: 'green', msg: `�ltima parcela de ${nome} � ${e.descricao} (R$ ${fmtMoney(restante)})` });
     }
   });
 
   if (alertas.length === 0) { container.innerHTML = ''; return; }
 
   container.innerHTML = `<div class="section-card" style="margin-bottom:0">
-    <div class="section-card-title">ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¯ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â Alertas</div>
+    <div class="section-card-title">⚠️ Alertas</div>
     ${alertas.map(a => `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
       <span style="width:10px;height:10px;border-radius:50%;background:var(--${a.tipo});flex-shrink:0"></span>
       <span style="font-size:0.85rem">${a.msg}</span>
@@ -875,7 +875,7 @@ function renderAlertasDashboard() {
 }
 
 // =====================================================
-// HISTÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“RICO DE FOLHAS
+// HISTÓRICO DE FOLHAS
 // =====================================================
 async function salvarHistoricoFolha(mesRef, dados) {
   // dados = { funcionarios: [{nome, totalProventos, totalDescontos, liquido}] }
@@ -902,17 +902,17 @@ async function renderHistoricoFolhas() {
   const tbody = document.getElementById('tabelaHistoricoFolhas');
   if (!tbody) return;
   if (lista.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="icon">ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â</div><h3>Nenhuma folha salva</h3></div></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="icon">📁</div><h3>Nenhuma folha salva</h3></div></td></tr>`;
     return;
   }
   tbody.innerHTML = lista.map(h => `<tr>
-    <td><strong>${h.mesRef || 'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â'}</strong></td>
+    <td><strong>${h.mesRef || '�'}</strong></td>
     <td>${h.qtdFuncionarios || 0}</td>
     <td class="mono" style="color:var(--green)">R$ ${fmtMoney(h.totalBruto)}</td>
     <td class="mono" style="color:var(--red)">R$ ${fmtMoney(h.totalDescontos)}</td>
     <td class="mono" style="color:var(--accent2)">R$ ${fmtMoney(h.totalLiquido)}</td>
-    <td style="font-size:0.78rem;color:var(--text3)">${h.geradoEm ? new Date(h.geradoEm).toLocaleDateString('pt-BR') : 'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â'}</td>
-    <td><button class="btn btn-outline btn-sm" onclick="verDetalhesHistorico('${h.id}')">ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¹Ã…â€œÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¯ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â Ver</button></td>
+    <td style="font-size:0.78rem;color:var(--text3)">${h.geradoEm ? new Date(h.geradoEm).toLocaleDateString('pt-BR') : '�'}</td>
+    <td><button class="btn btn-outline btn-sm" onclick="verDetalhesHistorico('${h.id}')">👁️ Ver</button></td>
   </tr>`).join('');
 }
 
@@ -925,9 +925,9 @@ function verDetalhesHistorico(id) {
     <td class="mono" style="color:var(--red)">R$ ${fmtMoney(d.totalDescontos)}</td>
     <td class="mono" style="color:var(--accent2)"><strong>R$ ${fmtMoney(d.liquido)}</strong></td>
   </tr>`).join('');
-  document.getElementById('folhaDetalheTitulo').textContent = `HistÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³rico ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ${h.mesRef}`;
+  document.getElementById('folhaDetalheTitulo').textContent = `Hist�rico � ${h.mesRef}`;
   document.getElementById('folhaDetalheBody').innerHTML = `
-    <table><thead><tr><th>FuncionÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡rio</th><th>Bruto</th><th>Descontos</th><th>LÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­quido</th></tr></thead>
+    <table><thead><tr><th>Funcionário</th><th>Bruto</th><th>Descontos</th><th>Líquido</th></tr></thead>
     <tbody>${rows}</tbody></table>`;
   document.querySelector('#modal-folha-detalhe .modal-footer').innerHTML =
     `<button class="btn btn-outline btn-sm" onclick="closeModal('modal-folha-detalhe')">Fechar</button>`;
@@ -935,7 +935,7 @@ function verDetalhesHistorico(id) {
 }
 
 // =====================================================
-// RELATÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“RIO CONSOLIDADO
+// RELATÓRIO CONSOLIDADO
 // =====================================================
 function populateRelatorioGrupos() {
   const relGrupoSel = document.getElementById('relGrupo');
@@ -961,18 +961,18 @@ function gerarRelatorio() {
   });
 
   if (ativos.length === 0) {
-    document.getElementById('relatorioContent').innerHTML = `<div class="empty-state"><div class="icon">ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¹Ã…â€œÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¥</div><h3>Nenhum funcionÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡rio encontrado</h3><p>Verifique os filtros selecionados</p></div>`;
+    document.getElementById('relatorioContent').innerHTML = `<div class="empty-state"><div class="icon">👥</div><h3>Nenhum funcionário encontrado</h3><p>Verifique os filtros selecionados</p></div>`;
     return;
   }
 
-  // Verificar se existe histÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³rico de folha para este mÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âªs
+  // Verificar se existe histórico de folha para este mês
   const historicoFolhas = getCol('historicoFolhas').getAll();
   const folhaDoMes = historicoFolhas.find(h => h.mesRef === mesRefHist);
 
-  // Se nÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o hÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ folha consolidada para este mÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âªs, usar snapshot se existir
-  // Caso contrÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡rio mostrar aviso
+  // Se não há folha consolidada para este mês, usar snapshot se existir
+  // Caso contrário mostrar aviso
   if (!folhaDoMes && !folhaDetalhe[ativos[0]?.id]) {
-    // Verificar se folhaDetalhe tem dados para este mÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âªs
+    // Verificar se folhaDetalhe tem dados para este mês
     const mesAtual = new Date();
     const mesAtualRef = `${String(mesAtual.getMonth()+1).padStart(2,'0')}/${mesAtual.getFullYear()}`;
     const temFolhaCarregada = Object.keys(folhaDetalhe).length > 0;
@@ -980,17 +980,17 @@ function gerarRelatorio() {
     if (!temFolhaCarregada) {
       document.getElementById('relatorioContent').innerHTML = `
         <div class="section-card" style="text-align:center;padding:32px">
-          <div style="font-size:3rem;margin-bottom:12px">ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¹</div>
+          <div style="font-size:3rem;margin-bottom:12px">📋</div>
           <h3 style="margin-bottom:8px">Nenhuma folha gerada para ${mesRef}</h3>
-          <p style="color:var(--text3);margin-bottom:16px">Para gerar o relatÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³rio de um mÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âªs, vocÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âª precisa primeiro gerar a Folha de Pagamento daquele perÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­odo.</p>
-          <button class="btn btn-primary btn-sm" onclick="navigate('folha')">ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¹ Ir para Folha de Pagamento</button>
+          <p style="color:var(--text3);margin-bottom:16px">Para gerar o relatório de um mês, você precisa primeiro gerar a Folha de Pagamento daquele período.</p>
+          <button class="btn btn-primary btn-sm" onclick="navigate('folha')">📋 Ir para Folha de Pagamento</button>
         </div>`;
       return;
     }
   }
 
-  // Se hÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ folha carregada na memÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³ria (folhaDetalhe), usar esses dados
-  // Se hÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ snapshot histÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³rico, usar o snapshot
+  // Se há folha carregada na memória (folhaDetalhe), usar esses dados
+  // Se há snapshot histórico, usar o snapshot
   let totalBruto = 0, totalDesc = 0, totalLiq = 0;
   const rows = [];
 
@@ -999,7 +999,7 @@ function gerarRelatorio() {
     let bruto = 0, descontos = 0, liq = 0;
     let fonte = 'sem dados';
 
-    // Prioridade 1: snapshot histÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³rico
+    // Prioridade 1: snapshot histórico
     if (folhaDoMes?.snapshot) {
       const snap = folhaDoMes.snapshot.find(s => s.funcionarioId === f.id || s.nome === f.nome);
       if (snap) {
@@ -1010,7 +1010,7 @@ function gerarRelatorio() {
       }
     }
 
-    // Prioridade 2: folhaDetalhe carregado na memÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³ria
+    // Prioridade 2: folhaDetalhe carregado na memória
     if (bruto === 0 && folhaDetalhe[f.id]) {
       const d = folhaDetalhe[f.id];
       const calc = calcFolhaTotais(d);
@@ -1020,21 +1020,21 @@ function gerarRelatorio() {
       fonte = 'em aberto';
     }
 
-    // NÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o mostrar funcionÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡rios sem dados reais para o perÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­odo
+    // Não mostrar funcionários sem dados reais para o período
     if (bruto === 0 && descontos === 0) continue;
 
     totalBruto += bruto;
     totalDesc += descontos;
     totalLiq += liq;
 
-    const alerta = liq < 0 ? 'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¯ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â' : '';
+    const alerta = liq < 0 ? '⚠️' : '';
     const badgeFonte = fonte === 'consolidado'
       ? '<span class="badge badge-green" style="font-size:0.65rem">consolidado</span>'
       : '<span class="badge badge-yellow" style="font-size:0.65rem">em aberto</span>';
 
     rows.push(`<tr ${liq < 0 ? 'style="background:rgba(239,68,68,0.07)"' : ''}>
       <td><span style="cursor:pointer;color:var(--accent2);text-decoration:underline" onclick="abrirFichaFuncionario('${f.id}')"><strong>${f.nome}</strong></span> ${badgeFonte}</td>
-      <td>${f.cargo || 'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â'}</td>
+      <td>${f.cargo || '�'}</td>
       <td class="mono">R$ ${fmtMoney(bruto)}</td>
       <td class="mono" style="color:var(--red)">R$ ${fmtMoney(descontos)}</td>
       <td class="mono" style="color:${liq < 0 ? 'var(--red)' : 'var(--accent2)'}"><strong>${alerta} R$ ${fmtMoney(liq)}</strong></td>
@@ -1044,10 +1044,10 @@ function gerarRelatorio() {
   if (rows.length === 0) {
     document.getElementById('relatorioContent').innerHTML = `
       <div class="section-card" style="text-align:center;padding:32px">
-        <div style="font-size:3rem;margin-bottom:12px">ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¹</div>
+        <div style="font-size:3rem;margin-bottom:12px">📋</div>
         <h3 style="margin-bottom:8px">Sem dados para ${mesRef}</h3>
-        <p style="color:var(--text3);margin-bottom:16px">NÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o hÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ folha de pagamento gerada ou consolidada para este perÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­odo.</p>
-        <button class="btn btn-primary btn-sm" onclick="navigate('folha')">ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¹ Gerar Folha de Pagamento</button>
+        <p style="color:var(--text3);margin-bottom:16px">Não há folha de pagamento gerada ou consolidada para este período.</p>
+        <button class="btn btn-primary btn-sm" onclick="navigate('folha')">📋 Gerar Folha de Pagamento</button>
       </div>`;
     return;
   }
@@ -1056,18 +1056,18 @@ function gerarRelatorio() {
     <div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap">
       <div class="stat-card" style="flex:1"><div class="stat-label">Total Bruto</div><div class="stat-value green">R$ ${fmtMoney(totalBruto)}</div></div>
       <div class="stat-card" style="flex:1"><div class="stat-label">Total Descontos</div><div class="stat-value red">R$ ${fmtMoney(totalDesc)}</div></div>
-      <div class="stat-card" style="flex:1"><div class="stat-label">Total LÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­quido</div><div class="stat-value accent">R$ ${fmtMoney(totalLiq)}</div></div>
-      <div class="stat-card" style="flex:1"><div class="stat-label">FuncionÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡rios</div><div class="stat-value">${rows.length}</div></div>
+      <div class="stat-card" style="flex:1"><div class="stat-label">Total Líquido</div><div class="stat-value accent">R$ ${fmtMoney(totalLiq)}</div></div>
+      <div class="stat-card" style="flex:1"><div class="stat-label">Funcionários</div><div class="stat-value">${rows.length}</div></div>
     </div>
     <div class="table-wrap">
       <div class="table-header">
-        <div class="table-title">RelatÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³rio ${mesRef}</div>
+        <div class="table-title">Relatório ${mesRef}</div>
         <div style="display:flex;gap:8px">
-          <button class="btn btn-outline btn-sm" onclick="exportRelatorioExcel()">ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â  Excel</button>
-          <button class="btn btn-outline btn-sm" onclick="exportRelatorioPDF()">ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¾ PDF</button>
+          <button class="btn btn-outline btn-sm" onclick="exportRelatorioExcel()">📊 Excel</button>
+          <button class="btn btn-outline btn-sm" onclick="exportRelatorioPDF()">📄 PDF</button>
         </div>
       </div>
-      <table><thead><tr><th>FuncionÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡rio</th><th>Cargo</th><th>Bruto</th><th>Descontos</th><th>LÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­quido</th></tr></thead>
+      <table><thead><tr><th>Funcionário</th><th>Cargo</th><th>Bruto</th><th>Descontos</th><th>Líquido</th></tr></thead>
       <tbody>${rows.join('')}</tbody>
       <tfoot><tr style="background:var(--bg2)">
         <td colspan="2"><strong>TOTAL (${rows.length} func.)</strong></td>
@@ -1092,20 +1092,20 @@ function exportRelatorioPDF() {
   doc.rect(lm, y, pw, 18, 'FD');
   doc.setTextColor(255,255,255);
   doc.setFont('helvetica','bold'); doc.setFontSize(13);
-  doc.text('RELATÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“RIO CONSOLIDADO DE FUNCIONÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂRIOS', lm+6, y+8);
+  doc.text('RELATÓRIO CONSOLIDADO DE FUNCIONÁRIOS', lm+6, y+8);
   doc.setFontSize(9); doc.setFont('helvetica','normal');
-  doc.text(`CompetÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âªncia: ${mesRef} ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ ${currentOrg?.nome||''}`, lm+6, y+14);
+  doc.text(`Compet�ncia: ${mesRef} � ${currentOrg?.nome||''}`, lm+6, y+14);
   doc.setTextColor(30,30,45); y += 24;
 
   // Header da tabela
   doc.setFillColor(46,158,79);
   doc.rect(lm, y, pw, 8, 'FD');
   doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(8);
-  doc.text('FUNCIONÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂRIO', lm+5, y+5.5);
+  doc.text('FUNCIONÁRIO', lm+5, y+5.5);
   doc.text('CARGO', lm+80, y+5.5);
   doc.text('BRUTO', lm+155, y+5.5);
   doc.text('DESCONTOS', lm+190, y+5.5);
-  doc.text('LÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂQUIDO', rm-5, y+5.5, {align:'right'});
+  doc.text('LÍQUIDO', rm-5, y+5.5, {align:'right'});
   doc.setTextColor(30,30,45); y += 8;
 
   // Linhas
@@ -1127,7 +1127,7 @@ function exportRelatorioPDF() {
     });
   }
 
-  // RodapÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â© totais
+  // Rodapé totais
   const tfoot = document.querySelector('#relatorioContent tfoot td');
   if (tfoot) {
     doc.setFillColor(27,45,107); doc.rect(lm, y, pw, 9, 'FD');
@@ -1147,7 +1147,7 @@ function exportRelatorioPDF() {
 // EXCEL EXPORTS
 // =====================================================
 function exportFuncionariosExcel() {
-  if (typeof XLSX === 'undefined') { toast('Biblioteca Excel nÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o carregada', 'error'); return; }
+  if (typeof XLSX === 'undefined') { toast('Biblioteca Excel não carregada', 'error'); return; }
   const data = funcionarios.map(f => {
     const grupo = grupos.find(g => g.id === f.grupoId);
     return {
@@ -1155,7 +1155,7 @@ function exportFuncionariosExcel() {
       'CPF': f.cpf || '',
       'Cargo': getNomeCargo(f),
       'Cargo': grupo?.nome || 'Manual',
-      'SalÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡rio Base': f.salario || 0,
+      'Salário Base': f.salario || 0,
       'Valor Hora Extra': f.horaExtra || 0,
       'INSS': f.inss || 0,
       'Status': f.ativo !== false ? 'Ativo' : 'Inativo'
@@ -1163,13 +1163,13 @@ function exportFuncionariosExcel() {
   });
   const ws = XLSX.utils.json_to_sheet(data);
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'FuncionÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡rios');
+  XLSX.utils.book_append_sheet(wb, ws, 'Funcionários');
   XLSX.writeFile(wb, 'Funcionarios_CadernoGestor.xlsx');
   toast('Excel exportado!', 'success');
 }
 
 function exportRelatorioExcel() {
-  if (typeof XLSX === 'undefined') { toast('Biblioteca Excel nÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o carregada', 'error'); return; }
+  if (typeof XLSX === 'undefined') { toast('Biblioteca Excel não carregada', 'error'); return; }
   const mes = parseInt(document.getElementById('relMes')?.value || new Date().getMonth()+1);
   const ano = parseInt(document.getElementById('relAno')?.value || new Date().getFullYear());
   const mesRef = `${String(mes).padStart(2,'0')}/${ano}`;
@@ -1189,15 +1189,15 @@ function exportRelatorioExcel() {
     const valesF = valesMes.filter(v => v.funcionarioId === f.id).reduce((s,v) => s + v.valor, 0);
     const descontos = inss + empF + valesF;
     return {
-      'FuncionÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡rio': f.nome,
+      'Funcionário': f.nome,
       'Cargo': getNomeCargo(f),
-      'SalÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡rio Bruto': salario,
+      'Salário Bruto': salario,
       'INSS': inss,
       'Vale Quinzena': valeQ,
-      'Parcelas Emp. FuncionÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡rios': empF,
-      'Vales do MÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âªs': valesF,
+      'Parcelas Emp. Funcionários': empF,
+      'Vales do Mês': valesF,
       'Total Descontos': descontos,
-      'LÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­quido': salario - descontos
+      'Líquido': salario - descontos
     };
   });
 

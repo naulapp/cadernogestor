@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cadernogestor-static-v20260502a';
+const CACHE_NAME = 'cadernogestor-static-v20260502b';
 const STATIC_EXTENSIONS = [
   '.css', '.js', '.mjs', '.png', '.jpg', '.jpeg', '.webp', '.svg',
   '.gif', '.ico', '.woff', '.woff2', '.ttf', '.eot'
