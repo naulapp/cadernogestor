@@ -28,11 +28,27 @@ let escalaRules = [];
 let escalaGerada = null;
 let folhaAtualId = null;
 let firebaseReady = false;
+const APP_VERSION = '20260502c';
+
+async function refreshAppCacheIfNeeded() {
+  try {
+    const previousVersion = localStorage.getItem('cgAppVersion');
+    if (previousVersion === APP_VERSION) return;
+    if ('caches' in window) {
+      const keys = await caches.keys();
+      await Promise.all(keys.filter(key => key.startsWith('cadernogestor-')).map(key => caches.delete(key)));
+    }
+    localStorage.setItem('cgAppVersion', APP_VERSION);
+  } catch (error) {
+    console.warn('Falha ao limpar caches antigos:', error?.message || error);
+  }
+}
 
 // =====================================================
 // INIT
 // =====================================================
 window.addEventListener('load', async () => {
+  refreshAppCacheIfNeeded();
   const splashFailSafe = setTimeout(() => {
     const splash = document.getElementById('screen-splash');
     if (splash?.classList.contains('active')) {

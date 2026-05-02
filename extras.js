@@ -23,16 +23,22 @@ function verificarCpfDuplicado(cpf, excludeId='') {
 
 function alertaDescontoMaiorSalario(salario, totalDescontos, nome) {
   if (totalDescontos > salario) {
-    const nomeFmt = nome || 'Funcionário';
+    const nomeFmt = nome || 'Funcion?rio';
     const salarioFmt = typeof fmtMoney === 'function' ? fmtMoney(salario) : Number(salario || 0).toFixed(2);
     const descontosFmt = typeof fmtMoney === 'function' ? fmtMoney(totalDescontos) : Number(totalDescontos || 0).toFixed(2);
-    Swal.fire({
-      icon: 'warning',
-      title: 'Descontos maiores que o salário',
-      html: `<div style="text-align:left">O total de descontos de <strong>${escapeHtml(nomeFmt)}</strong> ficou maior que o salário base.<br><br>Salário: <strong>R$ ${escapeHtml(salarioFmt)}</strong><br>Descontos: <strong>R$ ${escapeHtml(descontosFmt)}</strong></div>`,
-      confirmButtonText: 'Entendi',
-      confirmButtonColor: '#1b2d6b'
-    });
+    const titulo = 'Descontos maiores que o sal?rio';
+    const html = `<div style="text-align:left">O total de descontos de <strong>${escapeHtml(nomeFmt)}</strong> ficou maior que o sal?rio base.<br><br>Sal?rio: <strong>R$ ${escapeHtml(salarioFmt)}</strong><br>Descontos: <strong>R$ ${escapeHtml(descontosFmt)}</strong></div>`;
+    if (window.Swal?.fire) {
+      Swal.fire({
+        icon: 'warning',
+        title: titulo,
+        html,
+        confirmButtonText: 'Entendi',
+        confirmButtonColor: '#1b2d6b'
+      });
+      return;
+    }
+    alert(`${titulo}\n\nO total de descontos de ${nomeFmt} ficou maior que o sal?rio base.\n\nSal?rio: R$ ${salarioFmt}\nDescontos: R$ ${descontosFmt}`);
   }
 }
 
@@ -3512,7 +3518,7 @@ document.addEventListener('keydown', calcHandleKeyboardDash);
 // Service worker for PWA
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('sw.js?v=20260502b')
+    navigator.serviceWorker.register('sw.js?v=20260502c')
       .then(reg => {
         // Forçar update imediato
         reg.update();
