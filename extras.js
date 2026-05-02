@@ -56,21 +56,101 @@ service cloud.firestore {
         && request.auth.uid in orgDoc(orgId).data.membroIds;
     }
 
+    function isOrgOwner(orgId) {
+      return isOrgMember(orgId)
+        && request.auth.uid == orgDoc(orgId).data.dono;
+    }
+
+    function isOrgAdmin(orgId) {
+      return isOrgMember(orgId)
+        && request.auth.uid in orgDoc(orgId).data.adminIds;
+    }
+
+    function validAccessLists() {
+      return request.resource.data.membroIds is list
+        && request.resource.data.adminIds is list;
+    }
+
+    function preservesOwner() {
+      return request.resource.data.dono == resource.data.dono;
+    }
+
     match /orgs/{orgId} {
       allow create: if signedIn()
         && request.resource.data.dono == request.auth.uid
-        && request.resource.data.membroIds is list
-        && request.auth.uid in request.resource.data.membroIds;
+        && validAccessLists()
+        && request.auth.uid in request.resource.data.membroIds
+        && request.auth.uid in request.resource.data.adminIds;
 
       allow read: if isOrgMember(orgId);
 
-      allow update: if isOrgMember(orgId)
-        && request.resource.data.membroIds is list;
+      allow update: if (isOrgOwner(orgId) || isOrgAdmin(orgId))
+        && validAccessLists()
+        && preservesOwner();
 
-      allow delete: if isOrgMember(orgId);
+      allow delete: if isOrgOwner(orgId);
 
-      match /{collection}/{docId} {
-        allow read, write: if isOrgMember(orgId);
+      match /funcionarios/{docId} {
+        allow read: if isOrgMember(orgId);
+        allow create, update, delete: if isOrgAdmin(orgId);
+      }
+
+      match /grupos/{docId} {
+        allow read: if isOrgMember(orgId);
+        allow create, update, delete: if isOrgAdmin(orgId);
+      }
+
+      match /cargos/{docId} {
+        allow read: if isOrgMember(orgId);
+        allow create, update, delete: if isOrgAdmin(orgId);
+      }
+
+      match /historicoFolhas/{docId} {
+        allow read: if isOrgMember(orgId);
+        allow create, update, delete: if isOrgAdmin(orgId);
+      }
+
+      match /folhas/{docId} {
+        allow read: if isOrgMember(orgId);
+        allow create, update, delete: if isOrgAdmin(orgId);
+      }
+
+      match /escalaSettings/{docId} {
+        allow read: if isOrgMember(orgId);
+        allow create, update, delete: if isOrgAdmin(orgId);
+      }
+
+      match /escalaRules/{docId} {
+        allow read: if isOrgMember(orgId);
+        allow create, update, delete: if isOrgAdmin(orgId);
+      }
+
+      match /convites/{docId} {
+        allow read, create, update, delete: if isOrgAdmin(orgId);
+      }
+
+      match /vales/{docId} {
+        allow read: if isOrgMember(orgId);
+        allow create, update: if isOrgMember(orgId);
+        allow delete: if isOrgAdmin(orgId);
+      }
+
+      match /emprestimos/{docId} {
+        allow read: if isOrgMember(orgId);
+        allow create, update: if isOrgMember(orgId);
+        allow delete: if isOrgAdmin(orgId);
+      }
+
+      match /acertoPares/{docId} {
+        allow read: if isOrgMember(orgId);
+        allow create, update: if isOrgMember(orgId);
+        allow delete: if isOrgAdmin(orgId);
+      }
+
+      match /lancamentos/{docId} {
+        allow read: if isOrgMember(orgId);
+        allow create, update: if isOrgMember(orgId);
+        allow delete: if isOrgAdmin(orgId);
       }
     }
   }
@@ -425,16 +505,32 @@ function buildMemberIds(membros) {
   return [...new Set((membros || []).map(m => m?.uid).filter(Boolean))];
 }
 
+function isAdminMember(membro) {
+  if (!membro?.uid) return false;
+  if (['gestor', 'empregador', 'admin'].includes(membro.role)) return true;
+  const equipePerms = membro.permissoes?.equipe || [];
+  const configPerms = membro.permissoes?.configuracoes || [];
+  return equipePerms.includes('editar_permissoes')
+    || equipePerms.includes('convidar')
+    || configPerms.includes('editar');
+}
+
+function buildAdminIds(membros) {
+  return [...new Set((membros || []).filter(isAdminMember).map(m => m.uid).filter(Boolean))];
+}
+
 async function syncOrgMembersAccess(orgRef, membros) {
   const membroIds = buildMemberIds(membros);
+  const adminIds = buildAdminIds(membros);
   if (db && orgRef) {
-    await orgRef.update({ membros, membroIds });
+    await orgRef.update({ membros, membroIds, adminIds });
   }
   if (currentOrg) {
     currentOrg.membros = membros;
     currentOrg.membroIds = membroIds;
+    currentOrg.adminIds = adminIds;
   }
-  return membroIds;
+  return { membroIds, adminIds };
 }
 
 

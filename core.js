@@ -301,6 +301,7 @@ async function createOrg() {
   const uid = currentUser?.uid || 'demo';
   const org = { nome, cnpj, cidade, invite, dono: uid,
     membroIds: [uid],
+    adminIds: [uid],
     membros: [{ uid, nome: currentUser?.displayName || 'VocÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âª', role: 'gestor', email: currentUser?.email || '' }],
     criadoEm: new Date().toISOString() };
 
@@ -337,7 +338,12 @@ async function joinOrg() {
     }
     localStorage.setItem('cgOrgId', org.id);
     localStorage.setItem('cgOrgNome', org.nome);
-    currentOrg = { ...org, membros, membroIds: buildMemberIds(membros) };
+    currentOrg = {
+      ...org,
+      membros,
+      membroIds: buildMemberIds(membros),
+      adminIds: org.adminIds?.length ? org.adminIds : buildAdminIds(membros)
+    };
     afterOrgLoad();
   } else {
     toast('Firebase nÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o configurado ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â use modo demo', 'error');
@@ -454,7 +460,7 @@ async function fsDelete(col, id) {
 // LOAD ALL DATA
 // =====================================================
 // MigraÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o automÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡tica: garante que membroIds existe na org
-async function garantirMembroIds() {
+async function garantirAcessosOrg() {
   if (!db || !currentOrg) return;
   try {
     const orgRef = db.collection('orgs').doc(currentOrg.id);
@@ -462,14 +468,20 @@ async function garantirMembroIds() {
     if (!doc.exists) return;
     const data = doc.data();
     // Se membroIds nÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o existe, criar a partir de membros
-    if (!data.membroIds || data.membroIds.length === 0) {
-      const membroIds = (data.membros || []).map(m => m.uid).filter(Boolean);
-      if (membroIds.length > 0) {
-        await orgRef.update({ membroIds });
-        currentOrg.membroIds = membroIds;
-      }
-    } else {
-      currentOrg.membroIds = data.membroIds;
+    const membros = data.membros || currentOrg.membros || [];
+    const membroIds = buildMemberIds(membros);
+    const adminIds = buildAdminIds(membros);
+    const membroIdsIguais = JSON.stringify(data.membroIds || []) === JSON.stringify(membroIds);
+    const adminIdsIguais = JSON.stringify(data.adminIds || []) === JSON.stringify(adminIds);
+
+    currentOrg.membros = membros;
+    currentOrg.membroIds = data.membroIds?.length ? data.membroIds : membroIds;
+    currentOrg.adminIds = data.adminIds?.length ? data.adminIds : adminIds;
+
+    if ((!membroIdsIguais || !adminIdsIguais) && (currentUser?.uid === data.dono || (data.adminIds || adminIds).includes(currentUser?.uid))) {
+      await orgRef.update({ membroIds, adminIds });
+      currentOrg.membroIds = membroIds;
+      currentOrg.adminIds = adminIds;
     }
   } catch(e) {
     console.warn('NÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o foi possÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­vel verificar membroIds:', e.message);
@@ -479,7 +491,7 @@ async function garantirMembroIds() {
 async function loadAllData() {
   updateOrgUI();
   // Garantir que membroIds existe na org (migraÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o automÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡tica)
-  await garantirMembroIds();
+  await garantirAcessosOrg();
   try {
     [funcionarios, grupos, emprestimos, vales, acertoPares] = await Promise.all([
       fsGetAll('funcionarios'), fsGetAll('grupos'), fsGetAll('emprestimos'),
@@ -617,4 +629,3 @@ function filterFuncionarios(v) {
   const cargoFiltro = document.getElementById('funcCargoFiltro')?.value || '';
   renderFuncionarios(v, cargoFiltro);
 }
-
