@@ -28,7 +28,7 @@ let escalaRules = [];
 let escalaGerada = null;
 let folhaAtualId = null;
 let firebaseReady = false;
-const APP_VERSION = '20260502c';
+const APP_VERSION = '20260502d';
 
 async function refreshAppCacheIfNeeded() {
   try {

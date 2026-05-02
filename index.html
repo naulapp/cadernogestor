@@ -5,7 +5,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="version" content="20260502c">
+  <meta name="version" content="20260502d">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#0f1e4a">
 <meta name="description" content="CadernoGestor - Saia do papel. Sem sair do caderno.">
@@ -22,7 +22,31 @@
 <link rel="icon" type="image/png" href="logo.png">
 <link rel="apple-touch-icon" href="logo.png">
 <title>CadernoGestor</title>
-<link rel="manifest" href="manifest.json?v=20260502c">
+<link rel="manifest" href="manifest.json?v=20260502d">
+
+<script>
+(() => {
+  const VERSION = '20260502d';
+  const FLAG_KEY = 'cgHardRefreshVersion';
+  try {
+    const current = localStorage.getItem(FLAG_KEY);
+    if (current === VERSION) return;
+    localStorage.setItem(FLAG_KEY, VERSION);
+    const finishReload = () => {
+      const url = new URL(window.location.href);
+      url.searchParams.set('v', VERSION);
+      window.location.replace(url.toString());
+    };
+    const cleanCaches = ('caches' in window)
+      ? caches.keys().then(keys => Promise.all(keys.filter(key => key.startsWith('cadernogestor-')).map(key => caches.delete(key))))
+      : Promise.resolve();
+    const cleanSw = ('serviceWorker' in navigator)
+      ? navigator.serviceWorker.getRegistrations().then(regs => Promise.all(regs.map(reg => reg.unregister())))
+      : Promise.resolve();
+    Promise.all([cleanCaches, cleanSw]).finally(finishReload);
+  } catch (_) {}
+})();
+</script>
 
 <!-- Google Fonts -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -38,7 +62,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
-<link rel="stylesheet" href="styles.css?v=20260502c">
+<link rel="stylesheet" href="styles.css?v=20260502d">
 </head>
 <body>
 

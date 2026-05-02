@@ -3518,7 +3518,7 @@ document.addEventListener('keydown', calcHandleKeyboardDash);
 // Service worker for PWA
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('sw.js?v=20260502c')
+    navigator.serviceWorker.register('sw.js?v=20260502d')
       .then(reg => {
         // Forçar update imediato
         reg.update();
