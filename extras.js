@@ -1,0 +1,3426 @@
+// VALIDAÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¢ES
+// =====================================================
+function validarCpf(cpf) {
+  cpf = cpf.replace(/[^\d]/g,'');
+  if (cpf.length !== 11 || /^(\d)\1+$/.test(cpf)) return false;
+  let sum = 0;
+  for (let i=0; i<9; i++) sum += parseInt(cpf[i]) * (10-i);
+  let r = (sum * 10) % 11;
+  if (r === 10 || r === 11) r = 0;
+  if (r !== parseInt(cpf[9])) return false;
+  sum = 0;
+  for (let i=0; i<10; i++) sum += parseInt(cpf[i]) * (11-i);
+  r = (sum * 10) % 11;
+  if (r === 10 || r === 11) r = 0;
+  return r === parseInt(cpf[10]);
+}
+
+function verificarCpfDuplicado(cpf, excludeId='') {
+  const limpo = cpf.replace(/[^\d]/g,'');
+  if (!limpo) return false;
+  return funcionarios.some(f => f.id !== excludeId && f.cpf?.replace(/[^\d]/g,'') === limpo);
+}
+
+function alertaDescontoMaiorSalario(salario, totalDescontos, nome) {
+  if (totalDescontos > salario) {
+    const nomeFmt = nome || 'Funcionário';
+    const salarioFmt = typeof fmtMoney === 'function' ? fmtMoney(salario) : Number(salario || 0).toFixed(2);
+    const descontosFmt = typeof fmtMoney === 'function' ? fmtMoney(totalDescontos) : Number(totalDescontos || 0).toFixed(2);
+    Swal.fire({
+      icon: 'warning',
+      title: 'Descontos maiores que o salário',
+      html: `<div style="text-align:left">O total de descontos de <strong>${escapeHtml(nomeFmt)}</strong> ficou maior que o salário base.<br><br>Salário: <strong>R$ ${escapeHtml(salarioFmt)}</strong><br>Descontos: <strong>R$ ${escapeHtml(descontosFmt)}</strong></div>`,
+      confirmButtonText: 'Entendi',
+      confirmButtonColor: '#1b2d6b'
+    });
+  }
+}
+
+// FIRESTORE SECURITY RULES (para exibir na tela)
+// =====================================================
+function mostrarRegrasFirestore() {
+  const regras = `rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function orgDoc(orgId) {
+      return get(/databases/$(database)/documents/orgs/$(orgId));
+    }
+
+    function isOrgMember(orgId) {
+      return signedIn()
+        && orgDoc(orgId).exists()
+        && request.auth.uid in orgDoc(orgId).data.membroIds;
+    }
+
+    match /orgs/{orgId} {
+      allow create: if signedIn()
+        && request.resource.data.dono == request.auth.uid
+        && request.resource.data.membroIds is list
+        && request.auth.uid in request.resource.data.membroIds;
+
+      allow read: if isOrgMember(orgId);
+
+      allow update: if isOrgMember(orgId)
+        && request.resource.data.membroIds is list;
+
+      allow delete: if isOrgMember(orgId);
+
+      match /{collection}/{docId} {
+        allow read, write: if isOrgMember(orgId);
+      }
+    }
+  }
+}`;
+  document.getElementById('folhaDetalheTitulo').textContent = 'Regras de SeguranÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§a ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â Firestore';
+  document.getElementById('folhaDetalheBody').innerHTML = `
+    <p style="color:var(--text3);font-size:0.85rem;margin-bottom:12px">Cole estas regras no Firebase Console ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ Firestore ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ Rules:</p>
+    <pre style="background:var(--bg2);padding:16px;border-radius:8px;font-size:0.78rem;overflow-x:auto;color:var(--text)">\${regras}</pre>
+    <p style="color:var(--yellow);font-size:0.82rem;margin-top:12px">ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¯ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â VocÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âª tambÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©m precisa adicionar o campo <strong>membroIds</strong> (array de UIDs) em cada organizaÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o no Firestore.</p>`;
+  document.querySelector('#modal-folha-detalhe .modal-footer').innerHTML =
+    `<button class="btn btn-outline btn-sm" onclick="closeModal('modal-folha-detalhe')">Fechar</button>
+     <button class="btn btn-primary btn-sm" onclick="navigator.clipboard.writeText(document.querySelector('pre').textContent).then(()=>toast('Copiado!','success'))">ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¹ Copiar</button>`;
+  openModal('modal-folha-detalhe');
+}
+
+
+// =====================================================
+// CARGOS ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â lista gerenciÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡vel
+// =====================================================
+let cargosLista = [];
+
+function loadCargos() {
+  cargosLista = getCol('cargos').getAll().map(c => c.nome).filter(Boolean);
+  if (cargosLista.length === 0) {
+    // Cargos padrÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o
+    cargosLista = ['AJUDANTE DE CARGA E DESCARGA','AUXILIAR ADMINISTRATIVO','AUXILIAR DE LIMPEZA','MOTORISTA','OPERADOR'];
+  }
+  populateCargoSelect();
+}
+
+function populateCargoSelect() {
+  const sel = document.getElementById('funcCargo');
+  if (!sel) return;
+  const current = sel.value;
+  sel.innerHTML = '<option value="">Selecione ou cadastre...</option>' +
+    cargosLista.map(c => `<option value="${c}">${c}</option>`).join('') +
+    '<option value="__novo__">+ Cadastrar novo cargo...</option>';
+  if (current) sel.value = current;
+}
+
+function onCargoChange(sel) {
+  if (sel.value === '__novo__') {
+    sel.value = '';
+    cadastrarNovoCargo();
+  }
+}
+
+async function cadastrarNovoCargo() {
+  const nome = prompt('Nome do novo cargo (serÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ salvo em maiÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âºsculas):');
+  if (!nome || !nome.trim()) return;
+  const nomeFmt = nome.trim().toUpperCase();
+  if (cargosLista.includes(nomeFmt)) { toast('Cargo jÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ existe', 'info'); return; }
+  cargosLista.push(nomeFmt);
+  await fsAdd('cargos', { nome: nomeFmt });
+  populateCargoSelect();
+  document.getElementById('funcCargo').value = nomeFmt;
+  toast('Cargo cadastrado!', 'success');
+}
+
+// loadCargos jÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ integrado ao openModal principal
+
+// =====================================================
+// PARCELAMENTO ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âºltima parcela diferente
+// =====================================================
+function calcParcela() {
+  const total = parseFloat(document.getElementById('empTotal').value) || 0;
+  const n = parseInt(document.getElementById('empParcelas').value) || 1;
+  const tipo = document.getElementById('empTipoParcela')?.value || 'igual';
+  const grupoUltima = document.getElementById('empUltimaParcelaGroup');
+
+  if (grupoUltima) grupoUltima.style.display = tipo === 'ultima_diferente' ? '' : 'none';
+
+  if (!total || !n) {
+    document.getElementById('empSimulacao').style.display = 'none';
+    return;
+  }
+
+  // Sempre mostrar simulaÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o com ambas as opÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âµes
+  const valIgual = Math.round((total / n) * 100) / 100;
+  const somaIgual = valIgual * n;
+  const diffIgual = Math.round((total - somaIgual) * 100) / 100;
+
+  const valPadrao = Math.floor(total / n * 100) / 100;
+  const ultimaDif = Math.round((total - valPadrao * (n-1)) * 100) / 100;
+
+  const simIgual = document.getElementById('empSimIgual');
+  const simUltima = document.getElementById('empSimUltima');
+  if (simIgual) simIgual.innerHTML = `<span style="color:var(--accent2);font-weight:600">Parcelas iguais:</span> ${n}x <strong>R$ ${fmtMoney(valIgual)}</strong>${Math.abs(diffIgual)>0.01?' <span style="color:var(--text3);font-size:0.78rem">(ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âºltima: R$ '+fmtMoney(valIgual+diffIgual)+')</span>':''}`;
+  if (simUltima) simUltima.innerHTML = `<span style="color:var(--yellow);font-weight:600">ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ltima diferente:</span> ${n-1}x <strong>R$ ${fmtMoney(valPadrao)}</strong> + 1x <strong>R$ ${fmtMoney(ultimaDif)}</strong>`;
+  document.getElementById('empSimulacao').style.display = '';
+
+  if (tipo === 'igual') {
+    document.getElementById('empValorParcela').value = valIgual.toFixed(2);
+  } else if (tipo === 'ultima_diferente') {
+    document.getElementById('empValorParcela').value = valPadrao.toFixed(2);
+    document.getElementById('empUltimaParcela').value = ultimaDif.toFixed(2);
+  }
+
+  calcValidarParcelas();
+}
+
+function calcUltimaParcela() {
+  calcValidarParcelas();
+}
+
+function calcValidarParcelas() {
+  const total = parseFloat(document.getElementById('empTotal').value) || 0;
+  const n = parseInt(document.getElementById('empParcelas').value) || 1;
+  const tipo = document.getElementById('empTipoParcela')?.value || 'igual';
+  const alerta = document.getElementById('empValidacaoAlerta');
+  if (!total || !n || !alerta) return;
+
+  let soma = 0;
+  if (tipo === 'igual') {
+    soma = (parseFloat(document.getElementById('empValorParcela').value)||0) * n;
+  } else {
+    soma = (parseFloat(document.getElementById('empValorParcela').value)||0) * (n-1) +
+           (parseFloat(document.getElementById('empUltimaParcela').value)||0);
+  }
+
+  const diff = Math.abs(soma - total);
+  if (diff > 0.02) {
+    alerta.style.display = 'block';
+    alerta.textContent = `ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¯ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â A soma das parcelas (R$ ${fmtMoney(soma)}) nÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o confere com o total (R$ ${fmtMoney(total)}). DiferenÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§a: R$ ${fmtMoney(diff)}`;
+  } else {
+    alerta.style.display = 'none';
+  }
+}
+
+// =====================================================
+// IMPRIMIR / PDF TODOS OS FUNCIONÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂRIOS
+// =====================================================
+function printTodasEscalas() {
+  if (!escalaGerada || escalaGerada.equipe.length === 0) {
+    toast('Gere a escala primeiro', 'error'); return;
+  }
+  const orgNome = currentOrg?.nome || 'Empresa';
+  const competencia = monthNameFromPeriod(escalaGerada.competencia);
+  let html = `<!DOCTYPE html><html><head><title>FOLHA DE PONTO ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ${competencia}</title>
+  <style>
+    body{font-family:Arial,sans-serif;padding:0;background:#fff;color:#111}
+    .sheet{padding:24px;page-break-after:always}
+    .sheet:last-child{page-break-after:auto}
+    table{width:100%;border-collapse:collapse;margin-top:12px}
+    th,td{border:1px solid #aaa;padding:6px;font-size:11px;text-align:left}
+    th{background:#f0f0f0;font-weight:bold}
+    .head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
+    .title{font-size:18px;font-weight:bold}
+    .sub{font-size:12px;color:#555;margin-top:2px}
+    .meta{font-size:12px;text-align:right}
+    .sign{margin-top:24px;display:flex;justify-content:space-between;gap:24px}
+    .sign-line{flex:1;padding-top:12px;border-top:1px solid #666;text-align:center;font-size:11px}
+    @media print{.sheet{padding:16px}}
+  </style></head><body>`;
+
+  escalaGerada.equipe.forEach(item => {
+    html += `<div class="sheet">
+      <div class="head">
+        <div>
+          <div class="title">FOLHA DE PONTO</div>
+          <div class="sub">${orgNome} ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ ${item.funcionario.nome} ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ ${item.funcionario.cargo || ''}</div>
+        </div>
+        <div class="meta">
+          <div><strong>COMPETÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â NCIA:</strong> ${competencia}</div>
+          <div><strong>TOTAL:</strong> ${item.totalHorasMes}h</div>
+          <div><strong>HORA EXTRA:</strong> ${item.totalExtrasMes}h</div>
+        </div>
+      </div>
+      <table>
+        <thead><tr><th>DATA</th><th>DIA</th><th>ENTRADA</th><th>SAÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂDA INT.</th><th>RETORNO</th><th>SAÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂDA</th><th>TOTAL</th><th>H. EXTRA</th><th>OBS.</th></tr></thead>
+        <tbody>
+          ${item.dias.map(dia => `<tr>
+            <td>${fmtData(dia.data)}</td>
+            <td>${dayNameShort(dia.diaSemana).toUpperCase()}</td>
+            <td>${dia.entrada}</td>
+            <td>${dia.saidaIntervalo}</td>
+            <td>${dia.retornoIntervalo}</td>
+            <td>${dia.saidaFinal}</td>
+            <td>${dia.horasPrevistas}h</td>
+            <td>${dia.horaExtraPrevista > 0 ? dia.horaExtraPrevista + 'h' : 'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â'}</td>
+            <td></td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+      <div class="sign">
+        <div class="sign-line">ASSINATURA DO FUNCIONÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂRIO</div>
+        <div class="sign-line">RESPONSÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂVEL / GESTOR</div>
+      </div>
+    </div>`;
+  });
+
+  html += '</body></html>';
+  const popup = window.open('', '_blank');
+  popup.document.write(html);
+  popup.document.close();
+  popup.onload = () => { popup.focus(); popup.print(); };
+  toast(`${escalaGerada.equipe.length} folhas preparadas para impressÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o`, 'success');
+}
+
+function downloadTodasEscalasPdf() {
+  if (!escalaGerada || escalaGerada.equipe.length === 0) {
+    toast('Gere a escala primeiro', 'error'); return;
+  }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+  const orgNome = currentOrg?.nome || 'Empresa';
+  const competencia = monthNameFromPeriod(escalaGerada.competencia);
+
+  escalaGerada.equipe.forEach((item, idx) => {
+    if (idx > 0) doc.addPage();
+    doc.setFontSize(14); doc.setFont('helvetica','bold');
+    doc.text('FOLHA DE PONTO', 14, 14);
+    doc.setFontSize(9); doc.setFont('helvetica','normal');
+    doc.text(`${orgNome} ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ ${item.funcionario.nome} ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ ${item.funcionario.cargo || ''}`, 14, 20);
+    doc.text(`COMPETÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â NCIA: ${competencia}`, 200, 14, { align: 'right' });
+    doc.text(`TOTAL: ${item.totalHorasMes}h  |  HORA EXTRA: ${item.totalExtrasMes}h`, 200, 20, { align: 'right' });
+
+    doc.autoTable({
+      startY: 25,
+      head: [['DATA','DIA','ENTRADA','SAÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂDA INT.','RETORNO','SAÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂDA','TOTAL','H. EXTRA','OBS.']],
+      body: item.dias.map(dia => [
+        fmtData(dia.data), dayNameShort(dia.diaSemana).toUpperCase(),
+        dia.entrada, dia.saidaIntervalo, dia.retornoIntervalo, dia.saidaFinal,
+        `${dia.horasPrevistas}h`, dia.horaExtraPrevista > 0 ? `${dia.horaExtraPrevista}h` : 'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â', ''
+      ]),
+      styles: { fontSize: 7, cellPadding: 2 },
+      headStyles: { fillColor: [27,45,107], textColor: 255, fontStyle: 'bold' },
+      alternateRowStyles: { fillColor: [245,248,252] }
+    });
+
+    const finalY = doc.lastAutoTable.finalY + 14;
+    doc.line(14, finalY, 100, finalY);
+    doc.line(110, finalY, 196, finalY);
+    doc.setFontSize(8);
+    doc.text('ASSINATURA DO FUNCIONÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂRIO', 57, finalY + 4, { align: 'center' });
+    doc.text('RESPONSÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂVEL / GESTOR', 153, finalY + 4, { align: 'center' });
+  });
+
+  doc.save(`FolhaPonto_${escalaGerada.competencia}_Todos.pdf`);
+  toast(`PDF com ${escalaGerada.equipe.length} folhas gerado!`, 'success');
+}
+
+
+// =====================================================
+// MODAL DE CONFIRMAÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢O
+// =====================================================
+let _confirmarResolve = null;
+
+function confirmar(titulo, msg) {
+  return new Promise(resolve => {
+    _confirmarResolve = resolve;
+    document.getElementById('confirmarTitulo').textContent = titulo;
+    document.getElementById('confirmarMsg').textContent = msg || '';
+    document.getElementById('modal-confirmar').classList.add('active');
+  });
+}
+
+function resolveConfirmar(val) {
+  document.getElementById('modal-confirmar').classList.remove('active');
+  if (_confirmarResolve) { _confirmarResolve(val); _confirmarResolve = null; }
+}
+
+
+// =====================================================
+// BACKUP JSON
+// =====================================================
+function exportarBackup() {
+  const backup = {
+    exportadoEm: new Date().toISOString(),
+    org: currentOrg?.nome || '',
+    funcionarios, grupos, emprestimos, vales, acertoPares,
+    historicoFolhas: getCol('historicoFolhas').getAll(),
+    cargos: getCol('cargos').getAll()
+  };
+  const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `CadernoGestor_Backup_${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('Backup exportado!', 'success');
+}
+
+
+// Auto-preenche campos do funcionÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡rio ao selecionar grupo
+function onGrupoFuncChange(grupoId) {
+  if (grupoId === '__novo__') {
+    document.getElementById('funcGrupo').value = '';
+    openModal('modal-grupo');
+    return;
+  }
+  const info = document.getElementById('grupoHerancaInfo');
+  if (!grupoId) { if (info) info.style.display = 'none'; return; }
+  const grupo = grupos.find(g => g.id === grupoId);
+  if (!grupo) return;
+  // Preencher TODOS os campos do grupo
+  if (grupo.salario) document.getElementById('funcSalario').value = grupo.salario;
+  if (grupo.cargaSemanal) document.getElementById('funcCargaSemanal').value = grupo.cargaSemanal;
+  if (grupo.cargaMensal) document.getElementById('funcCargaMensal').value = grupo.cargaMensal;
+  if (grupo.horaExtraPct) document.getElementById('funcHoraExtraPct').value = grupo.horaExtraPct;
+  if (grupo.horaExtra) document.getElementById('funcHoraExtra').value = grupo.horaExtra;
+  if (grupo.inssType) { document.getElementById('funcInssType').value = grupo.inssType; toggleFuncInssType(); }
+  if (grupo.inss) document.getElementById('funcInss').value = grupo.inss;
+  if (grupo.inssPct) document.getElementById('funcInssPct').value = grupo.inssPct;
+  if (grupo.valeQuinzena) document.getElementById('funcInss').value = grupo.valeQuinzena;
+  adicionaisFunc = grupo.adicionais ? JSON.parse(JSON.stringify(grupo.adicionais)) : [];
+  renderAdicionaisFunc();
+  if (info) info.style.display = 'block';
+  toast(`Valores herdados do grupo "${grupo.nome}"`, 'info');
+}
+
+
+// =====================================================
+// SANITIZE DATA ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â remove undefined/NaN antes do Firebase
+// =====================================================
+function sanitizeData(obj) {
+  const clean = {};
+  for (const [k, v] of Object.entries(obj)) {
+    if (v === undefined) continue; // ignora undefined
+    if (typeof v === 'number' && isNaN(v)) { clean[k] = 0; continue; }
+    if (Array.isArray(v)) { clean[k] = v.map(i => typeof i === 'object' && i !== null ? sanitizeData(i) : i); continue; }
+    if (typeof v === 'object' && v !== null) { clean[k] = sanitizeData(v); continue; }
+    clean[k] = v;
+  }
+  return clean;
+}
+
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function escapeAttr(value) {
+  return escapeHtml(value).replace(/`/g, '&#96;');
+}
+
+function clearAppLocalStorage() {
+  const keys = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key && key.startsWith('cg')) keys.push(key);
+  }
+  keys.forEach(key => localStorage.removeItem(key));
+}
+
+function buildMemberIds(membros) {
+  return [...new Set((membros || []).map(m => m?.uid).filter(Boolean))];
+}
+
+async function syncOrgMembersAccess(orgRef, membros) {
+  const membroIds = buildMemberIds(membros);
+  if (db && orgRef) {
+    await orgRef.update({ membros, membroIds });
+  }
+  if (currentOrg) {
+    currentOrg.membros = membros;
+    currentOrg.membroIds = membroIds;
+  }
+  return membroIds;
+}
+
+
+// =====================================================
+// FUNCIONÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂRIO ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ADICIONAIS E HELPERS
+// =====================================================
+let adicionaisFunc = [];
+
+function toggleFuncInssType() {
+  const tipo = document.getElementById('funcInssType')?.value;
+  const vg = document.getElementById('funcInssValorGroup');
+  const pg = document.getElementById('funcInssPctGroup');
+  if (vg) vg.style.display = tipo === 'valor' ? '' : 'none';
+  if (pg) pg.style.display = tipo === 'pct' ? '' : 'none';
+  atualizarResumoFunc(); // atualizar resumo ao trocar tipo
+}
+
+function calcFuncHoraExtra() {
+  const salario = parseFloat(document.getElementById('funcSalario').value) || 0;
+  const mensal = parseFloat(document.getElementById('funcCargaMensal').value) || 220;
+  const pct = parseFloat(document.getElementById('funcHoraExtraPct').value) || 50;
+  if (!salario || !mensal) return;
+  // Sincronizar checkboxes com array
+  adicionaisFunc.forEach((a, i) => {
+    const cb = document.getElementById(`chkHoraExtra_adicionaisFunc_${i}`);
+    if (cb) a.incideHoraExtra = cb.checked;
+  });
+  const baseAdicionais = adicionaisFunc
+    .filter(a => a.incideHoraExtra && !a.isValorFixo)
+    .reduce((s, a) => s + (salario * (a.pct||0) / 100), 0);
+  const baseFixos = adicionaisFunc
+    .filter(a => a.incideHoraExtra && a.isValorFixo)
+    .reduce((s, a) => s + (a.valor||0), 0);
+  const baseTotal = salario + baseAdicionais + baseFixos;
+  const horaBase = baseTotal / mensal;
+  document.getElementById('funcHoraExtra').value = (horaBase * (1 + pct/100)).toFixed(2);
+}
+
+function addAdicionalFunc() {
+  adicionaisFunc.push({ nome: adicionaisNomes[0]||'Insalubridade', isValorFixo:false, pct:0, valor:0, incideHoraExtra:false, incideInss:false });
+  renderAdicionaisFunc();
+}
+
+function removeAdicionalFunc(idx) {
+  adicionaisFunc.splice(idx, 1);
+  renderAdicionaisFunc();
+}
+
+function renderAdicionaisFunc() {
+  const c = document.getElementById('funcAdicionais');
+  if (!c) return;
+  c.innerHTML = adicionaisFunc.map((a, i) => renderAdicional(adicionaisFunc, i, 'removeAdicionalFunc', 'adicionaisFunc')).join('');
+}
+
+// =====================================================
+// GRUPO ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â SELECIONAR FUNCIONÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂRIOS VINCULADOS
+// =====================================================
+function renderGrupoFuncionariosCheck(grupoId) {
+  const container = document.getElementById('grupoFuncionariosCheck');
+  if (!container) return;
+  if (funcionarios.length === 0) {
+    container.innerHTML = '<p style="color:var(--text3);font-size:0.82rem">Nenhum funcionÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡rio cadastrado ainda.</p>';
+    return;
+  }
+  container.innerHTML = getFuncionariosOrdenados('','',true).map(f => `
+    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:4px 0">
+      <input type="checkbox" id="gfc_${f.id}" ${f.grupoId === grupoId ? 'checked' : ''}
+        style="width:16px;height:16px;cursor:pointer">
+      <span style="font-size:0.85rem">${f.nome}</span>
+      ${f.grupoId && f.grupoId !== grupoId
+        ? `<span style="font-size:0.72rem;color:var(--yellow)">(em outro grupo)</span>`
+        : ''}
+    </label>`).join('');
+}
+
+
+// =====================================================
+// FICHA DO FUNCIONÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂRIO
+// =====================================================
+let fichaFuncAtual = null;
+
+function abrirFichaFuncionario(funcId, voltarPara='funcionarios') {
+  const f = funcionarios.find(fn => fn.id === funcId);
+  if (!f) return;
+  fichaFuncAtual = funcId;
+
+  document.getElementById('fichaVoltarBtn').onclick = () => navigate(voltarPara);
+  document.getElementById('fichaTitulo').textContent = f.nome;
+  document.getElementById('fichaSubtitulo').textContent = (f.cargo||'') + (f.grupoId ? ' ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ ' + (grupos.find(g=>g.id===f.grupoId)?.nome||'') : '');
+
+  renderFichaConteudo(funcId);
+  navigate('ficha-funcionario');
+}
+
+function renderFichaConteudo(funcId) {
+  const f = funcionarios.find(fn => fn.id === funcId);
+  if (!f) return;
+
+  const empAtivos = emprestimos.filter(e => (e.status==='ativo'||!e.status) && e.funcionarioId===funcId);
+  const totalEmp = empAtivos.reduce((s,e) => s+((e.total||0)-(e.pago||0)), 0);
+  const valesPend = vales.filter(v => v.funcionarioId===funcId && v.status!=='descontado');
+  const totalVales = valesPend.reduce((s,v) => {
+    const abatido = (v.abatimentos||[]).reduce((s2,a)=>s2+a.valor,0);
+    return s + Math.max(0,(v.valor||0)-abatido);
+  }, 0);
+  const totalDev = totalEmp + totalVales;
+
+  document.getElementById('fichaCards').innerHTML = `
+    <div class="stat-card"><div class="stat-label">EmprÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©stimos a FuncionÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡rios em Aberto</div><div class="stat-value red" style="font-size:1.2rem">R$ ${fmtMoney(totalEmp)}</div></div>
+    <div class="stat-card"><div class="stat-label">Adiantamentos pendentes</div><div class="stat-value yellow" style="font-size:1.2rem">R$ ${fmtMoney(totalVales)}</div></div>
+    <div class="stat-card"><div class="stat-label">SALDO DEVEDOR</div><div class="stat-value ${totalDev>0?'red':'green'}" style="font-size:1.3rem">R$ ${fmtMoney(totalDev)}</div></div>
+    <div class="stat-card"><div class="stat-label">SalÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡rio base</div><div class="stat-value accent" style="font-size:1.2rem">R$ ${fmtMoney(f.salario||0)}</div></div>
+  `;
+
+  // EMPRÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â°STIMOS A FUNCIONÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂRIOS ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â com botÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o de detalhe e pagamento
+  const empEl = document.getElementById('fichaEmprestimos');
+  if (empAtivos.length === 0) {
+    empEl.innerHTML = '<p style="color:var(--text3);font-size:0.85rem">Nenhum emprÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©stimo ativo.</p>';
+  } else {
+    empEl.innerHTML = empAtivos.map(e => {
+      const rest = (e.total||0)-(e.pago||0);
+      const pct = e.total>0 ? Math.min(100,(e.pago||0)/e.total*100) : 0;
+      const parcelaAtual = (e.parcelasPagas||0)+1;
+      return `<div style="background:var(--bg2);border-radius:10px;padding:14px;margin-bottom:10px">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap">
+          <div style="flex:1">
+            <div style="font-weight:600;font-size:0.95rem">${e.descricao}</div>
+            <div style="font-size:0.78rem;color:var(--text3);margin-top:2px">
+              Parcela ${parcelaAtual}/${e.parcelas} ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ Valor: R$ ${fmtMoney(e.valorParcela)}/parcela
+            </div>
+            <div style="margin-top:8px;display:flex;gap:16px;flex-wrap:wrap">
+              <div><div style="font-size:0.72rem;color:var(--text3)">Total</div><div style="font-family:var(--mono)">R$ ${fmtMoney(e.total)}</div></div>
+              <div><div style="font-size:0.72rem;color:var(--text3)">Pago</div><div style="font-family:var(--mono);color:var(--green)">R$ ${fmtMoney(e.pago||0)}</div></div>
+              <div><div style="font-size:0.72rem;color:var(--text3)">Restante</div><div style="font-family:var(--mono);color:var(--red)">R$ ${fmtMoney(rest)}</div></div>
+            </div>
+            <div class="progress-bar" style="margin-top:8px"><div class="progress-fill" style="width:${pct}%"></div></div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <button class="btn btn-outline btn-sm" onclick="fichaRegistrarPagamentoEmp('${e.id}','${funcId}')">ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³ Registrar pagamento</button>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // VALES ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â com abatimento parcial
+  const valesFunc = vales.filter(v => v.funcionarioId===funcId).sort((a,b)=>(b.data||'').localeCompare(a.data||''));
+  const valesEl = document.getElementById('fichaVales');
+  if (valesFunc.filter(v=>v.status!=='descontado').length === 0) {
+    valesEl.innerHTML = '<p style="color:var(--text3);font-size:0.85rem">Nenhum adiantamento pendente.</p>';
+  } else {
+    valesEl.innerHTML = valesFunc.filter(v=>v.status!=='descontado').map(v => {
+      const abatido = (v.abatimentos||[]).reduce((s,a)=>s+a.valor,0);
+      const restante = Math.max(0,(v.valor||0)-abatido);
+      return `<div style="background:var(--bg2);border-radius:10px;padding:14px;margin-bottom:10px">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap">
+          <div style="flex:1">
+            <div style="font-weight:600;font-size:0.9rem">${v.descricao||'Adiantamento'}${v.data?' ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â '+fmtData(v.data):''}</div>
+            <div style="margin-top:6px;display:flex;gap:16px;flex-wrap:wrap">
+              <div><div style="font-size:0.72rem;color:var(--text3)">Original</div><div style="font-family:var(--mono)">R$ ${fmtMoney(v.valor)}</div></div>
+              ${abatido>0?`<div><div style="font-size:0.72rem;color:var(--text3)">Abatido</div><div style="font-family:var(--mono);color:var(--green)">R$ ${fmtMoney(abatido)}</div></div>`:''}
+              <div><div style="font-size:0.72rem;color:var(--text3)">Restante</div><div style="font-family:var(--mono);color:var(--red)">R$ ${fmtMoney(restante)}</div></div>
+            </div>
+            ${(v.abatimentos||[]).length>0?`<div style="font-size:0.72rem;color:var(--text3);margin-top:4px">HistÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³rico: ${v.abatimentos.map(a=>`R$ ${fmtMoney(a.valor)} em ${fmtData(a.data)}`).join(' ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ ')}</div>`:''}
+          </div>
+          <button class="btn btn-outline btn-sm" onclick="fichaAbaterVale('${v.id}','${funcId}')">ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¸ Registrar pagamento</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // HISTÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“RICO FOLHAS
+  const histEl = document.getElementById('fichaHistoricoFolhas');
+  const historicoFolhas = getCol('historicoFolhas').getAll();
+  const folhasFunc = historicoFolhas.filter(h => h.snapshot?.some(s => s.nome===f.nome));
+  if (folhasFunc.length === 0) {
+    histEl.innerHTML = '<p style="color:var(--text3);font-size:0.85rem">Nenhuma folha gerada ainda.</p>';
+  } else {
+    histEl.innerHTML = `<table><thead><tr><th>CompetÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âªncia</th><th>Bruto</th><th>Descontos</th><th>LÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­quido</th></tr></thead>
+      <tbody>${folhasFunc.map(h => {
+        const snap = h.snapshot?.find(s => s.nome===f.nome);
+        return snap?`<tr>
+          <td><strong>${h.mesRef}</strong></td>
+          <td class="mono">R$ ${fmtMoney(snap.totalProventos)}</td>
+          <td class="mono" style="color:var(--red)">R$ ${fmtMoney(snap.totalDescontos)}</td>
+          <td class="mono" style="color:var(--accent2)"><strong>R$ ${fmtMoney(snap.liquido)}</strong></td>
+        </tr>`:'';
+      }).join('')}</tbody></table>`;
+  }
+}
+
+// Registrar pagamento de emprÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©stimo pela ficha
+async function fichaRegistrarPagamentoEmp(empId, funcId) {
+  await registrarPagamentoMelhorado(empId);
+  // ApÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³s fechar modal de confirmaÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o, re-renderizar ficha
+  setTimeout(() => renderFichaConteudo(funcId), 500);
+}
+
+// Abater vale pela ficha (integral ou parcial)
+async function fichaAbaterVale(valeId, funcId) {
+  const v = vales.find(x=>x.id===valeId);
+  if (!v) return;
+  const abatido = (v.abatimentos||[]).reduce((s,a)=>s+a.valor,0);
+  const restante = Math.max(0,(v.valor||0)-abatido);
+
+  document.getElementById('confirmarTitulo').textContent = `Pagamento de vale ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ${v.descricao||'Adiantamento'}`;
+  document.getElementById('confirmarMsg').innerHTML = `
+    <div style="margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>Valor original:</span><strong>R$ ${fmtMoney(v.valor)}</strong></div>
+      ${abatido>0?`<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>JÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ pago:</span><strong style="color:var(--green)">R$ ${fmtMoney(abatido)}</strong></div>`:''}
+      <div style="display:flex;justify-content:space-between"><span>Restante:</span><strong style="color:var(--red)">R$ ${fmtMoney(restante)}</strong></div>
+    </div>
+    <label style="font-size:0.82rem;color:var(--text2)">Valor a pagar agora (pode ser parcial):</label>
+    <input type="number" id="valeAbateInput" class="form-input" value="${restante.toFixed(2)}" max="${restante}" step="0.01" style="margin-top:6px">
+    <div id="valeAbateInfo" style="font-size:0.78rem;color:var(--text3);margin-top:6px"></div>
+  `;
+
+  setTimeout(() => {
+    const inp = document.getElementById('valeAbateInput');
+    if (!inp) return;
+    inp.addEventListener('input', () => {
+      const val = parseFloat(inp.value)||0;
+      const el = document.getElementById('valeAbateInfo');
+      if (!el) return;
+      if (val >= restante) { el.textContent = 'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¦ Vale serÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ quitado completamente'; el.style.color='var(--green)'; }
+      else if (val > 0) { el.textContent = `RestarÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ R$ ${fmtMoney(restante-val)} apÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³s este pagamento`; el.style.color='var(--yellow)'; }
+    });
+  }, 100);
+
+  document.getElementById('modal-confirmar').classList.add('active');
+  _confirmarResolve = async (ok) => {
+    document.getElementById('modal-confirmar').classList.remove('active');
+    _confirmarResolve = null;
+    if (!ok) return;
+    const inp2 = document.getElementById('valeAbateInput');
+    const valor = Math.min(parseFloat(inp2?.value)||0, restante);
+    if (!valor) return;
+    const novosAbatimentos = [...(v.abatimentos||[]), { valor, data: new Date().toISOString().slice(0,10), tipo: 'avulso' }];
+    const totalAbatido2 = novosAbatimentos.reduce((s,a)=>s+a.valor,0);
+    const novoStatus = totalAbatido2 >= (v.valor||0) ? 'descontado' : 'pendente';
+    const valeAntes = {...vales.find(x=>x.id===valeId)};
+    await fsUpdate('vales', valeId, { abatimentos: novosAbatimentos, status: novoStatus });
+    const idx = vales.findIndex(x=>x.id===valeId);
+    if (idx>=0) Object.assign(vales[idx], { abatimentos: novosAbatimentos, status: novoStatus });
+    pushUndo({ descricao: `Abatimento R$ ${fmtMoney(valor)} no vale ${v.descricao||''}`, reverter: async () => {
+      await fsUpdate('vales', valeId, { abatimentos: valeAntes.abatimentos||[], status: valeAntes.status||'pendente' });
+      const i2 = vales.findIndex(x=>x.id===valeId);
+      if (i2>=0) Object.assign(vales[i2], { abatimentos: valeAntes.abatimentos||[], status: valeAntes.status||'pendente' });
+      renderVales(); renderFichaConteudo(funcId); renderDashboard();
+    }});
+    renderFichaConteudo(funcId);
+    renderVales();
+    renderDashboard();
+    toast(`R$ ${fmtMoney(valor)} abatido! (Ctrl+Z para desfazer)`, 'success');
+  };
+}
+
+// =====================================================
+// RESUMO SALARIAL NO CADASTRO
+// =====================================================
+function atualizarResumoGrupo() {
+  const salario = parseFloat(document.getElementById('grupoSalario').value) || 0;
+  const mensal = parseFloat(document.getElementById('grupoCargaMensal').value) || 220;
+  const pctHE = parseFloat(document.getElementById('grupoHoraExtraPct').value) || 50;
+  const horaExtra = parseFloat(document.getElementById('grupoHoraExtra').value) || 0;
+  const inssType = document.getElementById('grupoInssType')?.value || 'valor';
+  let inss = 0;
+  if (inssType === 'pct') {
+    const pctStr = document.getElementById('grupoInssPct')?.value || '0';
+    const pct = parseFloat(pctStr.replace(',','.')) || 0;
+    inss = Math.round(salario * pct / 100 * 100) / 100;
+  } else {
+    inss = parseFloat(document.getElementById('grupoInss')?.value) || 0;
+  }
+
+  let totalAdicionais = 0;
+  const linhasAdic = [];
+  adicionaisGrupo.forEach(a => {
+    const val = a.isValorFixo ? (a.valor||0) : Math.round(salario*(a.pct||0)/100*100)/100;
+    totalAdicionais += val;
+    if (val > 0) linhasAdic.push(`
+      <div style="display:flex;justify-content:space-between;margin-top:3px">
+        <span>${a.nome}${!a.isValorFixo&&a.pct?' ('+a.pct+'%)':''}</span>
+        <span style="font-family:var(--mono);color:var(--green)">+ R$ ${fmtMoney(val)}</span>
+      </div>`);
+  });
+
+  const totalBruto = salario + totalAdicionais;
+  const liquido = totalBruto - inss;
+  const heCalc = salario && mensal ? parseFloat(((salario/mensal)*(1+pctHE/100)).toFixed(2)) : horaExtra;
+
+  const el = document.getElementById('grupoResumoSalarial');
+  if (!el) return;
+  if (!salario) { el.innerHTML = '<span style="color:var(--text3);font-size:0.8rem">Preencha o salÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡rio para ver o resumo</span>'; return; }
+  el.innerHTML = `
+    <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+      <span>SalÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡rio base</span><span style="font-family:var(--mono)">R$ ${fmtMoney(salario)}</span>
+    </div>
+    ${linhasAdic.join('')}
+    <div style="display:flex;justify-content:space-between;margin-top:8px;padding-top:8px;border-top:2px solid var(--border);font-weight:700;color:var(--green)">
+      <span>TOTAL BRUTO</span><span style="font-family:var(--mono)">R$ ${fmtMoney(totalBruto)}</span>
+    </div>
+    <div style="display:flex;justify-content:space-between;margin-top:5px;color:var(--text3);font-size:0.8rem">
+      <span>Hora extra (${pctHE}%)</span>
+      <span style="font-family:var(--mono)">R$ ${fmtMoney(heCalc)}/h</span>
+    </div>
+    ${inss>0?`<div style="display:flex;justify-content:space-between;margin-top:4px;color:var(--red);font-size:0.8rem">
+      <span>INSS${inssType==='pct'?' ('+((document.getElementById('grupoInssPct')?.value||'0').replace(',','.')+'%'):''})</span>
+      <span style="font-family:var(--mono)">- R$ ${fmtMoney(inss)}</span>
+    </div>`:''}
+    <div style="display:flex;justify-content:space-between;margin-top:8px;padding-top:8px;border-top:2px solid var(--border);font-weight:700;color:var(--accent2)">
+      <span>LÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂQUIDO ESTIMADO</span><span style="font-family:var(--mono)">R$ ${fmtMoney(liquido)}</span>
+    </div>
+  `;
+}
+
+function atualizarResumoFunc() {
+  const salario = parseFloat(document.getElementById('funcSalario').value) || 0;
+  const mensal = parseFloat(document.getElementById('funcCargaMensal').value) || 220;
+  const pctHE = parseFloat(document.getElementById('funcHoraExtraPct').value) || 50;
+
+  // Hora extra: calcular automaticamente do salÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡rio se campo estiver vazio/zero
+  let horaExtra = parseFloat(document.getElementById('funcHoraExtra').value) || 0;
+  if (salario && mensal && horaExtra === 0) {
+    horaExtra = parseFloat(((salario / mensal) * (1 + pctHE/100)).toFixed(2));
+    document.getElementById('funcHoraExtra').value = horaExtra.toFixed(2);
+  }
+
+  // INSS: corretamente lendo o tipo e calculando %
+  const inssType = document.getElementById('funcInssType')?.value || 'valor';
+  let inss = 0;
+  if (inssType === 'pct') {
+    const pctStr = document.getElementById('funcInssPct')?.value || '0';
+    const pct = parseFloat(pctStr.replace(',','.')) || 0;
+    inss = Math.round(salario * pct / 100 * 100) / 100;
+  } else {
+    inss = parseFloat(document.getElementById('funcInss').value) || 0;
+  }
+
+  // Adicionais
+  let totalAdicionais = 0;
+  const linhasAdic = [];
+  adicionaisFunc.forEach(a => {
+    const val = a.isValorFixo ? (a.valor||0) : Math.round(salario*(a.pct||0)/100*100)/100;
+    totalAdicionais += val;
+    if (val > 0) linhasAdic.push(`
+      <div style="display:flex;justify-content:space-between;margin-top:3px">
+        <span>${a.nome}${!a.isValorFixo&&a.pct?' ('+a.pct+'%)':''}</span>
+        <span style="font-family:var(--mono);color:var(--green)">+ R$ ${fmtMoney(val)}</span>
+      </div>`);
+  });
+
+  const totalBruto = salario + totalAdicionais;
+  const liquido = totalBruto - inss;
+
+  const el = document.getElementById('funcResumoSalarial');
+  if (!el) return;
+  el.innerHTML = `
+    <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+      <span>SalÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡rio base</span><span style="font-family:var(--mono)">R$ ${fmtMoney(salario)}</span>
+    </div>
+    ${linhasAdic.join('')}
+    <div style="display:flex;justify-content:space-between;margin-top:8px;padding-top:8px;border-top:2px solid var(--border);font-weight:700;color:var(--green)">
+      <span>TOTAL BRUTO</span><span style="font-family:var(--mono)">R$ ${fmtMoney(totalBruto)}</span>
+    </div>
+    <div style="display:flex;justify-content:space-between;margin-top:5px;color:var(--text3);font-size:0.8rem">
+      <span>Hora extra (${pctHE}%)</span>
+      <span style="font-family:var(--mono)">R$ ${fmtMoney(horaExtra)}/h</span>
+    </div>
+    ${inss>0?`<div style="display:flex;justify-content:space-between;margin-top:4px;color:var(--red);font-size:0.8rem">
+      <span>INSS${inssType==='pct'?' ('+((document.getElementById('funcInssPct')?.value||'0').replace(',','.')+'%'):''})</span>
+      <span style="font-family:var(--mono)">- R$ ${fmtMoney(inss)}</span>
+    </div>`:''}
+    <div style="display:flex;justify-content:space-between;margin-top:8px;padding-top:8px;border-top:2px solid var(--border);font-weight:700;color:var(--accent2)">
+      <span>LÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂQUIDO ESTIMADO</span><span style="font-family:var(--mono)">R$ ${fmtMoney(liquido)}</span>
+    </div>
+  `;
+}
+
+// =====================================================
+// VALES ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â novas funÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âµes
+// =====================================================
+function toggleValeParcelas() {
+  const tipo = document.getElementById('valeTipo').value;
+  document.getElementById('valeParcGroup').style.display = tipo==='parcelado' ? '' : 'none';
+}
+
+function calcValeParc() {
+  const valor = parseFloat(document.getElementById('valeValor').value) || 0;
+  const n = parseInt(document.getElementById('valeNParcelas').value) || 0;
+  if (valor && n > 0) {
+    document.getElementById('valeValorParc').value = (valor/n).toFixed(2);
+  }
+}
+
+function limparFiltrosVales() {
+  document.getElementById('valesFiltroFunc').value = '';
+  document.getElementById('valesFiltro').value = 'pendente';
+  document.getElementById('valesFiltroMes').value = '';
+  renderVales();
+}
+
+function editarVale(id) {
+  const v = vales.find(x => x.id===id);
+  if (!v) return;
+  document.getElementById('valeId').value = v.id;
+  document.getElementById('valeTituloModal').textContent = 'Editar Adiantamento';
+  document.getElementById('valeFuncionario').value = v.funcionarioId;
+  document.getElementById('valeData').value = v.data || '';
+  document.getElementById('valeValor').value = v.valor || '';
+  document.getElementById('valeDescricao').value = v.descricao || '';
+  document.getElementById('valeTipo').value = v.tipo || 'integral';
+  toggleValeParcelas();
+  if (v.nParcelas) {
+    document.getElementById('valeNParcelas').value = v.nParcelas;
+    document.getElementById('valeValorParc').value = v.valorParc || '';
+  }
+  openModal('modal-vale');
+}
+
+function openValesLoteModal() {
+  const container = document.getElementById('lotevaleFuncionarios');
+  const hoje = new Date().toISOString().slice(0,10);
+  document.getElementById('lotevaleData').value = hoje;
+  if (!container) return;
+  container.innerHTML = getFuncionariosOrdenados('','',true).map(f => `
+    <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
+      <input type="checkbox" id="lote_cb_${f.id}" checked style="width:16px;height:16px;flex-shrink:0">
+      <label for="lote_cb_${f.id}" style="flex:1;font-size:0.85rem;cursor:pointer">${f.nome}</label>
+      <input type="number" id="lote_val_${f.id}" placeholder="0.00" step="0.01"
+        style="width:100px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:6px;color:var(--text);font-size:0.82rem;text-align:right">
+    </div>`).join('');
+}
+
+function aplicarValorPadrao() {
+  const padrao = parseFloat(document.getElementById('lotevaleValorPadrao').value) || 0;
+  funcionarios.filter(f=>f.ativo!==false).forEach(f => {
+    const el = document.getElementById(`lote_val_${f.id}`);
+    if (el) el.value = padrao.toFixed(2);
+  });
+}
+
+async function salvarValesLote() {
+  const data = document.getElementById('lotevaleData').value;
+  const desc = document.getElementById('lotevaleDescricao').value || 'Vale';
+  const salvos = [];
+  for (const f of funcionarios.filter(fn=>fn.ativo!==false)) {
+    const cb = document.getElementById(`lote_cb_${f.id}`);
+    const valEl = document.getElementById(`lote_val_${f.id}`);
+    if (!cb?.checked || !valEl) continue;
+    const valor = parseFloat(valEl.value) || 0;
+    if (valor <= 0) continue;
+    const novo = await fsAdd('vales', {
+      funcionarioId: f.id, funcionarioNome: f.nome,
+      data, valor, descricao: desc, tipo: 'integral', status: 'pendente'
+    });
+    vales.push(novo);
+    salvos.push(f.nome);
+  }
+  closeModal('modal-vale-lote');
+  renderVales();
+  renderAlertasDashboard();
+  toast(`${salvos.length} vale(s) lanÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ado(s)!`, 'success');
+}
+
+// =====================================================
+// EMPRÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â°STIMOS A FUNCIONÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂRIOS ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â editar e registrar parcela melhorado
+// =====================================================
+function openEmprestimoModal(id) {
+  document.getElementById('empId').value = id || '';
+  document.getElementById('empTituloModal').textContent = id ? 'Editar EmprÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©stimo' : 'Novo EmprÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©stimo';
+  if (id) {
+    const e = emprestimos.find(x => x.id===id);
+    if (!e) return;
+    document.getElementById('empFuncionario').value = e.funcionarioId || '';
+    document.getElementById('empDescricao').value = e.descricao || '';
+    document.getElementById('empTotal').value = e.total || '';
+    document.getElementById('empParcelas').value = e.parcelas || '';
+    document.getElementById('empTipoParcela').value = e.tipoParcela || 'igual';
+    document.getElementById('empValorParcela').value = e.valorParcela || '';
+    document.getElementById('empUltimaParcela').value = e.ultimaParcela || '';
+    document.getElementById('empDataInicio').value = e.dataInicio || '';
+    calcParcela();
+  } else {
+    // Limpar
+    ['empId','empDescricao','empTotal','empParcelas','empValorParcela','empUltimaParcela'].forEach(id => {
+      const el = document.getElementById(id); if(el) el.value='';
+    });
+    document.getElementById('empTipoParcela').value = 'igual';
+    document.getElementById('empDataInicio').value = new Date().toISOString().slice(0,10);
+  }
+  openModal('modal-emprestimo');
+}
+
+async function registrarPagamentoMelhorado(id) {
+  const e = emprestimos.find(x => x.id===id);
+  if (!e) return;
+
+  const parcelasPagas = e.parcelasPagas || 0;
+  const totalParcelas = e.parcelas || 1;
+  const restante = (e.total||0) - (e.pago||0);
+
+  // Montar lista de parcelas pendentes
+  const parcelasDisponiveis = [];
+  for (let i = parcelasPagas; i < totalParcelas; i++) {
+    const num = i + 1;
+    const isUltima = num === totalParcelas;
+    let valor = e.valorParcela || 0;
+    if (isUltima && e.tipoParcela==='ultima_diferente' && e.ultimaParcela) valor = e.ultimaParcela;
+    // NÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o exceder restante
+    valor = Math.min(valor, restante - parcelasDisponiveis.reduce((s,p)=>s+p.valor,0));
+    if (valor <= 0.01) break;
+    parcelasDisponiveis.push({ num, valor, isUltima });
+  }
+
+  // Gerar HTML da lista de parcelas
+  const parcHtml = parcelasDisponiveis.map((p, pidx) => `
+    <div style="display:flex;align-items:center;gap:10px;padding:8px;background:var(--bg2);border-radius:6px;margin-bottom:6px">
+      <input type="checkbox" id="parc_cb_${p.num}" ${pidx===0?'checked':''} style="width:16px;height:16px;flex-shrink:0">
+      <label for="parc_cb_${p.num}" style="flex:1;font-size:0.85rem;cursor:pointer">
+        Parcela ${p.num}/${totalParcelas}${p.isUltima?' (ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âºltima)':''}
+      </label>
+      <input type="number" id="parc_val_${p.num}" class="form-input" value="${p.valor.toFixed(2)}" step="0.01"
+        style="width:100px;font-family:var(--mono);font-size:0.82rem">
+    </div>`).join('');
+
+  document.getElementById('confirmarTitulo').textContent = `Registrar pagamento ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ${e.descricao}`;
+  document.getElementById('confirmarMsg').innerHTML = `
+    <div style="display:flex;justify-content:space-between;margin-bottom:12px">
+      <span>Total restante:</span><strong style="font-family:var(--mono)">R$ ${fmtMoney(restante)}</strong>
+    </div>
+    <div style="font-size:0.82rem;font-weight:600;color:var(--text2);margin-bottom:8px">
+      Selecione as parcelas a pagar (e edite os valores se necessÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡rio):
+    </div>
+    ${parcHtml || `<p style="color:var(--text3)">EmprÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©stimo jÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ quitado ou sem parcelas pendentes.</p>`}
+    <div id="pagTotalInfo" style="margin-top:10px;padding:8px;background:var(--bg3);border-radius:6px;font-size:0.82rem;color:var(--accent2)"></div>
+  `;
+
+  // Calcular total selecionado
+  setTimeout(() => {
+    const calcTotal = () => {
+      let tot = 0;
+      parcelasDisponiveis.forEach(p => {
+        const cb = document.getElementById(`parc_cb_${p.num}`);
+        const vi = document.getElementById(`parc_val_${p.num}`);
+        if (cb?.checked && vi) tot += parseFloat(vi.value)||0;
+      });
+      const el = document.getElementById('pagTotalInfo');
+      if (el) {
+        const novoRest = restante - tot;
+        el.textContent = `Total a pagar: R$ ${fmtMoney(tot)} ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ Restante: R$ ${fmtMoney(Math.max(0,novoRest))}`;
+      }
+    };
+    parcelasDisponiveis.forEach(p => {
+      document.getElementById(`parc_cb_${p.num}`)?.addEventListener('change', calcTotal);
+      document.getElementById(`parc_val_${p.num}`)?.addEventListener('input', calcTotal);
+    });
+    calcTotal();
+  }, 100);
+
+  document.getElementById('modal-confirmar').classList.add('active');
+  _confirmarResolve = async (ok) => {
+    document.getElementById('modal-confirmar').classList.remove('active');
+    _confirmarResolve = null;
+    if (!ok) return;
+
+    // Registrar cada parcela selecionada
+    let totalPago = 0;
+    let parcelasRegistradas = 0;
+    const empAntes = {...e};
+
+    for (const p of parcelasDisponiveis) {
+      const cb = document.getElementById(`parc_cb_${p.num}`);
+      const vi = document.getElementById(`parc_val_${p.num}`);
+      if (!cb?.checked) continue;
+      const valor = parseFloat(vi?.value) || p.valor;
+      if (valor <= 0) continue;
+      totalPago += valor;
+      parcelasRegistradas++;
+    }
+
+    if (totalPago <= 0) return;
+
+    const novoPago = (e.pago||0) + totalPago;
+    const novoRestante = Math.max(0, (e.total||0) - novoPago);
+    const novasParcPagas = parcelasPagas + parcelasRegistradas;
+    const status = novoRestante <= 0.01 ? 'quitado' : 'ativo';
+    const updates = { pago: novoPago, parcelasPagas: novasParcPagas, status };
+    if (status==='ativo' && novasParcPagas === totalParcelas-1) updates.ultimaParcela = novoRestante;
+
+    const empIdx = emprestimos.findIndex(x=>x.id===id);
+    await fsUpdate('emprestimos', id, updates);
+    if (empIdx>=0) Object.assign(emprestimos[empIdx], updates);
+
+    pushUndo({ descricao: `Pagamento ${parcelasRegistradas} parcela(s) de ${e.descricao}`, reverter: async () => {
+      await fsUpdate('emprestimos', id, { pago: empAntes.pago, parcelasPagas: empAntes.parcelasPagas, status: empAntes.status||'ativo' });
+      const i2 = emprestimos.findIndex(x=>x.id===id);
+      if (i2>=0) Object.assign(emprestimos[i2], { pago: empAntes.pago, parcelasPagas: empAntes.parcelasPagas, status: empAntes.status||'ativo' });
+      renderEmprestimos(); renderDashboard();
+    }});
+
+    renderEmprestimos();
+    renderDashboard();
+    toast(`${parcelasRegistradas} parcela(s) registrada(s) ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â R$ ${fmtMoney(totalPago)}! Restante: R$ ${fmtMoney(novoRestante)}`, 'success');
+  };
+}
+
+// =====================================================
+// SIMULAÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢O AUTOMÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂTICA NO MODAL EMPRÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â°STIMO
+// =====================================================
+function atualizarSimulacaoEmp() {
+  const total = parseFloat(document.getElementById('empTotal').value) || 0;
+  const n = parseInt(document.getElementById('empParcelas').value) || 0;
+  if (!total || !n) { document.getElementById('empSimulacao').style.display='none'; return; }
+
+  const igualVal = Math.round(total/n*100)/100;
+  const igualTotal = igualVal * n;
+  const diff = Math.round((total - igualTotal)*100)/100;
+
+  // OpÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o 1: Iguais
+  document.getElementById('empSimIgual').innerHTML =
+    `<span style="color:var(--accent2)">Iguais:</span> ${n}x R$ ${fmtMoney(igualVal)}${Math.abs(diff)>0?' <span style="color:var(--text3)">(ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âºltima R$ '+fmtMoney(igualVal+diff)+')</span>':''}`;
+
+  // OpÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o 2: Parcela padrÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o + ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âºltima diferente
+  const padraoVal = Math.floor(total/n*100)/100;
+  const ultimaVal = Math.round((total - padraoVal*(n-1))*100)/100;
+  document.getElementById('empSimUltima').innerHTML =
+    `<span style="color:var(--yellow)">Com ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âºltima diferente:</span> ${n-1}x R$ ${fmtMoney(padraoVal)} + 1x R$ ${fmtMoney(ultimaVal)}`;
+
+  document.getElementById('empSimulacao').style.display = '';
+}
+
+
+// =====================================================
+// SISTEMA DE UNDO ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â histÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³rico de aÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âµes reversÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­veis
+// =====================================================
+const undoStack = [];
+const MAX_UNDO = 20;
+
+function pushUndo(acao) {
+  // acao = { descricao, async reverter() {} }
+  undoStack.push(acao);
+  if (undoStack.length > MAX_UNDO) undoStack.shift();
+  renderUndoBtn();
+}
+
+function renderUndoBtn() {
+  let btn = document.getElementById('undoFloatBtn');
+  if (!btn) {
+    btn = document.createElement('button');
+    btn.id = 'undoFloatBtn';
+    btn.style.cssText = 'position:fixed;bottom:90px;right:16px;background:var(--navy);color:white;border:none;border-radius:20px;padding:10px 18px;font-size:0.82rem;cursor:pointer;z-index:9000;box-shadow:0 4px 20px rgba(0,0,0,0.4);display:none;font-family:var(--font);max-width:280px;word-break:break-word;';
+    btn.onclick = desfazerUltimaAcao;
+    document.body.appendChild(btn);
+  }
+  if (undoStack.length > 0) {
+    btn.style.display = 'block';
+    btn.textContent = `ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¯ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â Desfazer: ${undoStack[undoStack.length-1].descricao}`;
+  } else {
+    btn.style.display = 'none';
+  }
+}
+
+async function desfazerUltimaAcao() {
+  const acao = undoStack.pop();
+  if (!acao) return;
+  try {
+    await acao.reverter();
+    toast(`AÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o desfeita: ${acao.descricao}`, 'success');
+  } catch(e) {
+    toast('Erro ao desfazer: ' + e.message, 'error');
+  }
+  renderUndoBtn();
+}
+
+// Atalho Ctrl+Z
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+    const active = document.activeElement;
+    // NÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o interceptar em inputs/textareas
+    if (!['INPUT','TEXTAREA'].includes(active.tagName)) {
+      e.preventDefault();
+      desfazerUltimaAcao();
+    }
+  }
+});
+
+
+// =====================================================
+// HISTÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“RICO FINANCEIRO
+// =====================================================
+function renderHistoricoFin() {
+  // EmprÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©stimos ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â todos, incluindo quitados
+  const empEl = document.getElementById('histFinEmprestimos');
+  if (empEl) {
+    const todos = emprestimos.sort((a,b) => (b.criadoEm||'').localeCompare(a.criadoEm||''));
+    if (todos.length === 0) {
+      empEl.innerHTML = '<p style="color:var(--text3);font-size:0.85rem">Nenhum emprÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©stimo.</p>';
+    } else {
+      empEl.innerHTML = todos.map(e => {
+        const func = funcionarios.find(f=>f.id===e.funcionarioId);
+        const rest = (e.total||0)-(e.pago||0);
+        const pct = e.total>0 ? Math.min(100,(e.pago||0)/e.total*100) : 0;
+        const isQuitado = e.status==='quitado' || rest<=0.01;
+        return `<div style="background:var(--bg2);border-radius:10px;padding:12px;margin-bottom:8px;opacity:${isQuitado?0.7:1}">
+          <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px">
+            <div>
+              <div style="font-weight:600">${e.descricao}</div>
+              <div style="font-size:0.78rem;color:var(--text3)">${func?.nome||'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â'} ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ ${e.criadoEm?new Date(e.criadoEm).toLocaleDateString('pt-BR'):'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â'}</div>
+            </div>
+            <span class="badge ${isQuitado?'badge-green':'badge-yellow'}">${isQuitado?'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¦ Quitado':'Em andamento'}</span>
+          </div>
+          <div style="display:flex;gap:16px;margin-top:8px;flex-wrap:wrap;font-size:0.82rem">
+            <div><span style="color:var(--text3)">Total: </span><span style="font-family:var(--mono)">R$ ${fmtMoney(e.total)}</span></div>
+            <div><span style="color:var(--text3)">Pago: </span><span style="font-family:var(--mono);color:var(--green)">R$ ${fmtMoney(e.pago||0)}</span></div>
+            <div><span style="color:var(--text3)">Parcelas: </span><span>${e.parcelasPagas||0}/${e.parcelas}</span></div>
+          </div>
+          <div class="progress-bar" style="margin-top:8px"><div class="progress-fill" style="width:${pct}%"></div></div>
+        </div>`;
+      }).join('');
+    }
+  }
+
+  // Vales ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â todos
+  const valesEl = document.getElementById('histFinVales');
+  if (valesEl) {
+    const todos = vales.sort((a,b) => (b.data||'').localeCompare(a.data||''));
+    if (todos.length === 0) {
+      valesEl.innerHTML = '<p style="color:var(--text3);font-size:0.85rem">Nenhum adiantamento.</p>';
+    } else {
+      valesEl.innerHTML = `<table><thead><tr><th>Data</th><th>FuncionÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡rio</th><th>DescriÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o</th><th>Valor</th><th>Abatido</th><th>Restante</th><th>Status</th></tr></thead>
+        <tbody>${todos.map(v => {
+          const func = funcionarios.find(f=>f.id===v.funcionarioId);
+          const abatido = (v.abatimentos||[]).reduce((s,a)=>s+a.valor,0);
+          const rest = Math.max(0,(v.valor||0)-abatido);
+          return `<tr>
+            <td style="font-size:0.8rem">${v.data?fmtData(v.data):'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â'}</td>
+            <td>${func?.nome||'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â'}</td>
+            <td>${v.descricao||'Adiantamento'}</td>
+            <td class="mono">R$ ${fmtMoney(v.valor)}</td>
+            <td class="mono" style="color:var(--green)">R$ ${fmtMoney(abatido)}</td>
+            <td class="mono" style="color:${rest>0?'var(--red)':'var(--text3)'}">R$ ${fmtMoney(rest)}</td>
+            <td><span class="badge ${v.status==='descontado'?'badge-green':'badge-yellow'}">${v.status==='descontado'?'Quitado':'Pendente'}</span></td>
+          </tr>`;
+        }).join('')}</tbody></table>`;
+    }
+  }
+}
+
+function toggleTodosFolha(checked) {
+  document.querySelectorAll('.folha-func-cb').forEach(cb => cb.checked = checked);
+}
+
+async function consolidarPeriodoTodos() {
+  const mes = document.getElementById('folhaMes')?.value;
+  const ano = document.getElementById('folhaAno')?.value;
+  const confirm = await confirmar('Consolidar perÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­odo?', `Isso darÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ baixa em todos os itens selecionados de todos os funcionÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡rios marcados para ${mes}/${ano}. Esta aÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o pode ser desfeita com Ctrl+Z.`);
+  if (!confirm) return;
+  // Processar cada funcionÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡rio marcado
+  const marcados = [...document.querySelectorAll('.folha-func-cb:checked')].map(cb => cb.dataset.id);
+  let total = 0;
+  for (const funcId of marcados) {
+    await gerarPdfEQuitarFolha(funcId, false); // false = nÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o fechar modal
+    total++;
+  }
+  toast(`${total} funcionÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡rio(s) consolidado(s)!`, 'success');
+}
+
+
+// =====================================================
+// FOLHA INLINE
+// =====================================================
+let proventosNomes = JSON.parse(localStorage.getItem('cgProventosNomes') || 'null') ||
+  ['PrÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âªmio Bom Desempenho', 'BÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â´nus ProduÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o', 'Horas Extras 100%', 'Adicional Noturno', 'Outros'];
+
+function salvarProventosNomes() {
+  localStorage.setItem('cgProventosNomes', JSON.stringify(proventosNomes));
+}
+
+function calcInssInline(funcId, tipo, val) {
+  const d = folhaDetalhe[funcId];
+  if (!d) return;
+  // val pode vir do select (tipo mudou) ou do input (valor mudou)
+  const inputEl = document.getElementById(`inss-inline-${funcId}`);
+  const v = val !== undefined ? parseFloat(val)||0 : (inputEl ? parseFloat(inputEl.value)||0 : 0);
+  d.inssType = tipo;
+  if (tipo === 'pct') {
+    d.inssPct = v;
+    d.inssValor = (d.salario||0) * v / 100;
+  } else {
+    d.inssValor = v;
+    d.inssPct = 0;
+  }
+  rebuildCard(funcId);
+}
+
+function addProventoInline(funcId) {
+  if (!folhaDetalhe[funcId]) return;
+  if (!folhaDetalhe[funcId].outrosProventos) folhaDetalhe[funcId].outrosProventos = [];
+  folhaDetalhe[funcId].outrosProventos.push({ descricao: proventosNomes[0]||'PrÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âªmio', valor: 0 });
+  rebuildCard(funcId);
+}
+
+function toggleFolhaInline(funcId) {
+  const el = document.getElementById(`folha-inline-${funcId}`);
+  const btn = document.getElementById(`btn-toggle-${funcId}`);
+  if (!el) return;
+  const isOpen = el.style.display !== 'none';
+  el.style.display = isOpen ? 'none' : 'block';
+  if (btn) btn.textContent = isOpen ? 'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¼ Editar proventos e descontos' : 'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â² Recolher';
+}
+
+function expandirTodosCards() {
+  document.querySelectorAll('[id^="folha-inline-"]').forEach(el => {
+    const funcId = el.id.replace('folha-inline-','');
+    el.style.display = 'block';
+    const btn = document.getElementById(`btn-toggle-${funcId}`);
+    if (btn) btn.textContent = 'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â² Recolher';
+  });
+}
+
+function recolherTodosCards() {
+  document.querySelectorAll('[id^="folha-inline-"]').forEach(el => {
+    const funcId = el.id.replace('folha-inline-','');
+    el.style.display = 'none';
+    const btn = document.getElementById(`btn-toggle-${funcId}`);
+    if (btn) btn.textContent = 'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¼ Editar proventos e descontos';
+  });
+}
+
+function rebuildCard(funcId) {
+  const d = folhaDetalhe[funcId];
+  if (!d) return;
+  const card = document.getElementById(`fc-${funcId}`);
+  if (!card) return;
+  const wasOpen = document.getElementById(`folha-inline-${funcId}`)?.style.display !== 'none';
+  card.outerHTML = buildFolhaCard(d.funcionario, d);
+  // Re-abrir se estava aberto
+  if (wasOpen) {
+    const newInline = document.getElementById(`folha-inline-${funcId}`);
+    if (newInline) newInline.style.display = 'block';
+  }
+}
+
+async function confirmarGerarPdf(funcId) {
+  const d = folhaDetalhe[funcId];
+  if (!d) { toast('Carregue a folha primeiro', 'error'); return; }
+  const f = d.funcionario;
+
+  // Verificar se campos essenciais foram preenchidos
+  const alertas = [];
+  if (!d.horasExtras && d.horaExtraVal > 0) alertas.push('Horas extras nÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o foram informadas');
+  if ((d.descontoEmprestimos||[]).filter(e=>e.selecionado!==false).length === 0 &&
+      (d.descontoVales||[]).filter(v=>v.selecionado!==false).length === 0 &&
+      emprestimos.some(e=>e.funcionarioId===funcId && (e.status==='ativo'||!e.status))) {
+    alertas.push('Existem emprÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©stimos/adiantamentos mas nenhum estÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ selecionado para desconto');
+  }
+
+  if (alertas.length > 0) {
+    const msg = `AtenÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o antes de gerar o PDF:\n\n${alertas.map(a=>'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¯ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â '+a).join('\n')}\n\nDeseja continuar mesmo assim?`;
+    if (!await confirmar('Verificar antes de gerar PDF', msg)) return;
+  }
+
+  gerarPdfFuncionario(funcId);
+}
+
+
+// =====================================================
+// SISTEMA DE PERMISSÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¢ES GRANULARES
+// =====================================================
+const TODAS_PERMISSOES = {
+  funcionarios: {
+    label: 'FuncionÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡rios',
+    acoes: ['ver', 'cadastrar', 'editar', 'excluir', 'ver_ficha']
+  },
+  cargos: {
+    label: 'Cargos',
+    acoes: ['ver', 'cadastrar', 'editar', 'excluir']
+  },
+  folha: {
+    label: 'Folha de Pagamento',
+    acoes: ['ver', 'gerar', 'editar', 'pdf', 'consolidar']
+  },
+  emprestimos: {
+    label: 'EmprÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©stimos a FuncionÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡rios',
+    acoes: ['ver', 'cadastrar', 'editar', 'excluir']
+  },
+  vales: {
+    label: 'Adiantamentos Salariais',
+    acoes: ['ver', 'cadastrar', 'editar', 'excluir', 'lote']
+  },
+  pagamentos: {
+    label: 'Registrar Pagamentos',
+    acoes: ['registrar_parcela', 'abater_vale', 'consolidar_folha']
+  },
+  escala: {
+    label: 'Assistente de Escala',
+    acoes: ['ver', 'configurar', 'gerar', 'imprimir']
+  },
+  relatorio: {
+    label: 'RelatÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³rios',
+    acoes: ['ver', 'exportar_excel']
+  },
+  acerto: {
+    label: 'Acerto de Contas Pessoais',
+    acoes: ['ver', 'cadastrar_par', 'lancar', 'excluir']
+  },
+  equipe: {
+    label: 'Equipe & Acessos',
+    acoes: ['ver', 'convidar', 'editar_permissoes', 'remover']
+  },
+  configuracoes: {
+    label: 'ConfiguraÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âµes',
+    acoes: ['ver', 'editar']
+  },
+  historico: {
+    label: 'HistÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³rico Financeiro',
+    acoes: ['ver']
+  }
+};
+
+// Perfis prÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©-definidos
+const PERFIS_PADRAO = {
+  gestor: { label: 'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¹Ã…â€œÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¹Ã…â€œ Gestor', cor: '#2E9E4F', descricao: 'Acesso total', permissoes: {} },
+  empregador: { label: 'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ Empregador', cor: '#1B2D6B', descricao: 'Gerencia folha e financeiro', permissoes: {
+    funcionarios: ['ver','cadastrar','editar','ver_ficha'],
+    cargos: ['ver','cadastrar','editar'],
+    folha: ['ver','gerar','editar','pdf','consolidar'],
+    emprestimos: ['ver','cadastrar','editar'],
+    vales: ['ver','cadastrar','editar','lote'],
+    pagamentos: ['registrar_parcela','abater_vale','consolidar_folha'],
+    escala: ['ver','configurar','gerar','imprimir'],
+    relatorio: ['ver','exportar_excel'],
+    acerto: ['ver','cadastrar_par','lancar'],
+    historico: ['ver']
+  }},
+  funcionario: { label: 'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¹Ã…â€œÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¤ FuncionÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡rio', cor: '#4a6a99', descricao: 'Apenas visualiza prÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³prios dados', permissoes: {
+    folha: ['ver'],
+    emprestimos: ['ver'],
+    vales: ['ver'],
+    historico: ['ver']
+  }}
+};
+
+// Preencher gestor com tudo
+Object.entries(TODAS_PERMISSOES).forEach(([mod, info]) => {
+  PERFIS_PADRAO.gestor.permissoes[mod] = [...info.acoes];
+});
+
+function renderPermissoesModal(perfilId, permissoes, containerId) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  container.innerHTML = Object.entries(TODAS_PERMISSOES).map(([mod, info]) => `
+    <div style="margin-bottom:14px">
+      <div style="font-size:0.8rem;font-weight:700;color:var(--text2);margin-bottom:6px;text-transform:uppercase">${info.label}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px">
+        ${info.acoes.map(acao => {
+          const checked = permissoes?.[mod]?.includes(acao);
+          const label = acao.replace(/_/g,' ').replace(/\w/g, l=>l.toUpperCase());
+          return `<label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:0.78rem;background:var(--bg2);border-radius:6px;padding:4px 8px;border:1px solid ${checked?'var(--accent)':'var(--border)'}">
+            <input type="checkbox" data-mod="${mod}" data-acao="${acao}" ${checked?'checked':''}
+              onchange="this.closest('label').style.borderColor=this.checked?'var(--accent)':'var(--border)'">
+            ${label}
+          </label>`;
+        }).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+function coletarPermissoes(containerId) {
+  const container = document.getElementById(containerId);
+  if (!container) return {};
+  const perms = {};
+  container.querySelectorAll('input[data-mod]:checked').forEach(cb => {
+    const mod = cb.dataset.mod;
+    const acao = cb.dataset.acao;
+    if (!perms[mod]) perms[mod] = [];
+    perms[mod].push(acao);
+  });
+  return perms;
+}
+
+function temPermissao(acao, modulo) {
+  // Gestor tem tudo
+  const membro = currentOrg?.membros?.find(m => m.uid === currentUser?.uid);
+  if (!membro) return false;
+  if (membro.role === 'gestor') return true;
+  // Verificar permissÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âµes granulares
+  if (membro.permissoes) {
+    return membro.permissoes[modulo]?.includes(acao) || false;
+  }
+  // Fallback para perfil padrÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o
+  const perfil = PERFIS_PADRAO[membro.role];
+  if (!perfil) return false;
+  return perfil.permissoes[modulo]?.includes(acao) || false;
+}
+
+
+// =====================================================
+// FUNÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¢ES DE PERMISSÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢O
+// =====================================================
+function editarMembro(uid) {
+  const membro = currentOrg?.membros?.find(m => m.uid === uid);
+  document.getElementById('membroId').value = uid;
+  document.getElementById('membroNome').value = membro?.nome || '';
+  document.getElementById('membroEmail').value = membro?.email || '';
+  document.getElementById('membroModalTitulo').textContent = `PermissÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âµes ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ${membro?.nome || uid}`;
+  renderPermissoesModal(membro?.role, membro?.permissoes || PERFIS_PADRAO[membro?.role||'funcionario']?.permissoes || {}, 'permissoesContainer');
+  openModal('modal-membro');
+}
+
+function aplicarPerfil(perfilId) {
+  const perfil = PERFIS_PADRAO[perfilId];
+  const perms = perfil ? perfil.permissoes : {};
+  renderPermissoesModal(perfilId, perms, 'permissoesContainer');
+}
+
+async function salvarMembro() {
+  const uid = document.getElementById('membroId').value;
+  const nome = document.getElementById('membroNome').value;
+  const email = document.getElementById('membroEmail').value;
+  const permissoes = coletarPermissoes('permissoesContainer');
+  if (!currentOrg?.membros) return;
+  const idx = currentOrg.membros.findIndex(m => m.uid === uid);
+  const updates = { permissoes, role: 'custom' };
+  if (nome) updates.nome = nome;
+  if (email) updates.email = email;
+  // Detectar se ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â© perfil padrÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o
+  for (const [pid, p] of Object.entries(PERFIS_PADRAO)) {
+    if (JSON.stringify(p.permissoes) === JSON.stringify(permissoes)) {
+      updates.role = pid;
+      break;
+    }
+  }
+  if (idx >= 0) {
+    Object.assign(currentOrg.membros[idx], updates);
+  } else {
+    currentOrg.membros.push({ uid, ...updates });
+  }
+  if (db) await syncOrgMembersAccess(db.collection('orgs').doc(currentOrg.id), currentOrg.membros);
+  else localDB.setOrg(currentOrg.id, currentOrg);
+  closeModal('modal-membro');
+  renderEquipe();
+  toast('PermissÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âµes salvas!', 'success');
+}
+
+function openPreConvite() {
+  aplicarPerfilConvite('empregador');
+  openModal('modal-pre-convite');
+}
+
+function aplicarPerfilConvite(perfilId) {
+  const perfil = PERFIS_PADRAO[perfilId];
+  const perms = perfil ? perfil.permissoes : {};
+  renderPermissoesModal(perfilId, perms, 'permissoesConviteContainer');
+}
+
+async function gerarConviteComPerms() {
+  const nome = document.getElementById('preConviteNome').value.trim();
+  const permissoes = coletarPermissoes('permissoesConviteContainer');
+  const code = Math.random().toString(36).substring(2,8).toUpperCase();
+  // Salvar convite pendente com permissÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âµes prÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©-definidas
+  if (!currentOrg.convitesPendentes) currentOrg.convitesPendentes = [];
+  currentOrg.convitesPendentes.push({ code, nome, permissoes, criadoEm: new Date().toISOString() });
+  currentOrg.invite = code; // Atualizar convite ativo
+  if (db) await db.collection('orgs').doc(currentOrg.id).update({
+    invite: code, convitesPendentes: currentOrg.convitesPendentes
+  });
+  else localDB.setOrg(currentOrg.id, currentOrg);
+  document.getElementById('inviteDisplay').textContent = code;
+  closeModal('modal-pre-convite');
+  navigator.clipboard.writeText(code).catch(()=>{});
+  toast(`Convite gerado: ${code} (copiado!)`, 'success');
+}
+
+// Ao entrar com convite, aplicar permissÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âµes prÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©-definidas
+async function aplicarPermissoesPendentes(orgData, uid) {
+  const pendente = (orgData.convitesPendentes||[]).find(c => c.code === orgData.invite);
+  if (pendente?.permissoes) return pendente.permissoes;
+  return PERFIS_PADRAO.funcionario.permissoes;
+}
+
+
+// =====================================================
+// ESCALA ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â Imprimir / PDF individual por funcionÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡rio
+// =====================================================
+function getEscalaItem(funcId) {
+  return escalaGerada?.equipe.find(e => e.funcionario.id === funcId);
+}
+
+function buildEscalaHtml(item) {
+  if (!item) return '';
+  const orgNome = currentOrg?.nome || 'Empresa';
+  const competencia = monthNameFromPeriod(escalaGerada.competencia);
+  return `<!DOCTYPE html><html><head><title>FOLHA DE PONTO ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ${item.funcionario.nome}</title>
+  <style>
+    body{font-family:Arial,sans-serif;padding:20px;background:#fff;color:#111}
+    h2{font-size:16px;margin:0}
+    .sub{font-size:11px;color:#555;margin-bottom:12px}
+    table{width:100%;border-collapse:collapse;margin-top:8px}
+    th,td{border:1px solid #aaa;padding:5px 7px;font-size:10px;text-align:left}
+    th{background:#f0f0f0;font-weight:bold}
+    .sign{margin-top:24px;display:flex;justify-content:space-between;gap:24px}
+    .sign-line{flex:1;padding-top:12px;border-top:1px solid #666;text-align:center;font-size:10px}
+    @media print{@page{size:A4 landscape;margin:15mm}}
+  </style></head><body>
+  <h2>FOLHA DE PONTO</h2>
+  <div class="sub">${orgNome} &nbsp;ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢&nbsp; ${item.funcionario.nome} &nbsp;ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢&nbsp; ${item.funcionario.cargo||''} &nbsp;ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢&nbsp; CompetÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âªncia: ${competencia} &nbsp;ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢&nbsp; Total: ${item.totalHorasMes}h &nbsp;ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢&nbsp; Hora Extra: ${item.totalExtrasMes}h</div>
+  <table>
+    <thead><tr><th>DATA</th><th>DIA</th><th>ENTRADA</th><th>SAÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂDA INT.</th><th>RETORNO</th><th>SAÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂDA</th><th>TOTAL</th><th>H. EXTRA</th></tr></thead>
+    <tbody>
+      ${item.dias.map(dia => `<tr>
+        <td>${fmtData(dia.data)}</td>
+        <td>${dayNameShort(dia.diaSemana).toUpperCase()}</td>
+        <td>${dia.entrada}</td>
+        <td>${dia.saidaIntervalo}</td>
+        <td>${dia.retornoIntervalo}</td>
+        <td>${dia.saidaFinal}</td>
+        <td>${dia.horasPrevistas}h</td>
+        <td>${dia.horaExtraPrevista > 0 ? dia.horaExtraPrevista + 'h' : 'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â'}</td>
+      </tr>`).join('')}
+    </tbody>
+  </table>
+  <div class="sign">
+    <div class="sign-line">ASSINATURA DO FUNCIONÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂRIO</div>
+    <div class="sign-line">RESPONSÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂVEL / GESTOR</div>
+  </div>
+  </body></html>`;
+}
+
+function printEscalaFuncionario(funcId) {
+  const item = getEscalaItem(funcId);
+  if (!item) { toast('Gere a escala primeiro', 'error'); return; }
+  const popup = window.open('', '_blank');
+  popup.document.write(buildEscalaHtml(item));
+  popup.document.close();
+  popup.onload = () => { popup.focus(); popup.print(); };
+}
+
+function downloadEscalaPdfFuncionario(funcId) {
+  const item = getEscalaItem(funcId);
+  if (!item) { toast('Gere a escala primeiro', 'error'); return; }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+  const orgNome = currentOrg?.nome || 'Empresa';
+  const competencia = monthNameFromPeriod(escalaGerada.competencia);
+
+  doc.setFontSize(13); doc.setFont('helvetica', 'bold');
+  doc.text('FOLHA DE PONTO', 14, 14);
+  doc.setFontSize(8); doc.setFont('helvetica', 'normal');
+  doc.text(`${orgNome} ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ ${item.funcionario.nome} ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ ${item.funcionario.cargo||''}`, 14, 20);
+  doc.text(`CompetÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âªncia: ${competencia}   Total: ${item.totalHorasMes}h   Hora Extra: ${item.totalExtrasMes}h`, 14, 25);
+
+  doc.autoTable({
+    startY: 29,
+    head: [['DATA','DIA','ENTRADA','SAÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂDA INT.','RETORNO','SAÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂDA','TOTAL','H. EXTRA']],
+    body: item.dias.map(dia => [
+      fmtData(dia.data),
+      dayNameShort(dia.diaSemana).toUpperCase(),
+      dia.entrada, dia.saidaIntervalo, dia.retornoIntervalo, dia.saidaFinal,
+      `${dia.horasPrevistas}h`,
+      dia.horaExtraPrevista > 0 ? `${dia.horaExtraPrevista}h` : 'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â'
+    ]),
+    styles: { fontSize: 7, cellPadding: 2 },
+    headStyles: { fillColor: [27,45,107], textColor: 255, fontStyle: 'bold' },
+    alternateRowStyles: { fillColor: [245,248,252] }
+  });
+
+  const finalY = doc.lastAutoTable.finalY + 14;
+  if (finalY < 195) {
+    doc.line(14, finalY, 130, finalY);
+    doc.line(140, finalY, 283, finalY);
+    doc.setFontSize(8);
+    doc.text('ASSINATURA DO FUNCIONÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂRIO', 72, finalY + 4, { align: 'center' });
+    doc.text('RESPONSÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂVEL / GESTOR', 211, finalY + 4, { align: 'center' });
+  }
+
+  const nomePdf = `${(item.funcionario.nome||'').replace(/\s+/g,'_')}_Folha_de_Ponto_${escalaGerada.competencia}.pdf`;
+  doc.save(nomePdf);
+  toast(`PDF gerado: ${nomePdf}`, 'success');
+}
+
+
+// =====================================================
+// DASHBOARD PERSONALIZÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂVEL
+// =====================================================
+
+// DefiniÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o de todos os widgets disponÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­veis
+const DASH_WIDGETS = {
+  atalhos: {
+    label: 'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ Atalhos RÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡pidos',
+    descricao: 'BotÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âµes de acesso rÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡pido a aÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âµes frequentes',
+    padrao: true,
+    render: () => {
+      // Atalhos configurÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡veis ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â carregados do localStorage
+      const todosAtalhos = {
+        'adiantamento': { label: 'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âµ Adiantamento Salarial', action: "openModal('modal-vale')" },
+        'adiantamento_lote': { label: 'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¹ Adiantamentos em Lote', action: "openModal('modal-vale-lote')" },
+        'acerto': { label: 'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¤ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â Novo Acerto de Contas Pessoais', action: "openModal('modal-lancamento')" },
+        'par': { label: 'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Novo Par', action: "openModal('modal-acerto-par')" },
+        'emprestimo': { label: 'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â° Novo EmprÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©stimo a FuncionÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡rios', action: "openEmprestimoModal()" },
+        'folha': { label: 'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¹ Folha de Pagamento', action: "navigate('folha')" },
+        'funcionario': { label: 'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¹Ã…â€œÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¤ Novo FuncionÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡rio', action: "openModal('modal-funcionario')" },
+        'cargo': { label: 'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¹Ã…â€œÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â Novo Cargo', action: "openModal('modal-grupo')" },
+        'calculadora': { label: 'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â® Calculadora', action: "navigate('calculadora')" },
+        'contrato': { label: 'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â Novo Contrato', action: "navigate('contratos')" },
+        'escala': { label: 'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¯ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â Assistente de Escala', action: "navigate('escala')" },
+        'relatorio': { label: 'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â  RelatÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³rio', action: "navigate('relatorio')" },
+      };
+      const atalhosSel = JSON.parse(localStorage.getItem('cgAtalhosDash') || 'null') ||
+        ['adiantamento','adiantamento_lote','acerto','par','emprestimo','folha'];
+      const btns = atalhosSel.map(k => todosAtalhos[k]).filter(Boolean);
+      return `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
+        ${btns.map(b => `<button class="btn btn-outline btn-sm" onclick="${b.action}" style="flex:1;min-width:130px;text-align:center">${b.label}</button>`).join('')}
+      </div>`;
+    }
+  },
+  resumo: {
+    label: 'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â  Resumo Geral',
+    descricao: 'Cards com totais de funcionÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡rios, emprÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©stimos e folha',
+    padrao: true,
+    render: () => {
+      const funcAtivos = funcionarios.filter(f => f.ativo !== false).length;
+      const empAtivos = emprestimos.filter(e => e.status === 'ativo' || !e.status);
+      const totalAberto = empAtivos.reduce((s, e) => s + ((e.total||0)-(e.pago||0)), 0);
+      const valesPend = vales.filter(v => v.status !== 'descontado');
+      const totalVales = valesPend.reduce((s,v)=>s+(v.valor||0),0);
+      const folhasHist = getCol('historicoFolhas').getAll();
+      const ultimaFolha = folhasHist.sort((a,b)=>(b.mesRef||'').localeCompare(a.mesRef||''))[0];
+      return `<div class="cards-grid" style="margin-bottom:16px">
+        <div class="stat-card" style="cursor:pointer" onclick="navigate('funcionarios')">
+          <div class="stat-label">FuncionÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡rios ativos</div>
+          <div class="stat-value accent">${funcAtivos}</div>
+        </div>
+        <div class="stat-card" style="cursor:pointer" onclick="navigate('emprestimos')">
+          <div class="stat-label">EmprÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©stimos a FuncionÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡rios em Aberto</div>
+          <div class="stat-value yellow">R$ ${fmtMoney(totalAberto)}</div>
+        </div>
+        <div class="stat-card" style="cursor:pointer" onclick="navigate('vales')">
+          <div class="stat-label">Adiantamentos pendentes</div>
+          <div class="stat-value red">R$ ${fmtMoney(totalVales)}</div>
+        </div>
+        <div class="stat-card" style="cursor:pointer" onclick="navigate('historico-folha')">
+          <div class="stat-label">ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ltima folha gerada</div>
+          <div class="stat-value" style="font-size:1rem">${ultimaFolha?.mesRef || 'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â'}</div>
+        </div>
+      </div>`;
+    }
+  },
+  acerto: {
+    label: 'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¤ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â Acerto de Contas Pessoais',
+    descricao: 'Resumo dos saldos entre os pares cadastrados',
+    padrao: false,
+    render: () => {
+      if (acertoPares.length === 0) {
+        return `<div class="section-card" style="margin-bottom:16px">
+          <div class="section-card-title">ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¤ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ACERTO DE CONTAS PESSOAIS</div>
+          <div class="empty-state" style="padding:20px">
+            <div class="icon" style="font-size:32px">ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¤ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â</div>
+            <h3>Nenhum par cadastrado</h3>
+            <p><button class="btn btn-primary btn-sm" onclick="openModal('modal-acerto-par')">ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Criar par</button></p>
+          </div>
+        </div>`;
+      }
+      const rows = acertoPares.map(par => {
+        const periodoAtual = par.consolidadoEm || null;
+        const lances = lancamentosCache.filter(l => {
+          if (l.parId !== par.id) return false;
+          if (!periodoAtual) return true;
+          if (!l.data) return true;
+          return l.data > periodoAtual;
+        }).sort((a,b) => (b.data||'').localeCompare(a.data||''));
+        const devidoPorA = lances.filter(l=>l.de===par.pessoaA).reduce((s,l)=>s+l.valor,0);
+        const devidoPorB = lances.filter(l=>l.de===par.pessoaB).reduce((s,l)=>s+l.valor,0);
+        const totalAB = devidoPorA;
+        const totalBA = devidoPorB;
+        const saldo = totalAB - totalBA; // positivo = A deve mais
+        const devedor = saldo > 0 ? par.pessoaA : par.pessoaB;
+        const credor  = saldo > 0 ? par.pessoaB : par.pessoaA;
+        const quitado = Math.abs(saldo) < 0.01;
+        const ultimoLanc = lances[0];
+        return `<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg2);border-radius:8px;margin-bottom:6px">
+          <!-- Info do par -->
+          <div style="flex:1;min-width:0;cursor:pointer" onclick="abrirPaginaPar('${par.id}')">
+            <div style="font-weight:600;font-size:0.85rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${par.pessoaA} ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ${par.pessoaB}</div>
+            <div style="font-size:0.7rem;margin-top:1px;color:${quitado?'var(--green)':'var(--yellow)'}">
+              ${quitado ? 'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¦ Quitado' : 'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¯ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ' + devedor + ' deve R$ ' + fmtMoney(Math.abs(saldo))}
+            </div>
+          </div>
+          <!-- BotÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âµes compactos ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â mesmo estilo do acerto de contas -->
+          <button onclick="openLancamentoPar('${par.id}','${par.pessoaA}')"
+            class="btn btn-outline btn-sm"
+            style="font-size:0.72rem;padding:4px 8px;white-space:nowrap;flex-shrink:0">
+            ${par.pessoaA.split(' ')[0]} deve
+          </button>
+          <button onclick="openLancamentoPar('${par.id}','${par.pessoaB}')"
+            class="btn btn-outline btn-sm"
+            style="font-size:0.72rem;padding:4px 8px;white-space:nowrap;flex-shrink:0">
+            ${par.pessoaB.split(' ')[0]} deve
+          </button>
+        </div>`;
+      }).join('');
+      return `<div class="section-card" style="margin-bottom:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <div class="section-card-title" style="margin:0">ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¤ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ACERTO DE CONTAS PESSOAIS</div>
+          <div style="display:flex;gap:6px">
+            <button class="btn btn-outline btn-sm" onclick="navigate('acerto')">Ver todos</button>
+            <button class="btn btn-primary btn-sm" onclick="openModal('modal-lancamento')">ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¾ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¢ LanÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ar</button>
+          </div>
+        </div>
+        ${rows}
+      </div>`;
+    }
+  },
+  valesPendentes: {
+    label: 'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âµ Adiantamentos Salariais Pendentes',
+    descricao: 'Lista dos vales ainda nÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o descontados',
+    padrao: false,
+    render: () => {
+      const pend = vales.filter(v=>v.status!=='descontado').slice(0,5);
+      if (pend.length === 0) return `<div class="section-card" style="margin-bottom:16px">
+        <div class="section-card-title">ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â½ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â« ADIANTAMENTOS PENDENTES</div>
+        <p style="color:var(--text3);font-size:0.85rem">Nenhum adiantamento pendente.</p>
+      </div>`;
+      return `<div class="section-card" style="margin-bottom:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <div class="section-card-title" style="margin:0">ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âµ ADIANTAMENTOS PENDENTES</div>
+          <button class="btn btn-outline btn-sm" onclick="navigate('vales')">Ver todos</button>
+        </div>
+        <table><thead><tr><th>FuncionÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡rio</th><th>DescriÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o</th><th>Valor</th><th>Data</th></tr></thead>
+        <tbody>${pend.map(v=>{
+          const f=funcionarios.find(fn=>fn.id===v.funcionarioId);
+          return `<tr>
+            <td>${f?.nome||'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â'}</td>
+            <td>${v.descricao||'Adiantamento'}</td>
+            <td class="mono" style="color:var(--red)">R$ ${fmtMoney(v.valor)}</td>
+            <td style="font-size:0.78rem">${v.data?fmtData(v.data):'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â'}</td>
+          </tr>`;
+        }).join('')}</tbody></table>
+        ${vales.filter(v=>v.status!=='descontado').length > 5 ? `<p style="font-size:0.78rem;color:var(--text3);margin-top:8px">+${vales.filter(v=>v.status!=='descontado').length-5} outros</p>` : ''}
+      </div>`;
+    }
+  },
+  emprestimosResumo: {
+    label: 'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â° EmprÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©stimos a FuncionÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡rios Resumo',
+    descricao: 'Lista dos emprÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©stimos ativos com saldo devedor',
+    padrao: false,
+    render: () => {
+      const ativos = emprestimos.filter(e=>e.status==='ativo'||!e.status).slice(0,5);
+      if (ativos.length === 0) return `<div class="section-card" style="margin-bottom:16px">
+        <div class="section-card-title">ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â° EMPRÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â°STIMOS A FUNCIONÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂRIOS</div>
+        <p style="color:var(--text3);font-size:0.85rem">Nenhum emprÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©stimo ativo.</p>
+      </div>`;
+      return `<div class="section-card" style="margin-bottom:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <div class="section-card-title" style="margin:0">ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â° EMPRÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â°STIMOS A FUNCIONÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂRIOS ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ATIVOS</div>
+          <button class="btn btn-outline btn-sm" onclick="navigate('emprestimos')">Ver todos</button>
+        </div>
+        <table><thead><tr><th>FuncionÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡rio</th><th>DescriÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o</th><th>Restante</th><th>PrÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³x. Parcela</th></tr></thead>
+        <tbody>${ativos.map(e=>{
+          const f=funcionarios.find(fn=>fn.id===e.funcionarioId);
+          const rest=(e.total||0)-(e.pago||0);
+          return `<tr>
+            <td>${f?.nome||e.funcionarioNome||'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â'}</td>
+            <td>${e.descricao}</td>
+            <td class="mono" style="color:var(--red)">R$ ${fmtMoney(rest)}</td>
+            <td class="mono">R$ ${fmtMoney(e.valorParcela)}</td>
+          </tr>`;
+        }).join('')}</tbody></table>
+      </div>`;
+    }
+  },
+  calculadora: {
+    label: 'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â® Calculadora',
+    descricao: 'Calculadora com fita de papel integrada no dashboard',
+    padrao: false,
+    render: () => {
+      return `<div class="section-card" style="margin-bottom:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <div class="section-card-title" style="margin:0">ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â® CALCULADORA</div>
+          <div style="display:flex;gap:6px">
+            <button class="btn btn-outline btn-sm" onclick="calcNovaDash()" title="Nova fita (Esc)">ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¹Ã…â€œÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¯ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â</button>
+            <button class="btn btn-outline btn-sm" onclick="calcImprimirDash('a4')">ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¨ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¯ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â A4</button>
+            <button class="btn btn-outline btn-sm" onclick="calcImprimirDash('cupom')">ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¾</button>
+            <button class="btn btn-outline btn-sm" onclick="navigate('calculadora')">ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Expandir</button>
+          </div>
+        </div>
+
+        <!-- Layout: fita + teclado -->
+        <div style="display:grid;grid-template-columns:1fr 200px;gap:12px">
+
+          <!-- FITA -->
+          <div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+              <span style="font-size:0.72rem;font-weight:700;color:var(--text3)">FITA</span>
+              <span id="dashCalcTotal" style="font-family:var(--mono);font-size:1rem;font-weight:700;color:var(--accent2)">0,00</span>
+            </div>
+            <div id="dashCalcFita" style="font-family:var(--mono);font-size:0.78rem;min-height:80px;max-height:200px;overflow-y:auto;border:1px solid var(--border);border-radius:6px;padding:6px;background:var(--bg3)">
+              <p style="color:var(--text3);font-size:0.72rem;text-align:center;margin:12px 0">Nenhuma operaÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o</p>
+            </div>
+          </div>
+
+          <!-- TECLADO COMPACTO -->
+          <div>
+            <!-- Display -->
+            <div style="background:var(--bg3);border-radius:6px;padding:6px 10px;margin-bottom:6px;text-align:right;border:1px solid var(--border)">
+              <div id="dashCalcDisplay" style="font-family:var(--mono);font-size:1.4rem;font-weight:700;color:var(--text)">0</div>
+              <div id="dashCalcOp" style="font-size:0.65rem;color:var(--text3);min-height:12px"></div>
+            </div>
+            <!-- Grid 4x5 compacto -->
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px">
+              <button class="calc-btn calc-fn" style="font-size:0.72rem;padding:7px 2px" onclick="dashCalcFn('%')">%</button>
+              <button class="calc-btn calc-fn" style="font-size:0.72rem;padding:7px 2px" onclick="dashCalcFn('CE')">CE</button>
+              <button class="calc-btn calc-fn" style="font-size:0.72rem;padding:7px 2px" onclick="dashCalcFn('C')">C</button>
+              <button class="calc-btn calc-op" style="font-size:0.85rem;padding:7px 2px" onclick="dashCalcFn('ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â·')">ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â·</button>
+
+              <button class="calc-btn" style="padding:7px 2px" onclick="dashCalcNum('7')">7</button>
+              <button class="calc-btn" style="padding:7px 2px" onclick="dashCalcNum('8')">8</button>
+              <button class="calc-btn" style="padding:7px 2px" onclick="dashCalcNum('9')">9</button>
+              <button class="calc-btn calc-op" style="padding:7px 2px" onclick="dashCalcFn('ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â')">ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â</button>
+
+              <button class="calc-btn" style="padding:7px 2px" onclick="dashCalcNum('4')">4</button>
+              <button class="calc-btn" style="padding:7px 2px" onclick="dashCalcNum('5')">5</button>
+              <button class="calc-btn" style="padding:7px 2px" onclick="dashCalcNum('6')">6</button>
+              <button class="calc-btn calc-op calc-minus" style="padding:7px 2px" onclick="dashCalcFn('-')">ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Â¹ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢</button>
+
+              <button class="calc-btn" style="padding:7px 2px" onclick="dashCalcNum('1')">1</button>
+              <button class="calc-btn" style="padding:7px 2px" onclick="dashCalcNum('2')">2</button>
+              <button class="calc-btn" style="padding:7px 2px" onclick="dashCalcNum('3')">3</button>
+              <button class="calc-btn calc-op calc-plus" style="padding:7px 2px" onclick="dashCalcFn('+')">+</button>
+
+              <button class="calc-btn calc-fn" style="font-size:0.65rem;padding:7px 2px" onclick="dashCalcFn('SUB')">SUB</button>
+              <button class="calc-btn" style="padding:7px 2px" onclick="dashCalcNum('0')">0</button>
+              <button class="calc-btn" style="padding:7px 2px" onclick="dashCalcNum(',')">.</button>
+              <button class="calc-btn calc-eq" style="padding:7px 2px" onclick="dashCalcFn('=')">=</button>
+            </div>
+          </div>
+        </div>
+      </div>`;
+    }
+  },
+  historicoFolhas: {
+    label: 'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â HistÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³rico de Folhas',
+    descricao: 'ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ltimas folhas geradas',
+    padrao: false,
+    render: () => {
+      const hist = getCol('historicoFolhas').getAll().sort((a,b)=>(b.mesRef||'').localeCompare(a.mesRef||'')).slice(0,4);
+      if (hist.length === 0) return '';
+      return `<div class="section-card" style="margin-bottom:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <div class="section-card-title" style="margin:0">ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â FOLHAS RECENTES</div>
+          <button class="btn btn-outline btn-sm" onclick="navigate('historico-folha')">Ver todas</button>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          ${hist.map(h=>`<div class="stat-card" style="flex:1;min-width:130px;cursor:pointer" onclick="navigate('historico-folha')">
+            <div class="stat-label">${h.mesRef}</div>
+            <div style="font-family:var(--mono);font-size:0.9rem;color:var(--accent2)">R$ ${fmtMoney(h.totalLiquido)}</div>
+            <div style="font-size:0.72rem;color:var(--text3)">${h.qtdFuncionarios} func.</div>
+          </div>`).join('')}
+        </div>
+      </div>`;
+    }
+  }
+};
+
+// Config padrÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o
+function getDashConfig() {
+  const saved = localStorage.getItem('cgDashConfig');
+  if (saved) return JSON.parse(saved);
+  // PadrÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o: widgets ativos na ordem padrÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o
+  return Object.keys(DASH_WIDGETS).filter(k => DASH_WIDGETS[k].padrao);
+}
+
+function salvarDashConfig(config) {
+  localStorage.setItem('cgDashConfig', JSON.stringify(config));
+}
+
+function renderDashboard() {
+  // Atualizar data
+  const d = new Date();
+  const dateEl = document.getElementById('dashDate');
+  if (dateEl) dateEl.textContent = d.toLocaleDateString('pt-BR', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
+
+  const config = getDashConfig();
+  const container = document.getElementById('dashConteudo');
+  if (!container) return;
+
+  container.innerHTML = config
+    .filter(k => DASH_WIDGETS[k])
+    .map(k => DASH_WIDGETS[k].render())
+    .join('');
+}
+
+function openDashConfig() {
+  const config = getDashConfig();
+  const container = document.getElementById('dashWidgetsConfig');
+  if (!container) return;
+  container.innerHTML = Object.entries(DASH_WIDGETS).map(([id, w]) => `
+    <div style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--bg2);border-radius:8px;margin-bottom:8px">
+      <input type="checkbox" id="dw_${id}" ${config.includes(id)?'checked':''}
+        style="width:18px;height:18px;flex-shrink:0;cursor:pointer">
+      <label for="dw_${id}" style="flex:1;cursor:pointer">
+        <div style="font-weight:600;font-size:0.9rem">${w.label}</div>
+        <div style="font-size:0.78rem;color:var(--text3)">${w.descricao}</div>
+      </label>
+    </div>
+  `).join('');
+
+  // Configurar atalhos
+  const atalhosContainer = document.getElementById('dashAtalhosConfig');
+  if (atalhosContainer) {
+    const todosAtalhos = {
+      'adiantamento': 'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âµ Adiantamento Salarial',
+      'adiantamento_lote': 'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¹ Adiantamentos em Lote',
+      'acerto': 'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¤ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â Novo Acerto de Contas Pessoais',
+      'par': 'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Novo Par',
+      'emprestimo': 'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â° Novo EmprÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©stimo a FuncionÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡rios',
+      'folha': 'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¹ Folha de Pagamento',
+      'funcionario': 'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¹Ã…â€œÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¤ Novo FuncionÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡rio',
+      'cargo': 'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¹Ã…â€œÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â Novo Cargo',
+      'calculadora': 'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â® Calculadora',
+      'contrato': 'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â Novo Contrato',
+      'escala': 'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¯ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â Assistente de Escala',
+      'relatorio': 'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â  RelatÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³rio',
+    };
+    const atalhosSel = JSON.parse(localStorage.getItem('cgAtalhosDash') || 'null') ||
+      ['adiantamento','adiantamento_lote','acerto','par','emprestimo','folha'];
+    atalhosContainer.innerHTML = Object.entries(todosAtalhos).map(([id, label]) => `
+      <label style="display:flex;align-items:center;gap:6px;padding:6px 10px;background:var(--bg2);border-radius:8px;cursor:pointer;font-size:0.82rem;border:1px solid ${atalhosSel.includes(id)?'var(--accent)':'var(--border)'}">
+        <input type="checkbox" id="da_${id}" ${atalhosSel.includes(id)?'checked':''}
+          onchange="this.closest('label').style.borderColor=this.checked?'var(--accent)':'var(--border)'">
+        ${label}
+      </label>`).join('');
+  }
+}
+
+function salvarDashboard() {
+  const config = Object.keys(DASH_WIDGETS).filter(id => {
+    const cb = document.getElementById(`dw_${id}`);
+    return cb?.checked;
+  });
+  salvarDashConfig(config);
+  // Salvar atalhos selecionados
+  const atalhosSel = Array.from(document.querySelectorAll('[id^="da_"]:checked')).map(cb => cb.id.replace('da_',''));
+  if (atalhosSel.length > 0) localStorage.setItem('cgAtalhosDash', JSON.stringify(atalhosSel));
+  closeModal('modal-dash-config');
+  renderDashboard();
+  toast('Dashboard personalizado!', 'success');
+}
+
+function resetarDashboard() {
+  localStorage.removeItem('cgDashConfig');
+  openDashConfig();
+  toast('ConfiguraÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o resetada para o padrÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o', 'info');
+}
+
+
+// =====================================================
+// EXPORTAR ACERTO DE CONTAS
+// =====================================================
+function setExportPeriodo(tipo) {
+  const parId = document.getElementById('exportAcertoParId').value;
+  const par = acertoPares.find(p => p.id === parId);
+  const hoje = new Date();
+  if (tipo === 'aberto') {
+    // ApÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³s ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âºltima consolidaÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o
+    const desde = par?.consolidadoEm || '';
+    document.getElementById('exportAcertoDe').value = desde;
+    document.getElementById('exportAcertoAte').value = '';
+  } else if (tipo === 'este_mes') {
+    document.getElementById('exportAcertoDe').value = new Date(hoje.getFullYear(), hoje.getMonth(), 1).toISOString().slice(0,10);
+    document.getElementById('exportAcertoAte').value = new Date(hoje.getFullYear(), hoje.getMonth()+1, 0).toISOString().slice(0,10);
+  } else if (tipo === 'mes_passado') {
+    document.getElementById('exportAcertoDe').value = new Date(hoje.getFullYear(), hoje.getMonth()-1, 1).toISOString().slice(0,10);
+    document.getElementById('exportAcertoAte').value = new Date(hoje.getFullYear(), hoje.getMonth(), 0).toISOString().slice(0,10);
+  } else {
+    document.getElementById('exportAcertoDe').value = '';
+    document.getElementById('exportAcertoAte').value = '';
+  }
+}
+
+function abrirExportarAcerto(parId) {
+  document.getElementById('exportAcertoParId').value = parId;
+  // Datas padrÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o: ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âºltimo mÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âªs
+  const hoje = new Date();
+  const primeiroDia = new Date(hoje.getFullYear(), hoje.getMonth()-1, 1);
+  const ultimoDia = new Date(hoje.getFullYear(), hoje.getMonth(), 0);
+  document.getElementById('exportAcertoDe').value = primeiroDia.toISOString().slice(0,10);
+  document.getElementById('exportAcertoAte').value = ultimoDia.toISOString().slice(0,10);
+  openModal('modal-exportar-acerto');
+}
+
+function filtrarLancamentosExport() {
+  const parId = document.getElementById('exportAcertoParId').value;
+  const de = document.getElementById('exportAcertoDe').value;
+  const ate = document.getElementById('exportAcertoAte').value;
+  return lancamentosCache
+    .filter(l => {
+      if (l.parId !== parId) return false;
+      if (de && l.data && l.data < de) return false;
+      if (ate && l.data && l.data > ate) return false;
+      return true;
+    })
+    .sort((a,b) => (a.data||'').localeCompare(b.data||''));
+}
+
+function exportarAcertoExcel() {
+  if (typeof XLSX === 'undefined') { toast('Biblioteca Excel nÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o carregada', 'error'); return; }
+  const parId = document.getElementById('exportAcertoParId').value;
+  const par = acertoPares.find(p => p.id === parId);
+  if (!par) return;
+  const lances = filtrarLancamentosExport();
+  const data = lances.map(l => ({
+    'Data': l.data || '',
+    'Quem Deve': l.de || '',
+    'DescriÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o': l.descricao || '',
+    'Valor (R$)': (l.valor||0).toFixed(2).replace('.',',')
+  }));
+  const ws = XLSX.utils.json_to_sheet(data);
+  const wb = XLSX.utils.book_new();
+  const nomeAba = `${par.pessoaA}_${par.pessoaB}`.substring(0,28);
+  XLSX.utils.book_append_sheet(wb, ws, nomeAba);
+  XLSX.writeFile(wb, `AcertoContas_${par.pessoaA}_${par.pessoaB}.xlsx`);
+  closeModal('modal-exportar-acerto');
+  toast('Excel exportado!', 'success');
+}
+
+function exportarAcertoPDF() {
+  const parId = document.getElementById('exportAcertoParId').value;
+  const par = acertoPares.find(p => p.id === parId);
+  if (!par) return;
+  const lances = filtrarLancamentosExport();
+  const de = document.getElementById('exportAcertoDe').value;
+  const ate = document.getElementById('exportAcertoAte').value;
+  const periodo = de && ate ? `${fmtData(de)} a ${fmtData(ate)}` : 'Todo o histÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³rico';
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const lm = 14, pw = 182, rm = lm + pw;
+  let y = 14;
+
+  // CabeÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§alho
+  doc.setFillColor(27,45,107);
+  doc.rect(lm, y, pw, 20, 'FD');
+  doc.setTextColor(255,255,255);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(13);
+  doc.text('ACERTO DE CONTAS PESSOAIS', lm+6, y+8);
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'normal');
+  doc.text(`${par.pessoaA} ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ${par.pessoaB}`, lm+6, y+14);
+  doc.text(`PerÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­odo: ${periodo}`, rm-6, y+14, { align:'right' });
+  doc.setTextColor(30,30,45);
+  y += 26;
+
+  // Calcular totais do perÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­odo
+  const totalAB = lances.filter(l=>l.de===par.pessoaA).reduce((s,l)=>s+l.valor,0);
+  const totalBA = lances.filter(l=>l.de===par.pessoaB).reduce((s,l)=>s+l.valor,0);
+  const saldo = totalAB - totalBA;
+  const devedor = saldo > 0 ? par.pessoaB : par.pessoaA;
+  const credor  = saldo > 0 ? par.pessoaA : par.pessoaB;
+
+  // Cards resumo
+  doc.setFillColor(245,248,252);
+  doc.rect(lm, y, pw/3-2, 16, 'FD');
+  doc.rect(lm+pw/3, y, pw/3-2, 16, 'FD');
+  doc.rect(lm+pw*2/3, y, pw/3, 16, 'FD');
+  doc.setFontSize(7); doc.setTextColor(100,110,130);
+  doc.text(par.pessoaA+' pagou', lm+pw/6, y+5, {align:'center'});
+  doc.text(par.pessoaB+' pagou', lm+pw/2, y+5, {align:'center'});
+  doc.text('SALDO', lm+pw*5/6, y+5, {align:'center'});
+  doc.setFontSize(10); doc.setFont('helvetica','bold');
+  doc.setTextColor(46,158,79);
+  doc.text(`R$ ${fmtMoney(totalAB)}`, lm+pw/6, y+12, {align:'center'});
+  doc.setTextColor(46,158,79);
+  doc.text(`R$ ${fmtMoney(totalBA)}`, lm+pw/2, y+12, {align:'center'});
+  doc.setTextColor(Math.abs(saldo)<0.01?46:200, Math.abs(saldo)<0.01?158:100, Math.abs(saldo)<0.01?79:30);
+  doc.text(`R$ ${fmtMoney(Math.abs(saldo))}`, lm+pw*5/6, y+12, {align:'center'});
+  doc.setTextColor(30,30,45);
+  y += 22;
+
+  if (Math.abs(saldo) > 0.01) {
+    doc.setFontSize(8);
+    doc.text(`${devedor} deve R$ ${fmtMoney(Math.abs(saldo))} para ${credor}`, lm+pw/2, y, {align:'center'});
+    y += 8;
+  }
+
+  // Tabela lanÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§amentos
+  doc.setFillColor(46,158,79);
+  doc.rect(lm, y, pw, 8, 'FD');
+  doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(8);
+  doc.text('DATA', lm+15, y+5, {align:'center'});
+  doc.text('QUEM DEVE', lm+50, y+5, {align:'center'});
+  doc.text('DESCRIÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢O', lm+115, y+5, {align:'center'});
+  doc.text('VALOR', rm-8, y+5, {align:'right'});
+  doc.setTextColor(30,30,45);
+  y += 8;
+
+  lances.forEach((l, i) => {
+    if (y > 270) { doc.addPage(); y = 14; }
+    doc.setFillColor(i%2===0 ? 255:248, i%2===0 ? 255:250, i%2===0 ? 255:255);
+    doc.rect(lm, y, pw, 7, 'FD');
+    doc.setFont('helvetica','normal'); doc.setFontSize(8);
+    doc.text(l.data ? fmtData(l.data) : 'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â', lm+15, y+5, {align:'center'});
+    doc.text(l.de||'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â', lm+50, y+5, {align:'center'});
+    const desc = (l.descricao||'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â').substring(0,40);
+    doc.text(desc, lm+115, y+5, {align:'center'});
+    doc.setFont('helvetica','bold'); doc.setTextColor(46,158,79);
+    doc.text(`R$ ${fmtMoney(l.valor)}`, rm-4, y+5, {align:'right'});
+    doc.setTextColor(30,30,45);
+    y += 7;
+  });
+
+  if (lances.length === 0) {
+    doc.setFontSize(9); doc.setTextColor(150,150,160);
+    doc.text('Nenhum lanÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§amento no perÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­odo selecionado.', lm+pw/2, y+8, {align:'center'});
+  }
+
+  doc.save(`AcertoContas_${par.pessoaA}_${par.pessoaB}.pdf`);
+  closeModal('modal-exportar-acerto');
+  toast('PDF exportado!', 'success');
+}
+
+// Velha funÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o mantida por compatibilidade
+async function exportarAcertoPar(parId) {
+  abrirExportarAcerto(parId);
+}
+
+
+// =====================================================
+// PÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂGINA INDIVIDUAL DO PAR
+// =====================================================
+let parAtualId = null;
+
+function decodeHtml(str) {
+  const txt = document.createElement('textarea');
+  txt.innerHTML = str || '';
+  return txt.value;
+}
+
+function abrirPaginaPar(parId) {
+  parAtualId = parId;
+  const par = acertoPares.find(p => p.id === parId);
+  if (!par) return;
+  // Decodificar HTML entities nos nomes
+  par.pessoaA = decodeHtml(par.pessoaA);
+  par.pessoaB = decodeHtml(par.pessoaB);
+
+  document.getElementById('parPageTitulo').textContent = `${par.pessoaA} ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ${par.pessoaB}`;
+
+  // Configurar botÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âµes do header
+  document.getElementById('parLancarBtn').onclick = () => openLancamentoPar(parId);
+  document.getElementById('parExportBtn').onclick = () => abrirExportarAcerto(parId);
+  document.getElementById('parConsolidarBtn').onclick = () => consolidarPeriodoPar(parId);
+  document.getElementById('parExcluirBtn').onclick = () => excluirPar(parId);
+
+  renderParPage(parId);
+  navigate('acerto-par');
+}
+
+async function renderParPage(parId) {
+  // Recarregar lanÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§amentos antes de renderizar
+  try {
+    if (db && currentOrg) {
+      const snap = await db.collection('orgs').doc(currentOrg.id).collection('lancamentos').get();
+      lancamentosCache = snap.docs.map(d => ({id: d.id, ...d.data()}));
+    }
+  } catch(e) { /* usar cache */ }
+  const par = acertoPares.find(p => p.id === parId);
+  if (!par) return;
+
+  const periodoAtual = par.consolidadoEm || null;
+  const todosLances = lancamentosCache.filter(l => l.parId === parId);
+  const lancesAtivos = todosLances.filter(l => {
+    if (!periodoAtual) return true;
+    if (!l.data) return true;
+    return l.data > periodoAtual;
+  }).sort((a,b) => (b.data||'').localeCompare(a.data||''));
+
+  const devidoPorA = lancesAtivos.filter(l => l.de === par.pessoaA).reduce((s,l)=>s+l.valor,0);
+  const devidoPorB = lancesAtivos.filter(l => l.de === par.pessoaB).reduce((s,l)=>s+l.valor,0);
+  const saldo = devidoPorA - devidoPorB;
+  const devedor = saldo > 0 ? par.pessoaA : par.pessoaB;
+  const credor  = saldo > 0 ? par.pessoaB : par.pessoaA;
+  const quitado = Math.abs(saldo) < 0.01;
+
+  // SubtÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­tulo
+  document.getElementById('parPageSaldo').textContent = quitado
+    ? 'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¦ Sem pendÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âªncias no perÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­odo atual'
+    : `${devedor} deve R$ ${fmtMoney(Math.abs(saldo))} para ${credor}`;
+
+  // Cards
+  document.getElementById('parCards').innerHTML = `
+    <div class="stat-card">
+      <div class="stat-label">${par.pessoaA} deve</div>
+      <div class="stat-value red" style="font-size:1.2rem">R$ ${fmtMoney(devidoPorA)}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">${par.pessoaB} deve</div>
+      <div class="stat-value red" style="font-size:1.2rem">R$ ${fmtMoney(devidoPorB)}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">SALDO LÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂQUIDO</div>
+      <div class="stat-value ${quitado?'green':'yellow'}" style="font-size:1.3rem">R$ ${fmtMoney(Math.abs(saldo))}</div>
+      <div style="font-size:0.75rem;color:var(--text3)">${quitado?'Quitado':devedor+' deve'}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Total de lanÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§amentos</div>
+      <div class="stat-value accent">${lancesAtivos.length}</div>
+    </div>
+  `;
+
+  renderParLancamentos();
+  renderParConsolidacoes(parId);
+}
+
+function renderParLancamentos() {
+  const par = acertoPares.find(p => p.id === parAtualId);
+  if (!par) return;
+  const filtroDe = document.getElementById('parFiltroDe')?.value || '';
+  const filtroAte = document.getElementById('parFiltroAte')?.value || '';
+  const periodoAtual = par.consolidadoEm || null;
+
+  let lances = lancamentosCache.filter(l => {
+    if (l.parId !== parAtualId) return false;
+    if (!periodoAtual) return true;
+    if (!l.data) return true;
+    return l.data > periodoAtual;
+  });
+
+  if (filtroDe) lances = lances.filter(l => !l.data || l.data >= filtroDe);
+  if (filtroAte) lances = lances.filter(l => !l.data || l.data <= filtroAte);
+
+  lances.sort((a,b) => (b.data||'').localeCompare(a.data||''));
+
+  const el = document.getElementById('parLancamentosList');
+  if (!el) return;
+
+  if (lances.length === 0) {
+    el.innerHTML = '<p style="color:var(--text3);font-size:0.85rem">Nenhum lanÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§amento no perÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­odo.</p>';
+    return;
+  }
+
+  el.innerHTML = `<table>
+    <thead><tr>
+      <th>Data</th><th>Quem deve</th><th>DescriÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o</th>
+      <th style="text-align:right">Valor</th><th></th>
+    </tr></thead>
+    <tbody>${lances.map(l => `<tr>
+      <td style="font-size:0.8rem">${l.data?fmtData(l.data):'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â'}</td>
+      <td><span style="font-weight:600;color:var(--red)">${l.de||'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â'}</span></td>
+      <td>${l.descricao||'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â'}</td>
+      <td style="text-align:right;font-family:var(--mono);font-weight:600;color:var(--green)">R$ ${fmtMoney(l.valor)}</td>
+      <td><button class="btn-icon" onclick="excluirLancamentoParPage('${l.id}')">ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¹Ã…â€œÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¯ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â</button></td>
+    </tr>`).join('')}
+    </tbody>
+  </table>`;
+}
+
+async function excluirLancamentoParPage(lancId) {
+  if (!await confirmar('Excluir lanÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§amento?', 'Esta aÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o nÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o pode ser desfeita.')) return;
+  if (db && currentOrg) {
+    await db.collection('orgs').doc(currentOrg.id).collection('lancamentos').doc(lancId).delete();
+  } else {
+    getCol('lancamentos').delete(lancId);
+  }
+  lancamentosCache = lancamentosCache.filter(l => l.id !== lancId);
+  renderParPage(parAtualId);
+  renderAcerto();
+  toast('LanÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§amento excluÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­do', 'success');
+}
+
+function renderParConsolidacoes(parId) {
+  const par = acertoPares.find(p => p.id === parId);
+  if (!par) return;
+  const el = document.getElementById('parConsolidacoes');
+  if (!el) return;
+  const consolidacoes = (par.consolidacoes || []).sort((a,b) => (b.data||'').localeCompare(a.data||''));
+  if (consolidacoes.length === 0) {
+    el.innerHTML = '<p style="color:var(--text3);font-size:0.82rem">Nenhuma consolidaÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o ainda.</p>';
+    return;
+  }
+  el.innerHTML = consolidacoes.map(c => `
+    <div style="display:flex;align-items:center;gap:12px;padding:10px;background:var(--bg2);border-radius:8px;margin-bottom:6px">
+      <div style="font-size:1.2rem">ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â</div>
+      <div style="flex:1">
+        <div style="font-weight:600;font-size:0.88rem">PerÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­odo consolidado em ${fmtData(c.data)}</div>
+        <div style="font-size:0.78rem;color:var(--text3)">
+          ${c.pessoaA} devia R$ ${fmtMoney(c.devidoA)} ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ ${c.pessoaB} devia R$ ${fmtMoney(c.devidoB)}
+          ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ Saldo quitado: R$ ${fmtMoney(c.saldo)}
+        </div>
+      </div>
+      <span class="badge badge-green">Quitado</span>
+    </div>`).join('');
+}
+
+async function consolidarPeriodoPar(parId) {
+  const par = acertoPares.find(p => p.id === parId);
+  if (!par) return;
+
+  const periodoAtual = par.consolidadoEm || null;
+  const lancesAtivos = lancamentosCache.filter(l => {
+    if (l.parId !== parId) return false;
+    if (!periodoAtual) return true;
+    if (!l.data) return true;
+    return l.data > periodoAtual;
+  });
+
+  const devidoPorA = lancesAtivos.filter(l=>l.de===par.pessoaA).reduce((s,l)=>s+l.valor,0);
+  const devidoPorB = lancesAtivos.filter(l=>l.de===par.pessoaB).reduce((s,l)=>s+l.valor,0);
+  const saldo = Math.abs(devidoPorA - devidoPorB);
+
+  if (lancesAtivos.length === 0) { toast('Nenhum lanÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§amento ativo para consolidar', 'error'); return; }
+
+  const ok = await confirmar(
+    'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¦ Consolidar perÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­odo?',
+    `Isso irÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ zerar o saldo atual entre ${par.pessoaA} e ${par.pessoaB}.
+
+` +
+    `${par.pessoaA} deve: R$ ${fmtMoney(devidoPorA)}
+` +
+    `${par.pessoaB} deve: R$ ${fmtMoney(devidoPorB)}
+` +
+    `Saldo lÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­quido: R$ ${fmtMoney(saldo)}
+
+` +
+    `Os lanÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§amentos anteriores ficam no histÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³rico mas nÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o contam mais para o saldo.`
+  );
+  if (!ok) return;
+
+  const hoje = new Date().toISOString().slice(0,10);
+  const novaConsolidacao = {
+    data: hoje, pessoaA: par.pessoaA, pessoaB: par.pessoaB,
+    devidoA: devidoPorA, devidoB: devidoPorB, saldo
+  };
+  const consolidacoes = [...(par.consolidacoes||[]), novaConsolidacao];
+  const updates = { consolidadoEm: hoje, consolidacoes };
+
+  if (db && currentOrg) {
+    await db.collection('orgs').doc(currentOrg.id).collection('acertoPares').doc(parId).update(updates);
+  } else {
+    getCol('acertoPares').update(parId, updates);
+  }
+  const idx = acertoPares.findIndex(p=>p.id===parId);
+  if (idx>=0) Object.assign(acertoPares[idx], updates);
+
+  const parBackup = {...acertoPares.find(p=>p.id===parId)};
+  const consolidacoesAntes = parBackup.consolidacoes ? [...parBackup.consolidacoes.slice(0,-1)] : [];
+  pushUndo({ descricao: `Consolidar perÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­odo ${par.pessoaA} ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ${par.pessoaB}`, reverter: async () => {
+    const reverts = { consolidadoEm: consolidacoesAntes.length > 0 ? consolidacoesAntes[consolidacoesAntes.length-1]?.data||null : null, consolidacoes: consolidacoesAntes };
+    if (db && currentOrg) await db.collection('orgs').doc(currentOrg.id).collection('acertoPares').doc(parId).update(reverts);
+    else getCol('acertoPares').update(parId, reverts);
+    const pidx = acertoPares.findIndex(p=>p.id===parId);
+    if (pidx>=0) Object.assign(acertoPares[pidx], reverts);
+    renderParPage(parId); renderAcerto();
+  }});
+  renderParPage(parId);
+  renderAcerto();
+  toast('PerÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­odo consolidado! (desfazer disponÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­vel)', 'success');
+}
+
+
+// =====================================================
+// ESCALA ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â seleÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o para imprimir/baixar
+// =====================================================
+function renderEscalaCheckList() {
+  if (!escalaGerada) return;
+  const el = document.getElementById('escalaCheckList');
+  const selEl = document.getElementById('escalaSelecao');
+  const btnsEl = document.getElementById('escalaBotoesPos');
+  if (!el) return;
+  if (selEl) selEl.style.display = 'block';
+  if (btnsEl) btnsEl.style.display = 'flex';
+  el.innerHTML = escalaGerada.equipe.map(item => `
+    <label style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg2);border-radius:8px;cursor:pointer">
+      <input type="checkbox" id="escCb_${item.funcionario.id}" checked style="width:16px;height:16px">
+      <span style="font-size:0.85rem">${item.funcionario.nome}</span>
+      <span style="font-size:0.75rem;color:var(--text3)">${item.totalHorasMes}h (${item.totalExtrasMes}h extras)</span>
+    </label>
+  `).join('');
+}
+
+function toggleTodosEscala(checked) {
+  document.querySelectorAll('[id^="escCb_"]').forEach(cb => cb.checked = checked);
+}
+
+function getEscalaSelecionados() {
+  if (!escalaGerada) return [];
+  return escalaGerada.equipe.filter(item => {
+    const cb = document.getElementById(`escCb_${item.funcionario.id}`);
+    return !cb || cb.checked;
+  });
+}
+
+function printEscalasSelecionadas() {
+  const selecionados = getEscalaSelecionados();
+  if (!selecionados.length) { toast('Selecione ao menos um funcionÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡rio', 'error'); return; }
+  if (selecionados.length === 1) {
+    printEscalaFuncionario(selecionados[0].funcionario.id);
+    return;
+  }
+  printTodasEscalas(selecionados);
+}
+
+function downloadEscalasSelecionadasPdf() {
+  const selecionados = getEscalaSelecionados();
+  if (!selecionados.length) { toast('Selecione ao menos um funcionÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡rio', 'error'); return; }
+  if (selecionados.length === 1) {
+    downloadEscalaPdfFuncionario(selecionados[0].funcionario.id);
+    return;
+  }
+  downloadTodasEscalasPdf(selecionados);
+}
+
+// =====================================================
+// FILTROS PERÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂODO ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â Acerto de Contas
+// =====================================================
+function filtrarParPeriodo(tipo) {
+  const hoje = new Date();
+  let de, ate;
+  if (tipo === 'este_mes') {
+    de = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+    ate = new Date(hoje.getFullYear(), hoje.getMonth()+1, 0);
+  } else if (tipo === 'mes_passado') {
+    de = new Date(hoje.getFullYear(), hoje.getMonth()-1, 1);
+    ate = new Date(hoje.getFullYear(), hoje.getMonth(), 0);
+  } else if (tipo === 'este_ano') {
+    de = new Date(hoje.getFullYear(), 0, 1);
+    ate = new Date(hoje.getFullYear(), 11, 31);
+  } else {
+    document.getElementById('parFiltroDe').value = '';
+    document.getElementById('parFiltroAte').value = '';
+    renderParLancamentos();
+    return;
+  }
+  document.getElementById('parFiltroDe').value = de.toISOString().slice(0,10);
+  document.getElementById('parFiltroAte').value = ate.toISOString().slice(0,10);
+  renderParLancamentos();
+}
+
+// =====================================================
+// UNDO GLOBAL ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â botÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o flutuante em TODAS as aÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âµes
+// =====================================================
+function pushUndoGlobal(descricao, reverterFn) {
+  pushUndo({ descricao, reverter: reverterFn });
+}
+
+// Wrapper para excluir com undo
+async function excluirComUndo(descricao, deleteFn, undoFn) {
+  await deleteFn();
+  pushUndoGlobal(descricao, undoFn);
+}
+
+// =====================================================
+// VOLTAR AO TOPO ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â botÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o flutuante
+// =====================================================
+function adicionarBotaoTopo() {
+  if (document.getElementById('btnVoltarTopo')) return;
+  const btn = document.createElement('button');
+  btn.id = 'btnVoltarTopo';
+  btn.innerHTML = 'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â²';
+  btn.title = 'Voltar ao topo';
+  btn.style.cssText = 'position:fixed;bottom:16px;right:16px;width:42px;height:42px;border-radius:50%;background:var(--navy);color:white;border:none;font-size:1rem;cursor:pointer;z-index:8999;box-shadow:0 4px 14px rgba(0,0,0,0.3);display:none;font-family:var(--font)';
+  btn.onclick = () => window.scrollTo({top:0,behavior:'smooth'});
+  document.body.appendChild(btn);
+  window.addEventListener('scroll', () => {
+    btn.style.display = window.scrollY > 200 ? 'flex' : 'none';
+    btn.style.alignItems = 'center';
+    btn.style.justifyContent = 'center';
+  });
+}
+document.addEventListener('DOMContentLoaded', adicionarBotaoTopo);
+
+function exportFuncionariosPDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const lm = 14, pw = 182, rm = lm + pw;
+  let y = 14;
+  doc.setFillColor(27,45,107); doc.rect(lm, y, pw, 18, 'FD');
+  doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(12);
+  doc.text('RELATÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“RIO DE FUNCIONÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂRIOS', lm+6, y+8);
+  doc.setFontSize(8); doc.setFont('helvetica','normal');
+  doc.text(`${currentOrg?.nome||''} ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ ${new Date().toLocaleDateString('pt-BR')}`, lm+6, y+14);
+  doc.setTextColor(30,30,45); y += 24;
+
+  doc.setFillColor(46,158,79); doc.rect(lm, y, pw, 8, 'FD');
+  doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(8);
+  ['NOME','CPF','CARGO','SALÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂRIO','STATUS'].forEach((h, i) => {
+    const xs = [lm+3, lm+55, lm+90, lm+140, lm+168];
+    doc.text(h, xs[i], y+5.5);
+  });
+  doc.setTextColor(30,30,45); y += 8;
+
+  funcionarios.forEach((f, i) => {
+    const grupo = grupos.find(g => g.id === f.grupoId);
+    doc.setFillColor(i%2===0?255:248, i%2===0?255:250, i%2===0?255:255);
+    doc.rect(lm, y, pw, 7, 'FD');
+    doc.setFont('helvetica','normal'); doc.setFontSize(8);
+    doc.text((f.nome||'').substring(0,24), lm+3, y+5);
+    doc.text(f.cpf||'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â', lm+55, y+5);
+    doc.text(getNomeCargo(f).substring(0,18), lm+90, y+5);
+    doc.setFont('helvetica','bold'); doc.setTextColor(46,158,79);
+    doc.text(`R$ ${fmtMoney(f.salario||0)}`, lm+140, y+5);
+    doc.setTextColor(f.ativo!==false?46:200, f.ativo!==false?158:30, f.ativo!==false?79:30);
+    doc.text(f.ativo!==false?'Ativo':'Inativo', lm+168, y+5);
+    doc.setTextColor(30,30,45); y += 7;
+    if (y > 270) { doc.addPage(); y = 14; }
+  });
+
+  doc.save('Funcionarios.pdf');
+  toast('PDF exportado!', 'success');
+}
+
+
+// =====================================================
+// CALCULADORA ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â FITA DE PAPEL
+// =====================================================
+let calcEstado = {
+  display: '0',
+  acumulador: null,
+  operacao: null,
+  novoNumero: true,
+  fita: [],
+  totalAtual: 0
+};
+
+function calcNum(n) {
+  if (n === ',' || n === '.') {
+    if (calcEstado.display.includes(',')) return;
+    if (calcEstado.novoNumero) { calcEstado.display = '0,'; calcEstado.novoNumero = false; return calcRender(); }
+    calcEstado.display += ',';
+  } else {
+    if (calcEstado.novoNumero) { calcEstado.display = n; calcEstado.novoNumero = false; }
+    else { if (calcEstado.display === '0') calcEstado.display = n; else calcEstado.display += n; }
+  }
+  calcRender();
+}
+
+function calcValor() {
+  return parseFloat(calcEstado.display.replace(',','.')) || 0;
+}
+
+function calcFn(op) {
+  const val = calcValor();
+  const desc = ''; // descriÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o agora ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â© inline na fita
+
+  if (op === 'C') {
+    // C: limpa sÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³ o nÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âºmero atual
+    calcEstado.display = '0'; calcEstado.novoNumero = true; calcRender(); return;
+  }
+  if (op === 'CE') {
+    // CE: limpa display E operaÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o pendente (mantÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©m fita)
+    calcEstado.display = '0'; calcEstado.acumulador = null; calcEstado.operacao = null;
+    calcEstado.novoNumero = true;
+    document.getElementById('calcOpDisplay').textContent = '';
+    calcRender(); return;
+  }
+  if (op === 'CF') {
+    // CF: limpa a fita inteira
+    calcNova(); return;
+  }
+
+  if (op === '%') {
+    const pct = calcEstado.acumulador !== null ? calcEstado.acumulador * val / 100 : val / 100;
+    calcEstado.display = String(pct).replace('.',',');
+    calcRender(); return;
+  }
+
+  if (op === 'subtotal') {
+    calcEstado.fita.push({ tipo:'subtotal', valor: calcEstado.totalAtual, desc: 'Subtotal' });
+    calcRenderFita(); return;
+  }
+
+  if (['+','-','ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â','ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â·'].includes(op)) {
+    if (calcEstado.operacao && !calcEstado.novoNumero) {
+      // Executar operaÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o anterior
+      calcExecutar(val, desc);
+    } else {
+      if (calcEstado.acumulador === null) {
+        calcEstado.acumulador = val;
+        calcEstado.totalAtual = val;
+        calcEstado.fita.push({ tipo: 'entrada', op: '', valor: val, desc: '' });
+        calcRenderFita();
+      }
+    }
+    calcEstado.operacao = op;
+    calcEstado.novoNumero = true;
+    document.getElementById('calcOpDisplay').textContent = `${fmtMoney(calcEstado.acumulador)} ${op}`;
+    calcRender(); return;
+  }
+
+  if (op === '=') {
+    if (calcEstado.operacao && !calcEstado.novoNumero) {
+      calcExecutar(val, desc);
+    }
+    calcEstado.operacao = null;
+    calcEstado.novoNumero = true;
+    document.getElementById('calcOpDisplay').textContent = '';
+    calcRender();
+  }
+}
+
+function calcExecutar(val, desc) {
+  const acc = calcEstado.acumulador;
+  const opSim = calcEstado.operacao;
+  let resultado = acc;
+  if (opSim === '+') resultado = acc + val;
+  if (opSim === '-') resultado = acc - val;
+  if (opSim === 'ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â') resultado = acc * val;
+  if (opSim === 'ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â·') resultado = val !== 0 ? acc / val : 0;
+
+  calcEstado.fita.push({ tipo:'entrada', op: opSim, valor: val, resultado, desc: '' });
+  calcEstado.acumulador = resultado;
+  calcEstado.totalAtual = resultado;
+  calcEstado.display = String(Math.round(resultado*100)/100).replace('.',',');
+  calcRenderFita();
+}
+
+function calcFormatDisplay(str) {
+  // Formatar nÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âºmero enquanto digita: 1500 ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ 1.500
+  if (!str || str === '0') return '0';
+  const negative = str.startsWith('-');
+  const parts = str.replace('-','').split(',');
+  const intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  const decPart = parts[1] !== undefined ? ',' + parts[1] : '';
+  return (negative ? '-' : '') + intPart + decPart;
+}
+
+function calcRender() {
+  const el = document.getElementById('calcDisplay');
+  const tot = document.getElementById('calcTotalDisplay');
+  if (el) el.textContent = calcFormatDisplay(calcEstado.display);
+  if (tot) tot.textContent = fmtMoney(calcEstado.totalAtual);
+}
+
+function calcRenderFita() {
+  const el = document.getElementById('calcFita');
+  if (!el) return;
+  if (calcEstado.fita.length === 0) {
+    el.innerHTML = '<p style="color:var(--text3);font-size:0.82rem;text-align:center;padding:20px">Nenhuma operaÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o ainda</p>';
+    return;
+  }
+  el.innerHTML = calcEstado.fita.map((linha, i) => {
+    if (linha.tipo === 'subtotal') {
+      return `<div class="calc-linha cl-sub">
+        <span class="cl-op" style="color:var(--navy)">SUB</span>
+        <span class="cl-desc">Subtotal</span>
+        <span class="cl-val" style="color:var(--navy)">R$ ${fmtMoney(linha.valor)}</span>
+      </div>`;
+    }
+    const cor = linha.op==='+' ? 'var(--green)' : linha.op==='-' ? 'var(--red)' : 'var(--text)';
+    return `<div class="calc-linha ${linha.resultado!==undefined?'cl-eq':''}">
+      <span class="cl-op" style="color:${cor}">${linha.op||'='}</span>
+      <input type="text" class="calc-desc-input" placeholder="descriÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o..."
+        value="${linha.desc||''}"
+        oninput="calcEstado.fita[${i}].desc=this.value"
+        style="border:none;background:transparent;color:var(--text3);font-size:0.75rem;flex:2;outline:none;padding:0 2px">
+      <span class="cl-val" style="color:${cor}">R$ ${fmtMoney(linha.valor)}</span>
+      ${linha.resultado!==undefined ? `<span style="font-family:var(--mono);font-weight:700;color:var(--accent2);min-width:80px;text-align:right">= R$ ${fmtMoney(linha.resultado)}</span>` : ''}
+      <button class="btn-icon" style="font-size:11px;opacity:0.5" onclick="calcRemoverLinha(${i})">ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¢</button>
+    </div>`;
+  }).join('');
+  calcRender();
+}
+
+function calcRemoverLinha(idx) {
+  calcEstado.fita.splice(idx, 1);
+  calcRenderFita();
+}
+
+function calcNova() {
+  calcEstado = { display:'0', acumulador:null, operacao:null, novoNumero:true, fita:[], totalAtual:0 };
+  calcRender(); calcRenderFita();
+}
+
+function calcImprimir(tipo) {
+  const orgNome = currentOrg?.nome || 'Empresa';
+  const data = new Date().toLocaleDateString('pt-BR');
+  const hora = new Date().toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'});
+  const total = fmtMoney(calcEstado.totalAtual);
+
+  const linhas = calcEstado.fita.map(l => {
+    if (l.tipo === 'subtotal') return `<tr style="border-top:2px solid #333"><td colspan="2" style="font-weight:bold">SUBTOTAL</td><td style="text-align:right;font-weight:bold">R$ ${fmtMoney(l.valor)}</td></tr>`;
+    const cor = l.op==='+' ? 'green' : l.op==='-' ? 'red' : '#333';
+    return `<tr><td style="color:${cor};font-weight:700">${l.op||'='}</td><td>${l.desc||''}</td><td style="text-align:right;color:${cor}">R$ ${fmtMoney(l.valor)}</td></tr>`;
+  }).join('');
+
+  const cupomW = tipo==='cupom' ? 'width:72mm;' : '';
+  const html = `<!DOCTYPE html><html><head><title>Calculadora ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ${orgNome}</title>
+  <style>
+    body{font-family:${tipo==='cupom'?'Courier New,monospace':'Arial,sans-serif'};${cupomW}padding:${tipo==='cupom'?'4mm':'20px'};font-size:${tipo==='cupom'?'10px':'11px'};-webkit-font-smoothing:none;font-weight:${tipo==='cupom'?'bold':'normal'}}
+    table{width:100%;border-collapse:collapse}
+    td{padding:${tipo==='cupom'?'2px 3px':'5px 8px'};border-bottom:1px dashed #ddd}
+    .total{font-size:${tipo==='cupom'?'12px':'16px'};font-weight:700;border-top:2px solid #333;padding-top:8px}
+    h3{text-align:center;margin:0 0 8px}
+    .info{text-align:center;color:#666;font-size:${tipo==='cupom'?'8px':'10px'};margin-bottom:10px}
+    @media print{@page{size:${tipo==='cupom'?'80mm auto':'A4'};margin:${tipo==='cupom'?'3mm':'15mm'}}}
+  </style></head><body>
+  <h3>${orgNome}</h3>
+  <div class="info">${data} ${hora}</div>
+  <table>${linhas}
+    <tr class="total"><td colspan="2">TOTAL</td><td style="text-align:right">R$ ${total}</td></tr>
+  </table>
+  </body></html>`;
+
+  const popup = window.open('','_blank');
+  popup.document.write(html);
+  popup.document.close();
+  popup.onload = () => { popup.focus(); popup.print(); };
+}
+
+async function calcSalvarFita() {
+  const nome = prompt('Nome para esta fita:');
+  if (!nome?.trim()) return;
+  const fita = {
+    nome: nome.trim(),
+    data: new Date().toISOString().slice(0,10),
+    total: calcEstado.totalAtual,
+    linhas: [...calcEstado.fita]
+  };
+  await fsAdd('calculadoraFitas', fita);
+  toast('Fita salva!', 'success');
+  renderFitasSalvas();
+}
+
+async function renderFitasSalvas() {
+  const el = document.getElementById('calcFitasSalvas');
+  if (!el) return;
+  const fitas = await fsGetAll('calculadoraFitas');
+  if (!fitas || fitas.length === 0) {
+    el.innerHTML = '<p style="color:var(--text3);font-size:0.85rem">Nenhuma fita salva ainda.</p>';
+    return;
+  }
+  el.innerHTML = fitas.sort((a,b)=>(b.data||'').localeCompare(a.data||'')).map(f => `
+    <div style="display:flex;align-items:center;gap:10px;padding:8px;background:var(--bg2);border-radius:8px;margin-bottom:6px">
+      <div style="flex:1">
+        <div style="font-weight:600;font-size:0.88rem">${f.nome}</div>
+        <div style="font-size:0.75rem;color:var(--text3)">${f.data?fmtData(f.data):''} ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ ${f.linhas?.length||0} operaÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âµes</div>
+      </div>
+      <div style="font-family:var(--mono);font-weight:700;color:var(--accent2)">R$ ${fmtMoney(f.total)}</div>
+      <button class="btn btn-outline btn-sm" onclick="calcCarregarFita('${f.id}')">Carregar</button>
+      <button class="btn-icon" onclick="calcExcluirFita('${f.id}')">ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¹Ã…â€œÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¯ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â</button>
+    </div>`).join('');
+}
+
+async function calcCarregarFita(id) {
+  const fitas = await fsGetAll('calculadoraFitas');
+  const fita = fitas.find(f=>f.id===id);
+  if (!fita) return;
+  calcEstado.fita = fita.linhas || [];
+  calcEstado.totalAtual = fita.total || 0;
+  calcEstado.display = String(fita.total||0).replace('.',',');
+  calcRenderFita();
+  toast(`Fita "${fita.nome}" carregada!`, 'success');
+}
+
+async function calcExcluirFita(id) {
+  await fsDelete('calculadoraFitas', id);
+  renderFitasSalvas();
+  toast('Fita excluÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­da', 'success');
+}
+
+// =====================================================
+// CONTRATOS ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â Templates e geraÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o
+// =====================================================
+let contratoAtual = { tipo:'', campos:{} };
+
+const CONTRATOS_TEMPLATES = {
+  clt: {
+    titulo: 'Contrato de Trabalho ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â CLT',
+    campos: [
+      {id:'funcionarioId', label:'FuncionÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡rio', tipo:'select-funcionario'},
+      {id:'dataAdmissao', label:'Data de admissÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o', tipo:'date'},
+      {id:'salario', label:'SalÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡rio (R$)', tipo:'money'},
+      {id:'jornada', label:'Jornada semanal (horas)', tipo:'number', default:'44'},
+      {id:'localTrabalho', label:'Local de trabalho', tipo:'text'},
+      {id:'beneficios', label:'BenefÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­cios (opcional)', tipo:'textarea'},
+    ]
+  },
+  temporario: {
+    titulo: 'Contrato de Trabalho TemporÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡rio',
+    campos: [
+      {id:'funcionarioId', label:'FuncionÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡rio', tipo:'select-funcionario'},
+      {id:'dataInicio', label:'Data de inÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­cio', tipo:'date'},
+      {id:'dataFim', label:'Data de tÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©rmino', tipo:'date'},
+      {id:'salario', label:'SalÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡rio (R$)', tipo:'money'},
+      {id:'motivoContratacao', label:'Motivo da contrataÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o temporÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ria', tipo:'textarea'},
+    ]
+  },
+  estagio: {
+    titulo: 'Contrato de EstÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡gio',
+    campos: [
+      {id:'nomeEstagiario', label:'Nome do estagiÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡rio', tipo:'text'},
+      {id:'cpfEstagiario', label:'CPF do estagiÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡rio', tipo:'text'},
+      {id:'instituicao', label:'InstituiÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o de ensino', tipo:'text'},
+      {id:'curso', label:'Curso', tipo:'text'},
+      {id:'supervisor', label:'Supervisor responsÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡vel', tipo:'text'},
+      {id:'bolsa', label:'Valor da bolsa (R$)', tipo:'money'},
+      {id:'dataInicio', label:'Data de inÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­cio', tipo:'date'},
+      {id:'dataFim', label:'Data de tÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©rmino', tipo:'date'},
+      {id:'cargaHoraria', label:'Carga horÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ria diÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ria (horas)', tipo:'number'},
+    ]
+  },
+  servico: {
+    titulo: 'Contrato de PrestaÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o de ServiÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§o',
+    campos: [
+      {id:'contratadoNome', label:'Nome/RazÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o Social do contratado', tipo:'text'},
+      {id:'contratadoCpfCnpj', label:'CPF/CNPJ do contratado', tipo:'text'},
+      {id:'descricaoServico', label:'DescriÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o do serviÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§o', tipo:'textarea'},
+      {id:'valor', label:'Valor total (R$)', tipo:'money'},
+      {id:'prazo', label:'Prazo de execuÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o', tipo:'text', placeholder:'Ex: 30 dias'},
+      {id:'formaPagamento', label:'Forma de pagamento', tipo:'text'},
+      {id:'dataInicio', label:'Data de inÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­cio', tipo:'date'},
+    ]
+  },
+  fornecimento: {
+    titulo: 'Contrato de Fornecimento',
+    campos: [
+      {id:'fornecedorNome', label:'Nome/RazÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o Social do fornecedor', tipo:'text'},
+      {id:'fornecedorCnpj', label:'CNPJ do fornecedor', tipo:'text'},
+      {id:'produtoServico', label:'Produto/serviÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§o fornecido', tipo:'textarea'},
+      {id:'valorMensal', label:'Valor mensal estimado (R$)', tipo:'money'},
+      {id:'prazoContrato', label:'VigÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âªncia do contrato', tipo:'text', placeholder:'Ex: 12 meses'},
+      {id:'condicoesPagamento', label:'CondiÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âµes de pagamento', tipo:'text'},
+    ]
+  },
+  compra_venda: {
+    titulo: 'Contrato de Compra e Venda',
+    campos: [
+      {id:'vendedorNome', label:'Nome/RazÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o Social do vendedor', tipo:'text'},
+      {id:'vendedorCnpj', label:'CPF/CNPJ do vendedor', tipo:'text'},
+      {id:'descricaoBem', label:'DescriÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o do bem/produto', tipo:'textarea'},
+      {id:'valor', label:'Valor total (R$)', tipo:'money'},
+      {id:'formaPagamento', label:'Forma de pagamento', tipo:'text'},
+      {id:'dataEntrega', label:'Data de entrega', tipo:'date'},
+    ]
+  },
+  emprestimo_func: {
+    titulo: 'Termo de EmprÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©stimo/Adiantamento a FuncionÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡rio',
+    campos: [
+      {id:'funcionarioId', label:'FuncionÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡rio', tipo:'select-funcionario'},
+      {id:'valor', label:'Valor (R$)', tipo:'money'},
+      {id:'parcelas', label:'NÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âºmero de parcelas', tipo:'number'},
+      {id:'dataConcessao', label:'Data de concessÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o', tipo:'date'},
+      {id:'motivoEmprestimo', label:'Finalidade (opcional)', tipo:'text'},
+    ]
+  },
+  rescisao: {
+    titulo: 'Termo de RescisÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o Contratual',
+    campos: [
+      {id:'funcionarioId', label:'FuncionÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡rio', tipo:'select-funcionario'},
+      {id:'dataRescisao', label:'Data da rescisÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o', tipo:'date'},
+      {id:'tipoRescisao', label:'Tipo de rescisÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o', tipo:'select',
+        opcoes:['Pedido de demissÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o','DemissÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o sem justa causa','DemissÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o com justa causa','Acordo mÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âºtuo (Lei 13.467)']},
+      {id:'avisoPrevio', label:'Aviso prÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©vio', tipo:'select', opcoes:['Trabalhado','Indenizado','Dispensado']},
+      {id:'saldoSalario', label:'Saldo de salÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡rio (R$)', tipo:'money'},
+      {id:'fgts', label:'FGTS a recolher/sacar (R$)', tipo:'money'},
+    ]
+  }
+};
+
+function usarTemplate(tipo) {
+  const tmpl = CONTRATOS_TEMPLATES[tipo];
+  if (!tmpl) return;
+  contratoAtual = { tipo, campos: {} };
+  document.getElementById('contratoModalTitulo').textContent = tmpl.titulo;
+
+  const body = document.getElementById('contratoModalBody');
+  body.innerHTML = `
+    <p style="color:var(--text3);font-size:0.82rem;margin-bottom:16px">Preencha os campos abaixo. Os dados da empresa sÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o preenchidos automaticamente.</p>
+    <div class="form-grid">
+      ${tmpl.campos.map(campo => renderCampoContrato(campo)).join('')}
+    </div>`;
+
+  // Popular selects de funcionÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡rio
+  tmpl.campos.filter(f => f.tipo === 'select-funcionario').forEach(f => {
+    const sel = document.getElementById(`cc_${f.id}`);
+    if (!sel) return;
+    sel.innerHTML = '<option value="">Selecione...</option>' +
+      funcionarios.filter(fn => fn.ativo !== false).map(fn =>
+        `<option value="${fn.id}">${fn.nome}</option>`).join('');
+  });
+
+  // Preencher data de hoje nos campos de data
+  tmpl.campos.filter(f => f.tipo === 'date').forEach(f => {
+    const el = document.getElementById(`cc_${f.id}`);
+    if (el && !el.value) el.value = new Date().toISOString().slice(0,10);
+  });
+
+  openModal('modal-contrato');
+}
+
+function renderCampoContrato(campo) {
+  const id = `cc_${campo.id}`;
+  if (campo.tipo === 'select-funcionario') {
+    return `<div class="form-group"><label class="form-label">${campo.label}</label><select class="form-input" id="${id}"></select></div>`;
+  }
+  if (campo.tipo === 'select') {
+    return `<div class="form-group"><label class="form-label">${campo.label}</label><select class="form-input" id="${id}">${campo.opcoes.map(o=>`<option value="${o}">${o}</option>`).join('')}</select></div>`;
+  }
+  if (campo.tipo === 'textarea') {
+    return `<div class="form-group" style="grid-column:1/-1"><label class="form-label">${campo.label}</label><textarea class="form-input" id="${id}" rows="3" placeholder="${campo.placeholder||''}" style="resize:vertical;font-family:var(--font)"></textarea></div>`;
+  }
+  if (campo.tipo === 'money') {
+    return `<div class="form-group"><label class="form-label">${campo.label}</label><div style="position:relative"><span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text3);pointer-events:none">R$</span><input type="number" class="form-input" id="${id}" step="0.01" placeholder="0,00" style="padding-left:34px" value="${campo.default||''}"></div></div>`;
+  }
+  return `<div class="form-group"><label class="form-label">${campo.label}</label><input type="${campo.tipo==='number'?'number':'text'}" class="form-input" id="${id}" placeholder="${campo.placeholder||''}" value="${campo.default||''}"></div>`;
+}
+
+function coletarCamposContrato() {
+  const tmpl = CONTRATOS_TEMPLATES[contratoAtual.tipo];
+  if (!tmpl) return {};
+  const dados = {};
+  tmpl.campos.forEach(campo => {
+    const el = document.getElementById(`cc_${campo.id}`);
+    if (!el) return;
+    dados[campo.id] = el.value;
+    // Para select-funcionario, guardar tambÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©m o objeto
+    if (campo.tipo === 'select-funcionario' && el.value) {
+      dados[campo.id + '_obj'] = funcionarios.find(f => f.id === el.value);
+    }
+  });
+  return dados;
+}
+
+async function gerarContratoPDF() {
+  const tmpl = CONTRATOS_TEMPLATES[contratoAtual.tipo];
+  if (!tmpl) return;
+  const dados = coletarCamposContrato();
+  const org = currentOrg || { nome: 'EMPRESA', cnpj: '', cidade: '' };
+  const hoje = new Date();
+  const dataExtenso = hoje.toLocaleDateString('pt-BR', {day:'numeric',month:'long',year:'numeric'});
+  const cidade = org.cidade || '';
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const lm = 25, pw = 160, rm = lm + pw;
+  let y = 20;
+
+  // CabeÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§alho
+  doc.setFont('helvetica','bold'); doc.setFontSize(11);
+  doc.text(org.nome.toUpperCase(), lm + pw/2, y, {align:'center'});
+  if (org.cnpj) {
+    y += 6; doc.setFont('helvetica','normal'); doc.setFontSize(9);
+    doc.text(`CNPJ: ${org.cnpj}`, lm + pw/2, y, {align:'center'});
+  }
+  y += 8;
+  doc.setLineWidth(0.8); doc.setDrawColor(27,45,107);
+  doc.line(lm, y, rm, y);
+  y += 8;
+
+  // TÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­tulo
+  doc.setFont('helvetica','bold'); doc.setFontSize(12);
+  doc.text(tmpl.titulo.toUpperCase(), lm + pw/2, y, {align:'center'});
+  y += 12;
+
+  // Texto do contrato
+  const texto = gerarTextoContrato(contratoAtual.tipo, dados, org);
+  doc.setFont('helvetica','normal'); doc.setFontSize(9.5);
+  const linhas = doc.splitTextToSize(texto, pw);
+  linhas.forEach(linha => {
+    if (y > 260) { doc.addPage(); y = 20; }
+    doc.text(linha, lm, y);
+    y += 5.5;
+  });
+
+  // Assinaturas
+  y = Math.max(y + 15, 240);
+  if (y > 270) { doc.addPage(); y = 30; }
+  doc.setLineWidth(0.4); doc.setDrawColor(100,100,120);
+  doc.line(lm, y, lm+70, y);
+  doc.line(rm-70, y, rm, y);
+  doc.setFontSize(9);
+  const contratante = org.nome.substring(0,25);
+  const contratado = dados.funcionarioId_obj?.nome || dados.contratadoNome || dados.vendedorNome || dados.fornecedorNome || 'CONTRATADO(A)';
+  doc.text(contratante, lm+35, y+5, {align:'center'});
+  doc.text(contratado.substring(0,25), rm-35, y+5, {align:'center'});
+  doc.setFontSize(8); doc.setTextColor(130,130,150);
+  doc.text('CONTRATANTE', lm+35, y+9, {align:'center'});
+  doc.text('CONTRATADO(A)', rm-35, y+9, {align:'center'});
+  doc.setTextColor(30,30,45);
+  y += 16;
+  doc.setFontSize(9);
+  doc.text(`${cidade ? cidade + ', ' : ''}${dataExtenso}`, lm+pw/2, y, {align:'center'});
+
+  const nomePdf = `${tmpl.titulo.replace(/[\/:*?"<>|]/g,'_')}.pdf`;
+  doc.save(nomePdf);
+
+  // Salvar registro
+  await fsAdd('contratos', {
+    tipo: contratoAtual.tipo,
+    titulo: tmpl.titulo,
+    dados,
+    geradoEm: new Date().toISOString()
+  });
+
+  closeModal('modal-contrato');
+  renderContratosLista();
+  toast('Contrato gerado!', 'success');
+}
+
+function gerarTextoContrato(tipo, d, org) {
+  const func = d.funcionarioId_obj;
+  const empresa = `${org.nome}${org.cnpj ? ', inscrita no CNPJ sob o nÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âº ' + org.cnpj : ''}${org.cidade ? ', com sede em ' + org.cidade : ''}`;
+
+  const textos = {
+    clt: `Pelo presente instrumento particular, ${empresa}, doravante denominada CONTRATANTE, e ${func?.nome||'___'}, portador(a) do CPF nÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âº ${func?.cpf||'___'}, doravante denominado(a) CONTRATADO(A), tÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âªm justo e acordado o presente Contrato de Trabalho por Prazo Indeterminado, regido pela ConsolidaÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o das Leis do Trabalho (CLT), mediante as seguintes clÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡usulas e condiÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âµes:
+
+CLÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂUSULA 1ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âª ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â DA FUNÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢O
+O(A) CONTRATADO(A) ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â© admitido(a) para exercer a funÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o de ${func?.cargo||'___'}, com ingresso em ${d.dataAdmissao ? fmtData(d.dataAdmissao) : '___'}, no local de trabalho: ${d.localTrabalho||'___'}.
+
+CLÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂUSULA 2ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âª ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â DA REMUNERAÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢O
+O(A) CONTRATADO(A) perceberÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ salÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡rio mensal de R$ ${fmtMoney(parseFloat(d.salario)||0)} (${numberToWords(parseFloat(d.salario)||0)}), pago atÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â© o 5ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âº dia ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âºtil do mÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âªs subsequente ao vencido.
+
+CLÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂUSULA 3ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âª ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â DA JORNADA DE TRABALHO
+A jornada de trabalho serÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ de ${d.jornada||'44'} (${d.jornada||'quarenta e quatro'}) horas semanais, distribuÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­das de segunda-feira a sexta-feira, de acordo com o horÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡rio estabelecido pela CONTRATANTE.
+
+CLÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂUSULA 4ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âª ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â DAS FÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â°RIAS E 13ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âº SALÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂRIO
+O(A) CONTRATADO(A) farÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ jus a fÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©rias anuais remuneradas acrescidas de 1/3 constitucional, bem como ao 13ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âº salÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡rio, nos termos da legislaÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o vigente.
+
+CLÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂUSULA 5ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âª ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â DO FGTS E INSS
+A CONTRATANTE recolherÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡, mensalmente, o FGTS e contribuiÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o previdenciÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ria (INSS) sobre a remuneraÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o do(a) CONTRATADO(A), nos percentuais legalmente estabelecidos.
+
+${d.beneficios ? `CLÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂUSULA 6ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âª ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â DOS BENEFÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂCIOS\n${d.beneficios}\n\n` : ''}CLÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂUSULA ${d.beneficios?'7':'6'}ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âª ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â DA RESCISÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢O
+O presente contrato poderÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ ser rescindido por qualquer das partes, mediante aviso prÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©vio, de acordo com as disposiÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âµes da CLT e legislaÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o vigente.
+
+CLÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂUSULA ${d.beneficios?'8':'7'}ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âª ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â DO FORO
+As partes elegem o foro da comarca de ${org.cidade||'___'} para dirimir quaisquer controvÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©rsias oriundas deste contrato.
+
+E, por estarem assim justos e contratados, as partes assinam o presente instrumento em 2 (duas) vias de igual teor.`,
+
+    rescisao: `Pelo presente instrumento particular, ${empresa}, doravante denominada EMPREGADORA, e ${func?.nome||'___'}, portador(a) do CPF nÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âº ${func?.cpf||'___'}, admitido(a) em ___ para exercer a funÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o de ${func?.cargo||'___'}, doravante denominado(a) EMPREGADO(A), formalizam o distrato do contrato de trabalho, mediante as seguintes condiÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âµes:
+
+CLÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂUSULA 1ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âª ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â DA RESCISÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢O
+Fica rescindido o contrato de trabalho em ${d.dataRescisao ? fmtData(d.dataRescisao) : '___'}, por ${d.tipoRescisao||'___'}.
+
+CLÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂUSULA 2ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âª ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â DO AVISO PRÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â°VIO
+O aviso prÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©vio foi: ${d.avisoPrevio||'___'}.
+
+CLÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂUSULA 3ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âª ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â DAS VERBAS RESCISÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“RIAS
+O(A) EMPREGADO(A) receberÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ as seguintes verbas rescisÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³rias:
+ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â Saldo de salÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡rio: R$ ${fmtMoney(parseFloat(d.saldoSalario)||0)}
+ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â FGTS: R$ ${fmtMoney(parseFloat(d.fgts)||0)}
+${d.tipoRescisao?.includes('sem justa causa') ? 'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â Multa de 40% sobre FGTS conforme legislaÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o vigente\n' : ''}
+CLÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂUSULA 4ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âª ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â DA QUITAÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢O
+Recebidas as verbas devidas, as partes dÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o plena, geral e irrevogÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡vel quitaÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o de todos os direitos e obrigaÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âµes decorrentes do contrato de trabalho ora rescindido, nada mais podendo reclamar, a qualquer tÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­tulo.
+
+E, por estarem assim justos e acordados, assinam o presente em 2 (duas) vias de igual teor.`,
+
+    servico: `Pelo presente instrumento particular, ${empresa}, doravante denominada CONTRATANTE, e ${d.contratadoNome||'___'}, inscrito(a) no CPF/CNPJ sob o nÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âº ${d.contratadoCpfCnpj||'___'}, doravante denominado(a) CONTRATADO(A), tÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âªm entre si justo e contratado a prestaÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o de serviÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§os, mediante as seguintes clÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡usulas:
+
+CLÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂUSULA 1ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âª ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â DO OBJETO
+O(A) CONTRATADO(A) prestarÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ os seguintes serviÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§os ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â  CONTRATANTE: ${d.descricaoServico||'___'}.
+
+CLÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂUSULA 2ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âª ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â DO VALOR E PAGAMENTO
+Pela prestaÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o dos serviÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§os, a CONTRATANTE pagarÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ ao(ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ) CONTRATADO(A) o valor de R$ ${fmtMoney(parseFloat(d.valor)||0)} (${numberToWords(parseFloat(d.valor)||0)}), mediante ${d.formaPagamento||'___'}.
+
+CLÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂUSULA 3ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âª ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â DO PRAZO
+Os serviÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§os deverÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o ser executados no prazo de ${d.prazo||'___'}, contados a partir de ${d.dataInicio ? fmtData(d.dataInicio) : '___'}.
+
+CLÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂUSULA 4ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âª ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â DA NATUREZA DOS SERVIÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¡OS
+O(A) CONTRATADO(A) prestarÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ os serviÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§os de forma autÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â´noma, sem subordinaÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o, nÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o configurando vÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­nculo empregatÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­cio entre as partes.
+
+CLÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂUSULA 5ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âª ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â DO FORO
+Fica eleito o foro da comarca de ${org.cidade||'___'} para dirimir quaisquer controvÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©rsias.
+
+E, por estarem assim justos e contratados, assinam o presente em 2 (duas) vias de igual teor.`,
+
+    emprestimo_func: `Pelo presente instrumento particular, ${empresa}, doravante denominada EMPREGADORA, e ${func?.nome||'___'}, portador(a) do CPF nÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âº ${func?.cpf||'___'}, funcionÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡rio(a) da EMPREGADORA na funÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o de ${func?.cargo||'___'}, doravante denominado(a) BENEFICIÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂRIO(A), formalizam o presente Termo de EmprÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©stimo, nas seguintes condiÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âµes:
+
+CLÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂUSULA 1ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âª ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â DO VALOR
+A EMPREGADORA concede ao(ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ) BENEFICIÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂRIO(A) emprÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©stimo/adiantamento no valor de R$ ${fmtMoney(parseFloat(d.valor)||0)} (${numberToWords(parseFloat(d.valor)||0)}), em ${d.dataConcessao ? fmtData(d.dataConcessao) : '___'}${d.motivoEmprestimo ? '\nFinalidade: ' + d.motivoEmprestimo : ''}
+
+CLÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂUSULA 2ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âª ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â DA DEVOLUÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢O
+O valor serÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ descontado diretamente da folha de pagamento do(a) BENEFICIÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂRIO(A), em ${d.parcelas||'___'} (${d.parcelas||'___'}) parcelas mensais iguais, iniciando-se no prÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³ximo pagamento.
+
+CLÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂUSULA 3ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âª ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â DO RECONHECIMENTO DE DÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂVIDA
+O(A) BENEFICIÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂRIO(A) reconhece o dÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©bito e autoriza expressamente os descontos em folha de pagamento, nos termos do art. 462 da CLT.
+
+CLÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂUSULA 4ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âª ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â DA RESCISÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢O
+Em caso de rescisÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o contratual, o saldo devedor serÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ integralmente descontado das verbas rescisÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³rias devidas.
+
+E, por estarem assim justos e acordados, assinam o presente em 2 (duas) vias de igual teor.`,
+  };
+
+  // Templates restantes (fornecimento, compra_venda, temporario, estagio) - versÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o simplificada
+  const padrao = `Pelo presente instrumento, ${empresa} e ${d.contratadoNome||d.fornecedorNome||d.vendedorNome||func?.nome||'___'} ajustam entre si o presente contrato, tendo como objeto: ${d.descricaoBem||d.produtoServico||d.descricaoServico||'___'}.
+
+Valor: R$ ${fmtMoney(parseFloat(d.valor||d.valorMensal||d.bolsa||d.salario)||0)}
+VigÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âªncia: ${d.prazoContrato||d.prazo||''}
+CondiÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âµes: ${d.condicoesPagamento||d.formaPagamento||''}
+
+As partes elegem o foro de ${org.cidade||'___'} para dirimir quaisquer controvÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©rsias.`;
+
+  return textos[tipo] || padrao;
+}
+
+async function renderContratosLista() {
+  const el = document.getElementById('contratosLista');
+  if (!el) return;
+  const contratos = await fsGetAll('contratos');
+  if (!contratos || contratos.length === 0) {
+    el.innerHTML = '<p style="color:var(--text3);font-size:0.85rem">Nenhum contrato gerado ainda.</p>';
+    return;
+  }
+  el.innerHTML = contratos.sort((a,b)=>(b.geradoEm||'').localeCompare(a.geradoEm||'')).map(ct => `
+    <div style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--bg2);border-radius:8px;margin-bottom:6px">
+      <div style="font-size:1.5rem">ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¾</div>
+      <div style="flex:1">
+        <div style="font-weight:600;font-size:0.88rem">${ct.titulo}</div>
+        <div style="font-size:0.75rem;color:var(--text3)">${ct.geradoEm?new Date(ct.geradoEm).toLocaleDateString('pt-BR'):''}</div>
+      </div>
+      <button class="btn btn-outline btn-sm" onclick="usarTemplate('${ct.tipo}')">ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¹ Usar novamente</button>
+      <button class="btn-icon" onclick="excluirContrato('${ct.id}')">ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¹Ã…â€œÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¯ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â</button>
+    </div>`).join('');
+}
+
+async function excluirContrato(id) {
+  if (!await confirmar('Excluir contrato?','')) return;
+  await fsDelete('contratos', id);
+  renderContratosLista();
+}
+
+function abrirNovoContrato() {
+  document.getElementById('contratosTemplates').scrollIntoView({behavior:'smooth'});
+  toast('Escolha um template abaixo', 'info');
+}
+
+function previewContrato() {
+  toast('Preencha os campos e clique em Gerar PDF para visualizar', 'info');
+}
+
+
+// =====================================================
+// CALCULADORA ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â TECLADO DO COMPUTADOR
+// =====================================================
+function calcHandleKeyboard(e) {
+  // SÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³ funciona quando a pÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡gina da calculadora estÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ ativa
+  if (!document.getElementById('page-calculadora')?.classList.contains('active')) return;
+  // NÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o interceptar quando estiver num input (exceto calcDesc)
+  const active = document.activeElement;
+  if (active && active.id !== 'calcDesc' && ['INPUT','TEXTAREA','SELECT'].includes(active.tagName)) return;
+
+  const key = e.key;
+  e.preventDefault();
+
+  if (key >= '0' && key <= '9') { calcNum(key); return; }
+  if (key === ',' || key === '.') { calcNum(','); return; }
+  if (key === '+') { calcFn('+'); return; }
+  if (key === '-') { calcFn('-'); return; }
+  if (key === '*') { calcFn('ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â'); return; }
+  if (key === '/') { calcFn('ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â·'); return; }
+  if (key === '%') { calcFn('%'); return; }
+  if (key === 'Enter' || key === '=') { calcFn('='); return; }
+  if (key === 'Backspace') {
+    if (calcEstado.display.length > 1) {
+      calcEstado.display = calcEstado.display.slice(0, -1);
+    } else {
+      calcEstado.display = '0';
+    }
+    calcRender(); return;
+  }
+  if (key === 'Escape') { calcNova(); return; } // Esc = Nova fita
+  if (key === 'Delete') { calcFn('CE'); return; } // Del = limpa operaÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o
+  if (key === 'F9') { calcFn('CF'); return; } // F9 = limpa fita
+  // Enter no campo descriÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â confirma operaÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o pendente
+  if (key === 'Tab' && calcEstado.operacao) { calcFn('='); return; }
+}
+
+document.addEventListener('keydown', (e) => {
+  // NÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o interceptar Ctrl+Z (undo) nem outros atalhos do sistema
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  calcHandleKeyboard(e);
+});
+
+
+// Helper: retorna o nome do cargo de um funcionÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡rio
+function getNomeCargo(f) {
+  if (f.grupoId) {
+    const g = grupos.find(g => g.id === f.grupoId);
+    if (g) return g.nome;
+  }
+  return f.cargo || 'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â';
+}
+
+// Helper: lista de funcionÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡rios ativos ordenada e filtrada
+function getFuncionariosOrdenados(filtro='', cargoFiltro='', ordemAZ=true) {
+  let lista = funcionarios.filter(f => f.ativo !== false);
+  if (filtro) {
+    const q = filtro.toLowerCase();
+    lista = lista.filter(f =>
+      f.nome.toLowerCase().includes(q) ||
+      getNomeCargo(f).toLowerCase().includes(q) ||
+      (f.cpf||'').includes(q)
+    );
+  }
+  if (cargoFiltro) {
+    lista = lista.filter(f => f.grupoId === cargoFiltro || f.cargo === cargoFiltro);
+  }
+  lista.sort((a, b) => {
+    const cmp = a.nome.localeCompare(b.nome, 'pt-BR');
+    return ordemAZ ? cmp : -cmp;
+  });
+  return lista;
+}
+// =====================================================
+// CALCULADORA DO DASHBOARD ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â estado prÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³prio
+// =====================================================
+let dashCalcEstado = {
+  display: '0', acumulador: null, operacao: null,
+  novoNumero: true, fita: [], totalAtual: 0
+};
+
+function dashCalcNum(n) {
+  const s = dashCalcEstado;
+  if (n === ',' || n === '.') {
+    if (s.display.includes(',')) return;
+    if (s.novoNumero) { s.display = '0,'; s.novoNumero = false; }
+    else s.display += ',';
+  } else {
+    if (s.novoNumero) { s.display = n; s.novoNumero = false; }
+    else { s.display = s.display === '0' ? n : s.display + n; }
+  }
+  dashCalcRender();
+}
+
+function dashCalcValor() {
+  return parseFloat(dashCalcEstado.display.replace(',', '.')) || 0;
+}
+
+function dashCalcFn(op) {
+  const s = dashCalcEstado;
+  const val = dashCalcValor();
+
+  if (op === 'C') { s.display = '0'; s.novoNumero = true; dashCalcRender(); return; }
+  if (op === 'CE') {
+    s.display = '0'; s.acumulador = null; s.operacao = null; s.novoNumero = true;
+    const opEl = document.getElementById('dashCalcOp');
+    if (opEl) opEl.textContent = '';
+    dashCalcRender(); return;
+  }
+  if (op === 'SUB') {
+    s.fita.push({ tipo: 'subtotal', valor: s.totalAtual });
+    dashCalcRenderFita(); return;
+  }
+  if (op === '%') {
+    const pct = s.acumulador !== null ? s.acumulador * val / 100 : val / 100;
+    s.display = String(pct).replace('.', ',');
+    dashCalcRender(); return;
+  }
+
+  if (['+', '-', 'ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â', 'ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â·'].includes(op)) {
+    if (s.operacao && !s.novoNumero) {
+      dashCalcExecutar(val);
+    } else if (s.acumulador === null) {
+      s.acumulador = val;
+      s.totalAtual = val;
+      s.fita.push({ tipo: 'entrada', op: '', valor: val });
+      dashCalcRenderFita();
+    }
+    s.operacao = op;
+    s.novoNumero = true;
+    const opEl = document.getElementById('dashCalcOp');
+    if (opEl) opEl.textContent = `${fmtMoney(s.acumulador)} ${op}`;
+    dashCalcRender(); return;
+  }
+
+  if (op === '=') {
+    if (s.operacao && !s.novoNumero) dashCalcExecutar(val);
+    s.operacao = null; s.novoNumero = true;
+    const opEl = document.getElementById('dashCalcOp');
+    if (opEl) opEl.textContent = '';
+    dashCalcRender();
+  }
+}
+
+function dashCalcExecutar(val) {
+  const s = dashCalcEstado;
+  const acc = s.acumulador;
+  let res = acc;
+  if (s.operacao === '+') res = acc + val;
+  if (s.operacao === '-') res = acc - val;
+  if (s.operacao === 'ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â') res = acc * val;
+  if (s.operacao === 'ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â·') res = val !== 0 ? acc / val : 0;
+  res = Math.round(res * 100) / 100;
+  s.fita.push({ tipo: 'entrada', op: s.operacao, valor: val, resultado: res });
+  s.acumulador = res;
+  s.totalAtual = res;
+  s.display = String(res).replace('.', ',');
+  dashCalcRenderFita();
+}
+
+function dashCalcRender() {
+  const s = dashCalcEstado;
+  const el = document.getElementById('dashCalcDisplay');
+  const tot = document.getElementById('dashCalcTotal');
+  if (el) el.textContent = calcFormatDisplay(s.display);
+  if (tot) tot.textContent = fmtMoney(s.totalAtual);
+}
+
+function dashCalcRenderFita() {
+  const el = document.getElementById('dashCalcFita');
+  if (!el) return;
+  const s = dashCalcEstado;
+  if (s.fita.length === 0) {
+    el.innerHTML = '<p style="color:var(--text3);font-size:0.72rem;text-align:center;margin:12px 0">Nenhuma operaÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o</p>';
+    dashCalcRender(); return;
+  }
+  el.innerHTML = s.fita.map((linha, i) => {
+    if (linha.tipo === 'subtotal') {
+      return `<div style="display:flex;justify-content:space-between;padding:2px 0;border-top:1px solid var(--navy);font-weight:700;color:var(--navy);font-size:0.72rem">
+        <span>SUB</span><span>R$ ${fmtMoney(linha.valor)}</span></div>`;
+    }
+    const cor = linha.op === '+' ? 'var(--green)' : linha.op === '-' ? 'var(--red)' : 'var(--text)';
+    return `<div style="display:flex;align-items:center;gap:4px;padding:2px 0;border-bottom:1px solid var(--border);font-size:0.72rem">
+      <span style="width:14px;font-weight:700;color:${cor};flex-shrink:0">${linha.op || '='}</span>
+      <span style="flex:1;color:${cor}">${fmtMoney(linha.valor)}</span>
+      ${linha.resultado !== undefined ? `<span style="font-weight:700;color:var(--accent2)">= ${fmtMoney(linha.resultado)}</span>` : ''}
+      <button onclick="dashCalcRemoverLinha(${i})" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:10px;padding:0 2px;line-height:1">ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¢</button>
+    </div>`;
+  }).join('');
+  // Auto-scroll para baixo
+  el.scrollTop = el.scrollHeight;
+  dashCalcRender();
+}
+
+function dashCalcRemoverLinha(idx) {
+  dashCalcEstado.fita.splice(idx, 1);
+  dashCalcRenderFita();
+}
+
+function calcNovaDash() {
+  dashCalcEstado = { display:'0', acumulador:null, operacao:null, novoNumero:true, fita:[], totalAtual:0 };
+  dashCalcRender();
+  dashCalcRenderFita();
+}
+
+function calcImprimirDash(tipo) {
+  // Usa a mesma funÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o da calculadora principal mas com o estado do dashboard
+  const estadoBackup = calcEstado;
+  calcEstado = dashCalcEstado;
+  calcImprimir(tipo);
+  calcEstado = estadoBackup;
+}
+
+// Sincronizar teclado com calculadora do dashboard quando dashboard estiver ativo
+function calcHandleKeyboardDash(e) {
+  // SÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³ quando dashboard estÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ ativo E calculadora do dashboard estÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ visÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­vel
+  const dashPage = document.getElementById('page-dashboard');
+  const dashFita = document.getElementById('dashCalcFita');
+  if (!dashPage?.classList.contains('active') || !dashFita) return;
+
+  const active = document.activeElement;
+  if (active && ['INPUT','TEXTAREA','SELECT'].includes(active.tagName)) return;
+
+  const key = e.key;
+  if (key >= '0' && key <= '9') { e.preventDefault(); dashCalcNum(key); return; }
+  if (key === ',' || key === '.') { e.preventDefault(); dashCalcNum(','); return; }
+  if (key === '+') { e.preventDefault(); dashCalcFn('+'); return; }
+  if (key === '-') { e.preventDefault(); dashCalcFn('-'); return; }
+  if (key === '*') { e.preventDefault(); dashCalcFn('ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â'); return; }
+  if (key === '/') { e.preventDefault(); dashCalcFn('ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â·'); return; }
+  if (key === 'Enter' || key === '=') { e.preventDefault(); dashCalcFn('='); return; }
+  if (key === 'Backspace') {
+    e.preventDefault();
+    const s = dashCalcEstado;
+    s.display = s.display.length > 1 ? s.display.slice(0,-1) : '0';
+    dashCalcRender(); return;
+  }
+  if (key === 'Escape') { e.preventDefault(); calcNovaDash(); return; }
+}
+
+// Adicionar ao listener de teclado existente
+document.addEventListener('keydown', calcHandleKeyboardDash);
+
+// Dashboard calc init handled in navigate()
+
+// Service worker for PWA
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js?v=20260502a')
+      .then(reg => {
+        // ForÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ar update imediato
+        reg.update();
+      })
+      .catch(() => {});
+  });
+}
