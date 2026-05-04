@@ -954,9 +954,9 @@ tr:hover td { background: rgba(108,99,255,0.04); }
 .mobile-nav-item.active { color: var(--accent2); }
 
 @media (max-width: 768px) {
-  .mobile-nav { display: block; }
-  .sidebar { display: none; }
-  .main-panel { margin-left: 0; padding-bottom: 80px; }
+  .mobile-nav { display: none; } /* removido — usar hamburger */
+  /* sidebar controlada pelo hamburger — não esconder aqui */
+  .main-panel { margin-left: 0; padding-bottom: 16px; }
 }
 
 /* FOLHA PREVIEW (like the PDF) */
@@ -1205,17 +1205,31 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
 /* ── HAMBURGER BUTTON ──────────────────────── */
 .hamburger-btn {
   display: none;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+  width: 36px;
+  height: 36px;
   background: none;
   border: none;
-  font-size: 1.4rem;
-  color: var(--text, #e2e8f0);
   cursor: pointer;
-  padding: 4px 8px;
-  line-height: 1;
-  border-radius: 6px;
+  padding: 6px;
+  border-radius: 8px;
   flex-shrink: 0;
 }
-.hamburger-btn:hover { background: var(--bg2, rgba(255,255,255,0.08)); }
+.hamburger-btn:hover { background: rgba(255,255,255,0.1); }
+.hamburger-btn span {
+  display: block;
+  width: 20px;
+  height: 2px;
+  background: var(--text, #e2e8f0);
+  border-radius: 2px;
+  transition: all 0.25s ease;
+}
+.hamburger-btn.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.hamburger-btn.open span:nth-child(2) { opacity: 0; transform: scaleX(0); }
+.hamburger-btn.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
 
 /* ── SIDEBAR OVERLAY (mobile) ──────────────── */
 .sidebar-overlay {
@@ -1228,7 +1242,7 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
 .sidebar-overlay.active { display: block; }
 
 @media (max-width: 768px) {
-  .hamburger-btn { display: flex; align-items: center; }
+  .hamburger-btn { display: flex; }
 
   /* Sidebar: oculta por padrão, desliza ao abrir */
   .sidebar {
@@ -1240,25 +1254,29 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
     transform: translateX(-100%);
     transition: transform 0.25s ease;
     overflow-y: auto;
-    width: 260px;
-    box-shadow: 4px 0 24px rgba(0,0,0,0.4);
+    width: 75vw;
+    max-width: 300px;
+    box-shadow: 4px 0 32px rgba(0,0,0,0.5);
   }
   .sidebar.open { transform: translateX(0); }
 
-  /* Calculadora mobile — tela cheia */
+  /* Calculadora mobile: layout vertical, teclado maior */
   #calcLayout {
     grid-template-columns: 1fr !important;
-    grid-template-rows: auto auto;
   }
-  /* Fita fica em cima */
+  /* Fita fica acima */
   #calcLayout > div:first-child { order: 1; }
-  /* Teclado fica em baixo, maior */
+  /* Teclado fica abaixo, ocupa tela */
   #calcLayout > div:last-child { order: 2; }
 
-  /* Botões da calc maiores no mobile */
+  /* Botões maiores no mobile */
   .calc-btn {
-    padding: 16px 4px !important;
-    font-size: 1.2rem !important;
+    padding: 18px 4px !important;
+    font-size: 1.3rem !important;
+    border-radius: 10px !important;
   }
-  .calc-btn.calc-eq { padding: 16px 4px !important; }
+  .calc-btn.calc-fn { font-size: 0.9rem !important; }
+
+  /* App sem padding extra no mobile */
+  .page { padding: 12px !important; }
 }

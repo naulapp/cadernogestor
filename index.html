@@ -73,8 +73,7 @@
 <div class="screen active" id="screen-splash">
   <img src="logo.png" style="width:100px;height:100px;object-fit:contain;margin-bottom:16px;animation:float 3s ease-in-out infinite;filter:drop-shadow(0 8px 24px rgba(46,158,79,0.4));border-radius:20px">
   <div class="splash-title">CadernoGestor</div>
-  <div class="splash-sub">Gestão simplificada. Resultado real.</div>
-  <div class="splash-tagline">Saia do papel. Sem sair do caderno.</div>
+  <div class="splash-sub">Saia do papel. Sem sair do caderno.</div>
   <div class="splash-loader"></div>
 </div>
 
@@ -187,7 +186,9 @@
 <div class="screen" id="screen-app">
   <!-- TOP BAR -->
   <div class="topbar">
-    <button class="hamburger-btn" onclick="toggleSidebar()" id="hamburgerBtn" aria-label="Menu">&#9776;</button>
+    <button class="hamburger-btn" onclick="toggleSidebar()" id="hamburgerBtn" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
     <div class="topbar-logo">
       <img src="logo.png" style="height:28px;width:28px;object-fit:contain;border-radius:6px">
       <div style="display:flex;flex-direction:column;line-height:1.1">
@@ -1082,17 +1083,6 @@
 
   </div><!-- /app-content -->
 
-  <!-- MOBILE NAV -->
-  <div class="mobile-nav">
-    <div class="mobile-nav-items">
-      <div class="mobile-nav-item active" onclick="navigate('dashboard')"><span class="icon">📊</span>Início</div>
-      <div class="mobile-nav-item" onclick="navigate('folha')"><span class="icon">📋</span>Folha</div>
-      <div class="mobile-nav-item" onclick="navigate('emprestimos')"><span class="icon">💰</span>Emprést.</div>
-      <div class="mobile-nav-item" onclick="navigate('vales')"><span class="icon">💵</span>Adiantamentos</div>
-      <div class="mobile-nav-item" onclick="navigate('relatorio')"><span class="icon">📈</span>Relatório</div>
-      <div class="mobile-nav-item" onclick="navigate('acerto')"><span class="icon">🤝</span>Acerto</div>
-    </div>
-  </div>
 </div>
 
 <!-- ======== MODALS ======== -->

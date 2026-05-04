@@ -564,9 +564,11 @@ async function loadAllData() {
 function toggleSidebar() {
   const sidebar = document.getElementById('sidebar');
   const overlay = document.getElementById('sidebarOverlay');
+  const btn = document.getElementById('hamburgerBtn');
   const isOpen = sidebar?.classList.contains('open');
   sidebar?.classList.toggle('open', !isOpen);
   overlay?.classList.toggle('active', !isOpen);
+  btn?.classList.toggle('open', !isOpen);
 }
 
 // Fechar sidebar ao navegar no mobile
@@ -574,6 +576,7 @@ function navigate(page) {
   // Fechar sidebar no mobile ao navegar
   document.getElementById('sidebar')?.classList.remove('open');
   document.getElementById('sidebarOverlay')?.classList.remove('active');
+  document.getElementById('hamburgerBtn')?.classList.remove('open');
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.querySelectorAll('.mobile-nav-item').forEach(n => n.classList.remove('active'));
