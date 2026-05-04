@@ -1204,7 +1204,7 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
 
 /* ── HAMBURGER BUTTON ──────────────────────── */
 .hamburger-btn {
-  display: none;
+  display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
@@ -1231,6 +1231,35 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
 .hamburger-btn.open span:nth-child(2) { opacity: 0; transform: scaleX(0); }
 .hamburger-btn.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
 
+
+/* ── CALCULADORA LAYOUT ───────────────────────── */
+.calc-layout {
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  gap: 16px;
+  align-items: start;
+}
+
+@media (max-width: 768px) {
+  .calc-layout {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto;
+  }
+  /* Fita em cima, teclado embaixo */
+  .calc-layout > .section-card:first-child { order: 1; }
+  .calc-layout > .section-card:last-child  { order: 2; }
+
+  /* Botões grandes para toque */
+  .calc-btn {
+    padding: 20px 4px !important;
+    font-size: 1.3rem !important;
+    border-radius: 10px !important;
+    min-height: 56px;
+  }
+  .calc-btn.calc-fn { font-size: 0.85rem !important; }
+  .calc-btn.calc-eq { min-height: 56px; }
+}
+
 /* ── SIDEBAR OVERLAY (mobile) ──────────────── */
 .sidebar-overlay {
   display: none;
@@ -1242,7 +1271,6 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
 .sidebar-overlay.active { display: block; }
 
 @media (max-width: 768px) {
-  .hamburger-btn { display: flex; }
 
   /* Sidebar: oculta por padrão, desliza ao abrir */
   .sidebar {
