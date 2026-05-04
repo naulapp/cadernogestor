@@ -191,7 +191,7 @@ async function salvarFuncionario() {
   closeModal('modal-funcionario');
   renderFuncionarios();
   populateSelects();
-  toast(id ? 'Funcion�rio atualizado' : 'Funcion�rio cadastrado!', 'success');
+  toast(id ? 'Funcionário atualizado' : 'Funcionário cadastrado!', 'success');
   limparFormFuncionario();
 }
 
@@ -224,11 +224,11 @@ function editarFuncionario(id) {
 }
 
 async function excluirFuncionario(id) {
-  if (!await confirmar('Excluir funcion�rio?', 'Esta a��o pode ser desfeita em seguida.')) return;
+  if (!await confirmar('Excluir funcionrio?', 'Esta ao pode ser desfeita em seguida.')) return;
   const backup = {...funcionarios.find(f=>f.id===id)};
   await fsDelete('funcionarios', id);
   funcionarios = funcionarios.filter(f => f.id !== id);
-  pushUndo({ descricao: `Excluir funcion�rio ${backup?.nome||''}`, reverter: async () => {
+  pushUndo({ descricao: `Excluir funcionrio ${backup?.nome||''}`, reverter: async () => {
     const novo = await fsAdd('funcionarios', backup);
     funcionarios.push(novo); renderFuncionarios(); renderDashboard();
   }});
@@ -244,7 +244,7 @@ function limparFormFuncionario() {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
-  // Selects � resetar para valor padr�o
+  // Selects  resetar para valor padro
   const selects = {
     funcCargo: '',
     funcGrupo: '',
@@ -280,12 +280,12 @@ function renderGrupos() {
   }
   container.innerHTML = grupos.map(g => {
     const count = funcionarios.filter(f => f.grupoId === g.id).length;
-    const adics = (g.adicionais||[]).map(a => a.nome).join(', ') || '�';
+    const adics = (g.adicionais||[]).map(a => a.nome).join(', ') || '';
     const inssLabel = g.inssType === 'pct' ? `${g.inssPct||0}%` : `R$ ${fmtMoney(g.inss)}`;
     return `<div class="section-card" style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
       <div style="flex:1;min-width:160px">
         <div style="font-weight:600;font-size:0.95rem">${g.nome}</div>
-        <div style="color:var(--text3);font-size:0.78rem;margin-top:2px">${count} funcion�rio(s) � ${g.cargaSemanal||44}h/sem � ${g.cargaMensal||220}h/m�s</div>
+        <div style="color:var(--text3);font-size:0.78rem;margin-top:2px">${count} funcionrio(s)  ${g.cargaSemanal||44}h/sem  ${g.cargaMensal||220}h/ms</div>
       </div>
       <div style="display:flex;gap:14px;font-size:0.82rem;flex-wrap:wrap">
         <div><div style="color:var(--text3)">Salário</div><div style="font-family:var(--mono)">R$ ${fmtMoney(g.salario)}</div></div>
@@ -399,7 +399,7 @@ function editarGrupo(id) {
 }
 
 async function excluirGrupo(id) {
-  if (!await confirmar('Excluir cargo?', 'Os funcion�rios vinculados ficar�o sem grupo.')) return;
+  if (!await confirmar('Excluir cargo?', 'Os funcionrios vinculados ficaro sem grupo.')) return;
   await fsDelete('grupos', id);
   grupos = grupos.filter(g => g.id !== id);
   renderGrupos();
@@ -427,7 +427,7 @@ function renderEmprestimos(filter='') {
     const parcelasRestantes = e.valorParcela > 0 ? Math.ceil(restante / e.valorParcela) : 0;
     const status = restante <= 0 ? 'quitado' : 'ativo';
     return `<tr>
-      <td><strong>${func?.nome || e.funcionarioNome || '�'}</strong></td>
+      <td><strong>${func?.nome || e.funcionarioNome || ''}</strong></td>
       <td>${e.descricao}</td>
       <td class="mono">R$ ${fmtMoney(e.total)}</td>
       <td>${e.parcelas}x</td>
@@ -508,11 +508,11 @@ async function registrarPagamento(id) {
 }
 
 async function excluirEmprestimo(id) {
-  if (!await confirmar('Excluir empr�stimo?', 'Esta a��o pode ser desfeita em seguida.')) return;
+  if (!await confirmar('Excluir emprstimo?', 'Esta ao pode ser desfeita em seguida.')) return;
   const backup = {...emprestimos.find(e=>e.id===id)};
   await fsDelete('emprestimos', id);
   emprestimos = emprestimos.filter(e => e.id !== id);
-  pushUndo({ descricao: `Excluir empr�stimo ${backup?.descricao||''}`, reverter: async () => {
+  pushUndo({ descricao: `Excluir emprstimo ${backup?.descricao||''}`, reverter: async () => {
     const novo = await fsAdd('emprestimos', backup);
     emprestimos.push(novo); renderEmprestimos(); renderDashboard();
   }});
@@ -554,7 +554,7 @@ function renderVales() {
 
   const totalFiltro = lista.reduce((s,v) => s + (v.valor||0), 0);
   const el = document.getElementById('valesTotalFiltro');
-  if (el) el.textContent = lista.length > 0 ? `${lista.length} registro(s) � Total: R$ ${fmtMoney(totalFiltro)}` : '';
+  if (el) el.textContent = lista.length > 0 ? `${lista.length} registro(s)  Total: R$ ${fmtMoney(totalFiltro)}` : '';
 
   if (lista.length === 0) {
     tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="icon">🎫</div><h3>Nenhum adiantamento encontrado</h3></div></td></tr>`;
@@ -563,10 +563,10 @@ function renderVales() {
   tbody.innerHTML = lista.map(v => {
     const func = funcionarios.find(f => f.id === v.funcionarioId);
     const isPendente = v.status !== 'descontado';
-    const parcelasInfo = v.tipo==='parcelado' && v.nParcelas ? `${v.nParcelas}x R$ ${fmtMoney(v.valorParc||v.valor/v.nParcelas)}` : '�';
+    const parcelasInfo = v.tipo==='parcelado' && v.nParcelas ? `${v.nParcelas}x R$ ${fmtMoney(v.valorParc||v.valor/v.nParcelas)}` : '';
     return `<tr>
-      <td><strong>${func?.nome || v.funcionarioNome || '�'}</strong></td>
-      <td style="font-family:var(--mono);font-size:0.82rem">${v.data?fmtData(v.data):'�'}</td>
+      <td><strong>${func?.nome || v.funcionarioNome || ''}</strong></td>
+      <td style="font-family:var(--mono);font-size:0.82rem">${v.data?fmtData(v.data):''}</td>
       <td>${v.descricao||'Adiantamento'}</td>
       <td class="mono" style="color:${isPendente?'var(--red)':'var(--text3)'}">R$ ${fmtMoney(v.valor)}</td>
       <td style="font-size:0.78rem">${parcelasInfo}</td>
@@ -621,7 +621,7 @@ async function marcarValeDescontado(id) {
 }
 
 async function excluirVale(id) {
-  if (!await confirmar('Excluir adiantamento?', 'Esta a��o pode ser desfeita em seguida.')) return;
+  if (!await confirmar('Excluir adiantamento?', 'Esta ao pode ser desfeita em seguida.')) return;
   const backup = {...vales.find(v=>v.id===id)};
   await fsDelete('vales', id);
   vales = vales.filter(v => v.id !== id);
@@ -669,7 +669,7 @@ async function loadFolha() {
     return;
   }
 
-  // Buscar adiantamentos pendentes (todos, n�o s� do m�s � gestor decide quais descontar)
+  // Buscar adiantamentos pendentes (todos, no s do ms  gestor decide quais descontar)
   const valesMes = vales.filter(v => v.status !== 'descontado');
   const empAtivos = emprestimos.filter(e => e.status === 'ativo' || !e.status);
 
@@ -684,14 +684,14 @@ async function loadFolha() {
     const horaExtraPct = grupo ? (grupo.horaExtraPct||50) : (f.horaExtraPct || 50);
     const cargaMensal = grupo ? (grupo.cargaMensal||220) : (f.cargaMensal || 220);
 
-    // INSS � prefer�ncia: tipo e valor do funcion�rio, fallback do grupo
+    // INSS  preferncia: tipo e valor do funcionrio, fallback do grupo
     const inssType = f.inssType || grupo?.inssType || 'valor';
     const inssPct = f.inssPct || grupo?.inssPct || 0;
     const inssValor = inssType === 'pct'
       ? Math.round(salario * (inssPct / 100) * 100) / 100
       : (f.inss || grupo?.inss || 0);
 
-    // Adicionais � do funcion�rio primeiro, fallback do grupo
+    // Adicionais  do funcionrio primeiro, fallback do grupo
     const adicionais = (f.adicionais?.length ? f.adicionais : grupo?.adicionais) || [];
 
     // Calcular valor de cada adicional
@@ -786,7 +786,7 @@ function buildFolhaCard(f, d) {
       const val = a.isValorFixo ? (a.valor||0) : ((d.salario||0)*(a.pct||0)/100);
       if (val > 0) provList.push(`${a.nome}: R$ ${fmtMoney(val)}`);
     });
-  } // N�o mostrar total gen�rico de adicionais � j� listados individualmente acima
+  } // No mostrar total genrico de adicionais  já listados individualmente acima
   if (calc.reflexoDsr > 0) provList.push(`DSR: R$ ${fmtMoney(calc.reflexoDsr)}`);
   (d.outrosProventos||[]).filter(o=>o.valor>0).forEach(o => provList.push(`${o.descricao}: R$ ${fmtMoney(o.valor)}`));
 
@@ -805,7 +805,7 @@ function buildFolhaCard(f, d) {
         <input type="checkbox" class="folha-func-cb" data-id="${f.id}" checked style="width:16px;height:16px;flex-shrink:0">
         <div>
           <div class="folha-employee-name">${f.nome}</div>
-          <div class="folha-employee-role">${getNomeCargo(f)} � CPF: ${f.cpf||'�'}</div>
+          <div class="folha-employee-role">${getNomeCargo(f)}  CPF: ${f.cpf||''}</div>
         </div>
       </div>
       <div style="display:flex;gap:6px;flex-wrap:wrap">
@@ -838,7 +838,7 @@ function buildFolhaCard(f, d) {
     </div>
     ${calc.liquido<0?'<div style="color:var(--red);font-size:0.78rem;padding:4px 0">⚠️ Descontos maiores que o salário — revise os itens</div>':''}
 
-    <!-- BOT�O EXPANDIR/RECOLHER -->
+    <!-- BOTO EXPANDIR/RECOLHER -->
     <div style="text-align:center;margin-top:8px">
       <button class="btn btn-outline btn-sm" onclick="toggleFolhaInline('${f.id}')" id="btn-toggle-${f.id}"
         style="width:100%;font-size:0.8rem;color:var(--text3)">
@@ -846,7 +846,7 @@ function buildFolhaCard(f, d) {
       </button>
     </div>
 
-    <!-- �REA INLINE DE EDI��O (oculta por padr�o) -->
+    <!-- REA INLINE DE EDIO (oculta por padro) -->
     <div id="folha-inline-${f.id}" style="display:none;margin-top:12px;border-top:1px solid var(--border);padding-top:12px">
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-bottom:10px">
         <div class="form-group" style="margin:0">
@@ -934,7 +934,7 @@ function buildFolhaCard(f, d) {
       <label style="display:flex;align-items:center;gap:8px;padding:6px;background:var(--bg2);border-radius:6px;margin-bottom:4px;cursor:pointer">
         <input type="checkbox" ${e.selecionado!==false?'checked':''} style="flex-shrink:0"
           onchange="folhaDetalhe['${f.id}'].descontoEmprestimos[${i}].selecionado=this.checked;rebuildCard('${f.id}')">
-        <span style="flex:1;font-size:0.8rem">${e.numero}� parcela � ${e.label}</span>
+        <span style="flex:1;font-size:0.8rem">${e.numero} parcela  ${e.label}</span>
         <input type="number" class="form-input" value="${e.valorPagar||e.valor}" step="0.01" style="width:90px;font-size:0.8rem"
           onchange="folhaDetalhe['${f.id}'].descontoEmprestimos[${i}].valorPagar=parseFloat(this.value)||0;rebuildCard('${f.id}')">
       </label>`).join('')}`:``}
@@ -968,13 +968,13 @@ function openFolhaDetalhe(funcId) {
   const d = folhaDetalhe[funcId];
   if (!d) return;
   const f = d.funcionario;
-  document.getElementById('folhaDetalheTitulo').textContent = `Folha � ${f.nome}`;
+  document.getElementById('folhaDetalheTitulo').textContent = `Folha  ${f.nome}`;
   document.getElementById('folhaDetalheBody').innerHTML = buildFolhaDetalheForm(funcId, d);
   folhaAtualId = funcId;
   openModal('modal-folha-detalhe');
 }
 
-// Abrir ficha na FOLHA DE PAGAMENTO � com checkboxes de desconto
+// Abrir ficha na FOLHA DE PAGAMENTO  com checkboxes de desconto
 function abrirFolhaFuncionario(funcId) {
   const d = folhaDetalhe[funcId];
   if (!d) { toast('Carregue a folha primeiro', 'error'); return; }
@@ -987,7 +987,7 @@ function abrirFolhaFuncionario(funcId) {
   const calc = calcFolhaTotais(d);
   const empAtivos = emprestimos.filter(e => (e.status==='ativo'||!e.status) && e.funcionarioId===funcId);
 
-  document.getElementById('folhaDetalheTitulo').textContent = `Folha � ${f.nome}`;
+  document.getElementById('folhaDetalheTitulo').textContent = `Folha  ${f.nome}`;
   document.getElementById('folhaDetalheBody').innerHTML = `
     <!-- PROVENTOS -->
     <div class="section-card-title">PROVENTOS</div>
@@ -1027,7 +1027,7 @@ function abrirFolhaFuncionario(funcId) {
     <button class="btn btn-outline btn-sm" onclick="adicionarExtraProvento('${funcId}')">➕ Outro provento</button>
 
     <!-- DESCONTOS OBRIGATÓRIOS -->
-    <div class="section-card-title" style="margin-top:16px">DESCONTOS � SELECIONE O QUE DESCONTAR NESTE M�S</div>
+    <div class="section-card-title" style="margin-top:16px">DESCONTOS  SELECIONE O QUE DESCONTAR NESTE MS</div>
     <p style="color:var(--text3);font-size:0.78rem;margin-bottom:10px">✅ = será incluído no PDF e baixado automaticamente ao confirmar</p>
 
     ${d.descontoEmprestimos.length > 0 ? `
@@ -1039,8 +1039,8 @@ function abrirFolhaFuncionario(funcId) {
         <input type="checkbox" id="emp_sel_${e.id}" ${e.selecionado!==false?'checked':''}
           onchange="folhaDetalhe['${funcId}'].descontoEmprestimos[${i}].selecionado=this.checked;recalcFolhaCard('${funcId}')">
         <div style="flex:1;min-width:200px">
-          <div style="font-size:0.85rem;font-weight:600">${e.numero}� PARCELA � ${e.label.toUpperCase()}</div>
-          <div style="font-size:0.75rem;color:var(--text3)">Restante: R$ ${fmtMoney(restante)} � ${e.numero}/${e.total||'?'} parcelas</div>
+          <div style="font-size:0.85rem;font-weight:600">${e.numero} PARCELA  ${e.label.toUpperCase()}</div>
+          <div style="font-size:0.75rem;color:var(--text3)">Restante: R$ ${fmtMoney(restante)}  ${e.numero}/${e.total||'?'} parcelas</div>
         </div>
         <div style="display:flex;align-items:center;gap:6px">
           <label style="font-size:0.78rem;color:var(--text3)">Valor:</label>
@@ -1061,8 +1061,8 @@ function abrirFolhaFuncionario(funcId) {
         <input type="checkbox" id="val_sel_${v.id}" ${v.selecionado!==false?'checked':''}
           onchange="folhaDetalhe['${funcId}'].descontoVales[${i}].selecionado=this.checked;recalcFolhaCard('${funcId}')">
         <div style="flex:1;min-width:200px">
-          <div style="font-size:0.85rem;font-weight:600">${(v.label||'Adiantamento').toUpperCase()}${v.data?' � '+fmtData(v.data):''}</div>
-          <div style="font-size:0.75rem;color:var(--text3)">Original: R$ ${fmtMoney(v.valor)}${abatido>0?' � J� abatido: R$ '+fmtMoney(abatido)+' � Restante: R$ '+fmtMoney(restante):''}</div>
+          <div style="font-size:0.85rem;font-weight:600">${(v.label||'Adiantamento').toUpperCase()}${v.data?'  '+fmtData(v.data):''}</div>
+          <div style="font-size:0.75rem;color:var(--text3)">Original: R$ ${fmtMoney(v.valor)}${abatido>0?'  J abatido: R$ '+fmtMoney(abatido)+'  Restante: R$ '+fmtMoney(restante):''}</div>
         </div>
         <div style="display:flex;align-items:center;gap:6px">
           <label style="font-size:0.78rem;color:var(--text3)">Pagar:</label>
@@ -1204,7 +1204,7 @@ async function gerarPdfEQuitarFolha(funcId, fecharModal=true) {
 function buildFolhaDetalheForm(funcId, d) {
   return `
   <div class="form-grid">
-    <div class="section-card-title" style="margin-top:0">COMPOSI��O SALARIAL</div>
+    <div class="section-card-title" style="margin-top:0">COMPOSIO SALARIAL</div>
     <div class="form-grid form-grid-2">
       <div class="form-group">
         <label class="form-label">Salário mensal (R$)</label>
@@ -1386,13 +1386,13 @@ function gerarPdfFolhaCompleto(doc, params, startY = 10, save = false) {
   doc.setTextColor(...COR_PRIMARIA);
   doc.text('FUNCIONÁRIO', lm + 5, y + 6);
   doc.text('CPF', lm + 80, y + 6);
-  doc.text('CARGO / FUN��O', lm + 130, y + 6);
+  doc.text('CARGO / FUNO', lm + 130, y + 6);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(10);
   doc.setTextColor(...COR_TEXTO);
-  // Nome pode ser longo � quebrar se necess�rio
-  const nomeText = f.nome || '�';
+  // Nome pode ser longo  quebrar se necessrio
+  const nomeText = f.nome || '';
   if (nomeText.length > 30) {
     doc.setFontSize(9);
     doc.text(nomeText.substring(0, 35), lm + 5, y + 14);
@@ -1400,10 +1400,10 @@ function gerarPdfFolhaCompleto(doc, params, startY = 10, save = false) {
   } else {
     doc.text(nomeText, lm + 5, y + 14);
   }
-  doc.text(f.cpf || '�', lm + 80, y + 14);
+  doc.text(f.cpf || '', lm + 80, y + 14);
   // Cargo: buscar do grupo se não tiver no funcionário
   const grupoNomeObj = d?.funcionario?.grupoId ? grupos.find(g => g.id === d.funcionario.grupoId) : null;
-  const cargoText = f.cargo || grupoNomeObj?.nome || '�';
+  const cargoText = f.cargo || grupoNomeObj?.nome || '';
   doc.setFontSize(8.5);
   const cargoLines = doc.splitTextToSize(cargoText, 52);
   doc.text(cargoLines[0] || '', lm + 130, y + 11);
@@ -1424,7 +1424,7 @@ function gerarPdfFolhaCompleto(doc, params, startY = 10, save = false) {
   y += 8;
 
   const proventos = [];
-  const diasLabel = d.diasTrabalhados > 0 ? `Sal�rio Mensal (${d.diasTrabalhados} dias trabalhados)` : 'Sal�rio Mensal';
+  const diasLabel = d.diasTrabalhados > 0 ? `Salrio Mensal (${d.diasTrabalhados} dias trabalhados)` : 'Salrio Mensal';
   proventos.push([diasLabel, fmtMoney(calc.salarioBase)]);
   if (d.horasExtras > 0) proventos.push([`Horas Extras (${d.horasExtras}h × R$ ${fmtMoney(d.horaExtraVal)})`, fmtMoney(calc.horasExtrasValor)]);
   if (calc.reflexoDsr > 0) proventos.push(['Reflexo DSR em Horas Extras', fmtMoney(calc.reflexoDsr)]);
@@ -1475,7 +1475,7 @@ function gerarPdfFolhaCompleto(doc, params, startY = 10, save = false) {
     descontos.push([inssLabel, fmtMoney(d.inssValor)]);
   }
   (d.descontoEmprestimos||[]).filter(e=>e.selecionado!==false).forEach(e => {
-    descontos.push([`${e.numero}� Parcela � Empr�stimo: ${e.label}`, fmtMoney(e.valorPagar||e.valor)]);
+    descontos.push([`${e.numero} Parcela  Emprstimo: ${e.label}`, fmtMoney(e.valorPagar||e.valor)]);
   });
   (d.descontoVales||[]).filter(v=>v.selecionado!==false).forEach(v => {
     const label = (v.label||v.descricao||'Adiantamento') + (v.data ? ` (${fmtData(v.data)})` : '');
@@ -1483,7 +1483,7 @@ function gerarPdfFolhaCompleto(doc, params, startY = 10, save = false) {
   });
   if ((d.faltas||0) > 0) {
     const descFalta = calcFaltas(d.salario, d.faltas, calc.reflexoDsr);
-    descontos.push([`${d.faltas} Falta(s) � Desconto proporcional`, fmtMoney(descFalta)]);
+    descontos.push([`${d.faltas} Falta(s)  Desconto proporcional`, fmtMoney(descFalta)]);
   }
   (d.outrosDescontos||[]).forEach(o => { if ((o.valor||0)>0) descontos.push([o.descricao, fmtMoney(o.valor)]); });
 
@@ -1541,7 +1541,7 @@ function gerarPdfFolhaCompleto(doc, params, startY = 10, save = false) {
 
   doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5);
   const valorExtenso = numberToWords(calc.liquido);
-  const recibo = `Declaro que recebi da empresa ${orgNome}${orgCnpj ? ' (CNPJ: '+orgCnpj+')' : ''} a import�ncia de R$ ${fmtMoney(calc.liquido)} (${valorExtenso}), referente ao sal�rio do m�s de ${mesNome}/${ano}, na fun��o de ${f.cargo || 'n�o definido'}.`;
+  const recibo = `Declaro que recebi da empresa ${orgNome}${orgCnpj ? ' (CNPJ: '+orgCnpj+')' : ''} a importncia de R$ ${fmtMoney(calc.liquido)} (${valorExtenso}), referente ao salrio do ms de ${mesNome}/${ano}, na funo de ${f.cargo || 'no definido'}.`;
   const lines = doc.splitTextToSize(recibo, pw - 10);
   doc.text(lines, lm + 5, y);
   y += lines.length * 5 + 8;
@@ -1694,7 +1694,7 @@ async function carregarERenderAcerto(container) {
       <!-- Último lançamento -->
       <div style="border-top:1px solid var(--border);padding-top:8px;font-size:0.78rem;color:var(--text3)">
         ${lances.length > 0
-          ? `${lances.length} lan�amento(s) � �ltimo: ${lances[0].data?fmtData(lances[0].data):'�'}`
+          ? `${lances.length} lançamento(s)  último: ${lances[0].data?fmtData(lances[0].data):''}`
           : 'Nenhum lançamento ainda'}
       </div>
     </div>`;
@@ -1702,7 +1702,7 @@ async function carregarERenderAcerto(container) {
 }
 
 async function excluirLancamento(lancId, parId) {
-  if (!await confirmar('Excluir lan�amento?', 'Esta a��o n�o pode ser desfeita.')) return;
+  if (!await confirmar('Excluir lançamento?', 'Esta ao no pode ser desfeita.')) return;
   if (db && currentOrg) {
     await db.collection('orgs').doc(currentOrg.id).collection('lancamentos').doc(lancId).delete();
   } else {
@@ -1718,14 +1718,14 @@ async function excluirLancamento(lancId, parId) {
 function populateLancPar() {
   const sel = document.getElementById('lancPar');
   if (!sel) return;
-  sel.innerHTML = '<option value="">� Selecionar par �</option>' +
+  sel.innerHTML = '<option value=""> Selecionar par </option>' +
     acertoPares.map(p => `<option value="${p.id}">${p.pessoaA} ↔ ${p.pessoaB}</option>`).join('');
 }
 
 function lancParChanged() {
   const parId = document.getElementById('lancPar').value;
   if (!parId) {
-    document.getElementById('lancDe').innerHTML = '<option value="">� Selecionar �</option>';
+    document.getElementById('lancDe').innerHTML = '<option value=""> Selecionar </option>';
     const at = document.getElementById('lancAtalhos');
     if (at) at.style.display = 'none';
     return;
@@ -1815,7 +1815,7 @@ function popularSelectLancDe(parId) {
   if (!par) return;
   const sel = document.getElementById('lancDe');
   if (!sel) return;
-  sel.innerHTML = `<option value="">� Selecionar �</option><option value="${par.pessoaA}">${par.pessoaA}</option><option value="${par.pessoaB}">${par.pessoaB}</option>`;
+  sel.innerHTML = `<option value=""> Selecionar </option><option value="${par.pessoaA}">${par.pessoaA}</option><option value="${par.pessoaB}">${par.pessoaB}</option>`;
 }
 
 async function salvarLancamento() {
@@ -1824,7 +1824,7 @@ async function salvarLancamento() {
   const valorRaw = document.getElementById('lancValor').value.replace(/\./g,'').replace(',','.');
   const valor = parseFloat(valorRaw) || 0;
   if (!parId || !de || !valor) { toast('Preencha todos os campos', 'error'); return; }
-  // Garantir que data est� preenchida � sem data, lan�amento fica oculto
+  // Garantir que data está preenchida  sem data, lançamento fica oculto
   const lancDataVal = document.getElementById('lancData').value || new Date().toISOString().slice(0,10);
   const data = {
     parId, de, valor,
@@ -1866,7 +1866,7 @@ async function salvarLancamento() {
 }
 
 async function excluirPar(id) {
-  if (!await confirmar('Excluir par?', 'Todos os lan�amentos deste par ser�o removidos. Isso pode ser desfeito.')) return;
+  if (!await confirmar('Excluir par?', 'Todos os lançamentos deste par sero removidos. Isso pode ser desfeito.')) return;
   const backup = acertoPares.find(p=>p.id===id);
   await fsDelete('acertoPares', id);
   acertoPares = acertoPares.filter(p => p.id !== id);
@@ -1887,10 +1887,10 @@ function verLancamentos(parId) {
   if (lances.length === 0) { toast('Nenhum lançamento ainda', 'info'); return; }
   const html = `<table><thead><tr><th>Data</th><th>De</th><th>Valor</th><th>Descrição</th></tr></thead><tbody>
     ${lances.map(l => `<tr>
-      <td>${l.data ? fmtData(l.data) : '�'}</td>
+      <td>${l.data ? fmtData(l.data) : ''}</td>
       <td><strong>${l.de}</strong></td>
       <td class="mono" style="color:var(--green)">R$ ${fmtMoney(l.valor)}</td>
-      <td>${l.descricao || '�'}</td>
+      <td>${l.descricao || ''}</td>
     </tr>`).join('')}
   </tbody></table>`;
   document.getElementById('folhaDetalheTitulo').textContent = `Histórico: ${par.pessoaA} ↔ ${par.pessoaB}`;

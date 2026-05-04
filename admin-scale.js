@@ -41,7 +41,7 @@ function copyInvite() {
 }
 
 function openOrgSelector() {
-  const nome = prompt('Nome da organiza��o:', currentOrg?.nome || '');
+  const nome = prompt('Nome da organização:', currentOrg?.nome || '');
   if (nome && currentOrg) {
     currentOrg.nome = nome;
     if (db) db.collection('orgs').doc(currentOrg.id).update({ nome });
@@ -438,7 +438,7 @@ function renderEscalaPreview() {
 }
 
 function printEscalaPreview() {
-  // Substitu�do por printEscalaFuncionario(funcId) � use os bot�es na tabela
+  // Substitudo por printEscalaFuncionario(funcId)  use os botes na tabela
   toast('Use os botões 🖨️ ao lado de cada funcionário na tabela', 'info');
   return;
   const area = null;
@@ -473,7 +473,7 @@ function downloadEscalaPdf() {
   doc.autoTable({
     startY: 54,
     head: [['DATA', 'DIA', 'ENTRADA', 'SAÍDA INT.', 'RETORNO', 'SAÍDA', 'TOTAL', 'H. EXTRA']],
-    body: item.dias.map(dia => [fmtData(dia.data), dayNameShort(dia.diaSemana).toUpperCase(), dia.entrada, dia.saidaIntervalo, dia.retornoIntervalo, dia.saidaFinal, `${dia.horasPrevistas}h`, dia.horaExtraPrevista > 0 ? `${dia.horaExtraPrevista}h` : '�']),
+    body: item.dias.map(dia => [fmtData(dia.data), dayNameShort(dia.diaSemana).toUpperCase(), dia.entrada, dia.saidaIntervalo, dia.retornoIntervalo, dia.saidaFinal, `${dia.horasPrevistas}h`, dia.horaExtraPrevista > 0 ? `${dia.horaExtraPrevista}h` : '']),
     styles: { fontSize: 8, cellPadding: 2.4 },
     headStyles: { fillColor: [15, 23, 42] }
   });
@@ -530,7 +530,7 @@ function labelDiaSemana(dia) {
 }
 
 function dayNameShort(index) {
-  return ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab'][index] || '�';
+  return ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab'][index] || '';
 }
 
 function daysInMonth(month, year) {
@@ -604,7 +604,7 @@ function parseMoneyInput(el) {
 
 
 function fmtData(d) {
-  if (!d) return '�';
+  if (!d) return '';
   const [y,m,day] = d.split('-');
   return `${day}/${m}/${y}`;
 }
@@ -694,7 +694,7 @@ function toggleTheme() {
 })();
 
 // =====================================================
-// CARGO � HELPERS
+// CARGO  HELPERS
 // =====================================================
 let adicionaisGrupo = [];
 
@@ -829,7 +829,7 @@ function preencherAdicionaisGrupo(lista) {
 
 
 // =====================================================
-// ALERTAS DASHBOARD � vales e parcelas vencendo
+// ALERTAS DASHBOARD  vales e parcelas vencendo
 // =====================================================
 function renderAlertasDashboard() {
   const container = document.getElementById('dashAlertas');
@@ -845,7 +845,7 @@ function renderAlertasDashboard() {
     if (!v.data) return;
     const d = new Date(v.data + 'T00:00:00');
     const func = funcionarios.find(f => f.id === v.funcionarioId);
-    const nome = func?.nome || 'Funcion�rio';
+    const nome = func?.nome || 'Funcionrio';
     const diasDiff = Math.floor((d - hoje) / 86400000);
     if (diasDiff < 0) alertas.push({ tipo: 'red', msg: `Vale de ${nome} (R$ ${fmtMoney(v.valor)}) está em atraso há ${Math.abs(diasDiff)} dia(s)` });
     else if (diasDiff <= 3) alertas.push({ tipo: 'yellow', msg: `Vale de ${nome} (R$ ${fmtMoney(v.valor)}) vence em ${diasDiff === 0 ? 'hoje' : diasDiff + ' dia(s)'}` });
@@ -856,10 +856,10 @@ function renderAlertasDashboard() {
   const anoAtual = hoje.getFullYear();
   emprestimos.filter(e => e.status === 'ativo' || !e.status).forEach(e => {
     const func = funcionarios.find(f => f.id === e.funcionarioId);
-    const nome = func?.nome || 'Funcion�rio';
+    const nome = func?.nome || 'Funcionrio';
     const restante = (e.total || 0) - (e.pago || 0);
     if (restante > 0 && restante <= e.valorParcela) {
-      alertas.push({ tipo: 'green', msg: `�ltima parcela de ${nome} � ${e.descricao} (R$ ${fmtMoney(restante)})` });
+      alertas.push({ tipo: 'green', msg: `ltima parcela de ${nome}  ${e.descricao} (R$ ${fmtMoney(restante)})` });
     }
   });
 
@@ -906,12 +906,12 @@ async function renderHistoricoFolhas() {
     return;
   }
   tbody.innerHTML = lista.map(h => `<tr>
-    <td><strong>${h.mesRef || '�'}</strong></td>
+    <td><strong>${h.mesRef || ''}</strong></td>
     <td>${h.qtdFuncionarios || 0}</td>
     <td class="mono" style="color:var(--green)">R$ ${fmtMoney(h.totalBruto)}</td>
     <td class="mono" style="color:var(--red)">R$ ${fmtMoney(h.totalDescontos)}</td>
     <td class="mono" style="color:var(--accent2)">R$ ${fmtMoney(h.totalLiquido)}</td>
-    <td style="font-size:0.78rem;color:var(--text3)">${h.geradoEm ? new Date(h.geradoEm).toLocaleDateString('pt-BR') : '�'}</td>
+    <td style="font-size:0.78rem;color:var(--text3)">${h.geradoEm ? new Date(h.geradoEm).toLocaleDateString('pt-BR') : ''}</td>
     <td><button class="btn btn-outline btn-sm" onclick="verDetalhesHistorico('${h.id}')">👁️ Ver</button></td>
   </tr>`).join('');
 }
@@ -925,7 +925,7 @@ function verDetalhesHistorico(id) {
     <td class="mono" style="color:var(--red)">R$ ${fmtMoney(d.totalDescontos)}</td>
     <td class="mono" style="color:var(--accent2)"><strong>R$ ${fmtMoney(d.liquido)}</strong></td>
   </tr>`).join('');
-  document.getElementById('folhaDetalheTitulo').textContent = `Hist�rico � ${h.mesRef}`;
+  document.getElementById('folhaDetalheTitulo').textContent = `Histórico  ${h.mesRef}`;
   document.getElementById('folhaDetalheBody').innerHTML = `
     <table><thead><tr><th>Funcionário</th><th>Bruto</th><th>Descontos</th><th>Líquido</th></tr></thead>
     <tbody>${rows}</tbody></table>`;
@@ -1034,7 +1034,7 @@ function gerarRelatorio() {
 
     rows.push(`<tr ${liq < 0 ? 'style="background:rgba(239,68,68,0.07)"' : ''}>
       <td><span style="cursor:pointer;color:var(--accent2);text-decoration:underline" onclick="abrirFichaFuncionario('${f.id}')"><strong>${f.nome}</strong></span> ${badgeFonte}</td>
-      <td>${f.cargo || '�'}</td>
+      <td>${f.cargo || ''}</td>
       <td class="mono">R$ ${fmtMoney(bruto)}</td>
       <td class="mono" style="color:var(--red)">R$ ${fmtMoney(descontos)}</td>
       <td class="mono" style="color:${liq < 0 ? 'var(--red)' : 'var(--accent2)'}"><strong>${alerta} R$ ${fmtMoney(liq)}</strong></td>
@@ -1094,7 +1094,7 @@ function exportRelatorioPDF() {
   doc.setFont('helvetica','bold'); doc.setFontSize(13);
   doc.text('RELATÓRIO CONSOLIDADO DE FUNCIONÁRIOS', lm+6, y+8);
   doc.setFontSize(9); doc.setFont('helvetica','normal');
-  doc.text(`Compet�ncia: ${mesRef} � ${currentOrg?.nome||''}`, lm+6, y+14);
+  doc.text(`Competncia: ${mesRef}  ${currentOrg?.nome||''}`, lm+6, y+14);
   doc.setTextColor(30,30,45); y += 24;
 
   // Header da tabela

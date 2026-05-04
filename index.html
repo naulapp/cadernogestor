@@ -99,7 +99,7 @@
       </div>
       <div class="form-group">
         <label class="form-label">Senha</label>
-        <input type="password" class="form-input" id="loginPassword" placeholder="��������">
+        <input type="password" class="form-input" id="loginPassword" placeholder="">
       </div>
       <button class="btn btn-primary" onclick="doLogin()">Entrar</button>
     </div>
@@ -133,7 +133,7 @@
   <div class="setup-card">
     <h2>🏢 Configure sua conta</h2>
 
-    <!-- Email logado + bot�o trocar conta � sempre vis�vel -->
+    <!-- Email logado + boto trocar conta  sempre visvel -->
     <div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.3);border-radius:10px;padding:12px;margin-bottom:20px;text-align:center">
       <div id="setupUserEmail" style="font-size:0.85rem;color:var(--text2);margin-bottom:8px">Carregando conta...</div>
       <button class="btn btn-sm" onclick="doLogoutForce()"
@@ -283,7 +283,7 @@
           <button class="btn btn-outline btn-sm" onclick="openModal('modal-dash-config')" title="Personalizar">⚙️ Personalizar Dashboard</button>
         </div>
 
-        <!-- WIDGETS DIN�MICOS -->
+        <!-- WIDGETS DINMICOS -->
         <div id="dashConteudo"></div>
       </div>
 
@@ -586,7 +586,7 @@
 
         <div class="table-wrap">
           <div class="table-header">
-            <div class="table-title">Empr�stimos a Funcion�rios � Ativos</div>
+            <div class="table-title">Emprstimos a Funcionários  Ativos</div>
             <input type="text" class="search-input" placeholder="🔍 Buscar..." oninput="filterEmprestimos(this.value)">
           </div>
           <table>
@@ -827,7 +827,7 @@
               <div id="calcOpDisplay" style="font-size:0.75rem;color:var(--text3);min-height:16px"></div>
             </div>
 
-            <!-- Campo descri��o removido � descri��o fica inline na fita -->
+            <!-- Campo descrio removido  descrio fica inline na fita -->
             <!-- Teclado numérico -->
             <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px">
               <button class="calc-btn calc-fn" onclick="calcFn('%')" title="Porcentagem">%</button>
@@ -1009,7 +1009,7 @@
 
         <div class="section-card" style="margin-bottom:20px">
           <div class="section-card-title">Código de convite da organização</div>
-          <div class="invite-code" id="inviteDisplay" onclick="copyInvite()">�</div>
+          <div class="invite-code" id="inviteDisplay" onclick="copyInvite()"></div>
           <p style="color:var(--text3);font-size:0.78rem;text-align:center;margin-top:8px">Clique para copiar</p>
         </div>
 
@@ -1097,7 +1097,7 @@
 
 <!-- ======== MODALS ======== -->
 
-<!-- MODAL CONFIRMA��O -->
+<!-- MODAL CONFIRMAO -->
 <div class="modal-overlay" id="modal-confirmar">
   <div class="modal" style="max-width:400px">
     <div class="modal-header">
@@ -1440,7 +1440,7 @@
             <input type="number" class="form-input" id="empParcelas" placeholder="8" min="1" oninput="calcParcela()">
           </div>
         </div>
-        <!-- SIMULA��O � aparece ap�s preencher valor + parcelas -->
+        <!-- SIMULAO  aparece aps preencher valor + parcelas -->
         <div id="empSimulacao" style="display:none;background:var(--bg2);border-radius:8px;padding:12px;font-size:0.85rem;margin-bottom:4px">
           <div style="font-weight:600;margin-bottom:8px;color:var(--text2)">📊 Como ficará o parcelamento:</div>
           <div id="empSimIgual" style="margin-bottom:6px;padding:8px;background:var(--bg3);border-radius:6px"></div>
@@ -1527,7 +1527,7 @@
             </div>
             <div class="form-group">
               <label class="form-label">Valor por parcela (R$)</label>
-              <input type="number" class="form-input" id="valeValorParc" placeholder="�" step="0.01" readonly
+              <input type="number" class="form-input" id="valeValorParc" placeholder="" step="0.01" readonly
                 style="background:var(--bg3)">
             </div>
           </div>
@@ -1664,7 +1664,7 @@
 <div class="modal-overlay" id="modal-folha-detalhe">
   <div class="modal" style="max-width:700px">
     <div class="modal-header">
-      <div class="modal-title" id="folhaDetalheTitulo">Folha � Funcion�rio</div>
+      <div class="modal-title" id="folhaDetalheTitulo">Folha  Funcionário</div>
       <div class="modal-close" onclick="closeModal('modal-folha-detalhe')">✕</div>
     </div>
     <div class="modal-body" id="folhaDetalheBody"></div>
@@ -1744,7 +1744,7 @@
           ${Object.entries(PERFIS_PADRAO).map(([id, p]) => `
           <button class="btn btn-outline btn-sm" onclick="aplicarPerfil('${id}')"
             style="border-color:${p.cor};color:${p.cor}">
-            ${p.label} � ${p.descricao}
+            ${p.label}  ${p.descricao}
           </button>`).join('')}
           <button class="btn btn-outline btn-sm" onclick="aplicarPerfil('custom')" style="border-color:var(--yellow);color:var(--yellow)">
             ⚙️ Personalizado

@@ -161,7 +161,7 @@ service cloud.firestore {
     }
   }
 }`;
-  document.getElementById('folhaDetalheTitulo').textContent = 'Regras de Seguran�a � Firestore';
+  document.getElementById('folhaDetalheTitulo').textContent = 'Regras de Segurana  Firestore';
   document.getElementById('folhaDetalheBody').innerHTML = `
     <p style="color:var(--text3);font-size:0.85rem;margin-bottom:12px">Cole estas regras no Firebase Console → Firestore → Rules:</p>
     <pre style="background:var(--bg2);padding:16px;border-radius:8px;font-size:0.78rem;overflow-x:auto;color:var(--text)">\${regras}</pre>
@@ -174,7 +174,7 @@ service cloud.firestore {
 
 
 // =====================================================
-// CARGOS � lista gerenci�vel
+// CARGOS  lista gerencivel
 // =====================================================
 let cargosLista = [];
 
@@ -219,7 +219,7 @@ async function cadastrarNovoCargo() {
 // loadCargos já integrado ao openModal principal
 
 // =====================================================
-// PARCELAMENTO � �ltima parcela diferente
+// PARCELAMENTO  ltima parcela diferente
 // =====================================================
 function calcParcela() {
   const total = parseFloat(document.getElementById('empTotal').value) || 0;
@@ -244,7 +244,7 @@ function calcParcela() {
 
   const simIgual = document.getElementById('empSimIgual');
   const simUltima = document.getElementById('empSimUltima');
-  if (simIgual) simIgual.innerHTML = `<span style="color:var(--accent2);font-weight:600">Parcelas iguais:</span> ${n}x <strong>R$ ${fmtMoney(valIgual)}</strong>${Math.abs(diffIgual)>0.01?' <span style="color:var(--text3);font-size:0.78rem">(�ltima: R$ '+fmtMoney(valIgual+diffIgual)+')</span>':''}`;
+  if (simIgual) simIgual.innerHTML = `<span style="color:var(--accent2);font-weight:600">Parcelas iguais:</span> ${n}x <strong>R$ ${fmtMoney(valIgual)}</strong>${Math.abs(diffIgual)>0.01?' <span style="color:var(--text3);font-size:0.78rem">(ltima: R$ '+fmtMoney(valIgual+diffIgual)+')</span>':''}`;
   if (simUltima) simUltima.innerHTML = `<span style="color:var(--yellow);font-weight:600">Última diferente:</span> ${n-1}x <strong>R$ ${fmtMoney(valPadrao)}</strong> + 1x <strong>R$ ${fmtMoney(ultimaDif)}</strong>`;
   document.getElementById('empSimulacao').style.display = '';
 
@@ -295,7 +295,7 @@ function printTodasEscalas() {
   }
   const orgNome = currentOrg?.nome || 'Empresa';
   const competencia = monthNameFromPeriod(escalaGerada.competencia);
-  let html = `<!DOCTYPE html><html><head><title>FOLHA DE PONTO � ${competencia}</title>
+  let html = `<!DOCTYPE html><html><head><title>FOLHA DE PONTO  ${competencia}</title>
   <style>
     body{font-family:Arial,sans-serif;padding:0;background:#fff;color:#111}
     .sheet{padding:24px;page-break-after:always}
@@ -317,7 +317,7 @@ function printTodasEscalas() {
       <div class="head">
         <div>
           <div class="title">FOLHA DE PONTO</div>
-          <div class="sub">${orgNome} � ${item.funcionario.nome} � ${item.funcionario.cargo || ''}</div>
+          <div class="sub">${orgNome}  ${item.funcionario.nome}  ${item.funcionario.cargo || ''}</div>
         </div>
         <div class="meta">
           <div><strong>COMPETÊNCIA:</strong> ${competencia}</div>
@@ -336,7 +336,7 @@ function printTodasEscalas() {
             <td>${dia.retornoIntervalo}</td>
             <td>${dia.saidaFinal}</td>
             <td>${dia.horasPrevistas}h</td>
-            <td>${dia.horaExtraPrevista > 0 ? dia.horaExtraPrevista + 'h' : '�'}</td>
+            <td>${dia.horaExtraPrevista > 0 ? dia.horaExtraPrevista + 'h' : ''}</td>
             <td></td>
           </tr>`).join('')}
         </tbody>
@@ -370,7 +370,7 @@ function downloadTodasEscalasPdf() {
     doc.setFontSize(14); doc.setFont('helvetica','bold');
     doc.text('FOLHA DE PONTO', 14, 14);
     doc.setFontSize(9); doc.setFont('helvetica','normal');
-    doc.text(`${orgNome} � ${item.funcionario.nome} � ${item.funcionario.cargo || ''}`, 14, 20);
+    doc.text(`${orgNome}  ${item.funcionario.nome}  ${item.funcionario.cargo || ''}`, 14, 20);
     doc.text(`COMPETÊNCIA: ${competencia}`, 200, 14, { align: 'right' });
     doc.text(`TOTAL: ${item.totalHorasMes}h  |  HORA EXTRA: ${item.totalExtrasMes}h`, 200, 20, { align: 'right' });
 
@@ -380,7 +380,7 @@ function downloadTodasEscalasPdf() {
       body: item.dias.map(dia => [
         fmtData(dia.data), dayNameShort(dia.diaSemana).toUpperCase(),
         dia.entrada, dia.saidaIntervalo, dia.retornoIntervalo, dia.saidaFinal,
-        `${dia.horasPrevistas}h`, dia.horaExtraPrevista > 0 ? `${dia.horaExtraPrevista}h` : '�', ''
+        `${dia.horasPrevistas}h`, dia.horaExtraPrevista > 0 ? `${dia.horaExtraPrevista}h` : '', ''
       ]),
       styles: { fontSize: 7, cellPadding: 2 },
       headStyles: { fillColor: [27,45,107], textColor: 255, fontStyle: 'bold' },
@@ -401,7 +401,7 @@ function downloadTodasEscalasPdf() {
 
 
 // =====================================================
-// MODAL DE CONFIRMA��O
+// MODAL DE CONFIRMAO
 // =====================================================
 let _confirmarResolve = null;
 
@@ -471,7 +471,7 @@ function onGrupoFuncChange(grupoId) {
 
 
 // =====================================================
-// SANITIZE DATA � remove undefined/NaN antes do Firebase
+// SANITIZE DATA  remove undefined/NaN antes do Firebase
 // =====================================================
 function sanitizeData(obj) {
   const clean = {};
@@ -541,7 +541,7 @@ async function syncOrgMembersAccess(orgRef, membros) {
 
 
 // =====================================================
-// FUNCION�RIO � ADICIONAIS E HELPERS
+// FUNCIONRIO  ADICIONAIS E HELPERS
 // =====================================================
 let adicionaisFunc = [];
 
@@ -592,7 +592,7 @@ function renderAdicionaisFunc() {
 }
 
 // =====================================================
-// GRUPO � SELECIONAR FUNCION�RIOS VINCULADOS
+// GRUPO  SELECIONAR FUNCIONRIOS VINCULADOS
 // =====================================================
 function renderGrupoFuncionariosCheck(grupoId) {
   const container = document.getElementById('grupoFuncionariosCheck');
@@ -625,7 +625,7 @@ function abrirFichaFuncionario(funcId, voltarPara='funcionarios') {
 
   document.getElementById('fichaVoltarBtn').onclick = () => navigate(voltarPara);
   document.getElementById('fichaTitulo').textContent = f.nome;
-  document.getElementById('fichaSubtitulo').textContent = (f.cargo||'') + (f.grupoId ? ' � ' + (grupos.find(g=>g.id===f.grupoId)?.nome||'') : '');
+  document.getElementById('fichaSubtitulo').textContent = (f.cargo||'') + (f.grupoId ? '  ' + (grupos.find(g=>g.id===f.grupoId)?.nome||'') : '');
 
   renderFichaConteudo(funcId);
   navigate('ficha-funcionario');
@@ -651,7 +651,7 @@ function renderFichaConteudo(funcId) {
     <div class="stat-card"><div class="stat-label">Salário base</div><div class="stat-value accent" style="font-size:1.2rem">R$ ${fmtMoney(f.salario||0)}</div></div>
   `;
 
-  // EMPR�STIMOS A FUNCION�RIOS � com bot�o de detalhe e pagamento
+  // EMPRSTIMOS A FUNCIONRIOS  com boto de detalhe e pagamento
   const empEl = document.getElementById('fichaEmprestimos');
   if (empAtivos.length === 0) {
     empEl.innerHTML = '<p style="color:var(--text3);font-size:0.85rem">Nenhum empréstimo ativo.</p>';
@@ -665,7 +665,7 @@ function renderFichaConteudo(funcId) {
           <div style="flex:1">
             <div style="font-weight:600;font-size:0.95rem">${e.descricao}</div>
             <div style="font-size:0.78rem;color:var(--text3);margin-top:2px">
-              Parcela ${parcelaAtual}/${e.parcelas} � Valor: R$ ${fmtMoney(e.valorParcela)}/parcela
+              Parcela ${parcelaAtual}/${e.parcelas}  Valor: R$ ${fmtMoney(e.valorParcela)}/parcela
             </div>
             <div style="margin-top:8px;display:flex;gap:16px;flex-wrap:wrap">
               <div><div style="font-size:0.72rem;color:var(--text3)">Total</div><div style="font-family:var(--mono)">R$ ${fmtMoney(e.total)}</div></div>
@@ -682,7 +682,7 @@ function renderFichaConteudo(funcId) {
     }).join('');
   }
 
-  // VALES � com abatimento parcial
+  // VALES  com abatimento parcial
   const valesFunc = vales.filter(v => v.funcionarioId===funcId).sort((a,b)=>(b.data||'').localeCompare(a.data||''));
   const valesEl = document.getElementById('fichaVales');
   if (valesFunc.filter(v=>v.status!=='descontado').length === 0) {
@@ -694,13 +694,13 @@ function renderFichaConteudo(funcId) {
       return `<div style="background:var(--bg2);border-radius:10px;padding:14px;margin-bottom:10px">
         <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap">
           <div style="flex:1">
-            <div style="font-weight:600;font-size:0.9rem">${v.descricao||'Adiantamento'}${v.data?' � '+fmtData(v.data):''}</div>
+            <div style="font-weight:600;font-size:0.9rem">${v.descricao||'Adiantamento'}${v.data?'  '+fmtData(v.data):''}</div>
             <div style="margin-top:6px;display:flex;gap:16px;flex-wrap:wrap">
               <div><div style="font-size:0.72rem;color:var(--text3)">Original</div><div style="font-family:var(--mono)">R$ ${fmtMoney(v.valor)}</div></div>
               ${abatido>0?`<div><div style="font-size:0.72rem;color:var(--text3)">Abatido</div><div style="font-family:var(--mono);color:var(--green)">R$ ${fmtMoney(abatido)}</div></div>`:''}
               <div><div style="font-size:0.72rem;color:var(--text3)">Restante</div><div style="font-family:var(--mono);color:var(--red)">R$ ${fmtMoney(restante)}</div></div>
             </div>
-            ${(v.abatimentos||[]).length>0?`<div style="font-size:0.72rem;color:var(--text3);margin-top:4px">Hist�rico: ${v.abatimentos.map(a=>`R$ ${fmtMoney(a.valor)} em ${fmtData(a.data)}`).join(' � ')}</div>`:''}
+            ${(v.abatimentos||[]).length>0?`<div style="font-size:0.72rem;color:var(--text3);margin-top:4px">Histórico: ${v.abatimentos.map(a=>`R$ ${fmtMoney(a.valor)} em ${fmtData(a.data)}`).join('  ')}</div>`:''}
           </div>
           <button class="btn btn-outline btn-sm" onclick="fichaAbaterVale('${v.id}','${funcId}')">💸 Registrar pagamento</button>
         </div>
@@ -742,11 +742,11 @@ async function fichaAbaterVale(valeId, funcId) {
   const abatido = (v.abatimentos||[]).reduce((s,a)=>s+a.valor,0);
   const restante = Math.max(0,(v.valor||0)-abatido);
 
-  document.getElementById('confirmarTitulo').textContent = `Pagamento de vale � ${v.descricao||'Adiantamento'}`;
+  document.getElementById('confirmarTitulo').textContent = `Pagamento de vale  ${v.descricao||'Adiantamento'}`;
   document.getElementById('confirmarMsg').innerHTML = `
     <div style="margin-bottom:10px">
       <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>Valor original:</span><strong>R$ ${fmtMoney(v.valor)}</strong></div>
-      ${abatido>0?`<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>J� pago:</span><strong style="color:var(--green)">R$ ${fmtMoney(abatido)}</strong></div>`:''}
+      ${abatido>0?`<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>J pago:</span><strong style="color:var(--green)">R$ ${fmtMoney(abatido)}</strong></div>`:''}
       <div style="display:flex;justify-content:space-between"><span>Restante:</span><strong style="color:var(--red)">R$ ${fmtMoney(restante)}</strong></div>
     </div>
     <label style="font-size:0.82rem;color:var(--text2)">Valor a pagar agora (pode ser parcial):</label>
@@ -917,7 +917,7 @@ function atualizarResumoFunc() {
 }
 
 // =====================================================
-// VALES � novas fun��es
+// VALES  novas funes
 // =====================================================
 function toggleValeParcelas() {
   const tipo = document.getElementById('valeTipo').value;
@@ -1003,11 +1003,11 @@ async function salvarValesLote() {
 }
 
 // =====================================================
-// EMPR�STIMOS A FUNCION�RIOS � editar e registrar parcela melhorado
+// EMPRSTIMOS A FUNCIONRIOS  editar e registrar parcela melhorado
 // =====================================================
 function openEmprestimoModal(id) {
   document.getElementById('empId').value = id || '';
-  document.getElementById('empTituloModal').textContent = id ? 'Editar Empr�stimo' : 'Novo Empr�stimo';
+  document.getElementById('empTituloModal').textContent = id ? 'Editar Emprstimo' : 'Novo Emprstimo';
   if (id) {
     const e = emprestimos.find(x => x.id===id);
     if (!e) return;
@@ -1057,13 +1057,13 @@ async function registrarPagamentoMelhorado(id) {
     <div style="display:flex;align-items:center;gap:10px;padding:8px;background:var(--bg2);border-radius:6px;margin-bottom:6px">
       <input type="checkbox" id="parc_cb_${p.num}" ${pidx===0?'checked':''} style="width:16px;height:16px;flex-shrink:0">
       <label for="parc_cb_${p.num}" style="flex:1;font-size:0.85rem;cursor:pointer">
-        Parcela ${p.num}/${totalParcelas}${p.isUltima?' (�ltima)':''}
+        Parcela ${p.num}/${totalParcelas}${p.isUltima?' (ltima)':''}
       </label>
       <input type="number" id="parc_val_${p.num}" class="form-input" value="${p.valor.toFixed(2)}" step="0.01"
         style="width:100px;font-family:var(--mono);font-size:0.82rem">
     </div>`).join('');
 
-  document.getElementById('confirmarTitulo').textContent = `Registrar pagamento � ${e.descricao}`;
+  document.getElementById('confirmarTitulo').textContent = `Registrar pagamento  ${e.descricao}`;
   document.getElementById('confirmarMsg').innerHTML = `
     <div style="display:flex;justify-content:space-between;margin-bottom:12px">
       <span>Total restante:</span><strong style="font-family:var(--mono)">R$ ${fmtMoney(restante)}</strong>
@@ -1140,12 +1140,12 @@ async function registrarPagamentoMelhorado(id) {
 
     renderEmprestimos();
     renderDashboard();
-    toast(`${parcelasRegistradas} parcela(s) registrada(s) � R$ ${fmtMoney(totalPago)}! Restante: R$ ${fmtMoney(novoRestante)}`, 'success');
+    toast(`${parcelasRegistradas} parcela(s) registrada(s)  R$ ${fmtMoney(totalPago)}! Restante: R$ ${fmtMoney(novoRestante)}`, 'success');
   };
 }
 
 // =====================================================
-// SIMULA��O AUTOM�TICA NO MODAL EMPR�STIMO
+// SIMULAO AUTOMTICA NO MODAL EMPRSTIMO
 // =====================================================
 function atualizarSimulacaoEmp() {
   const total = parseFloat(document.getElementById('empTotal').value) || 0;
@@ -1158,7 +1158,7 @@ function atualizarSimulacaoEmp() {
 
   // Opção 1: Iguais
   document.getElementById('empSimIgual').innerHTML =
-    `<span style="color:var(--accent2)">Iguais:</span> ${n}x R$ ${fmtMoney(igualVal)}${Math.abs(diff)>0?' <span style="color:var(--text3)">(�ltima R$ '+fmtMoney(igualVal+diff)+')</span>':''}`;
+    `<span style="color:var(--accent2)">Iguais:</span> ${n}x R$ ${fmtMoney(igualVal)}${Math.abs(diff)>0?' <span style="color:var(--text3)">(ltima R$ '+fmtMoney(igualVal+diff)+')</span>':''}`;
 
   // Opção 2: Parcela padrão + última diferente
   const padraoVal = Math.floor(total/n*100)/100;
@@ -1171,7 +1171,7 @@ function atualizarSimulacaoEmp() {
 
 
 // =====================================================
-// SISTEMA DE UNDO � hist�rico de a��es revers�veis
+// SISTEMA DE UNDO  histórico de aes reversveis
 // =====================================================
 const undoStack = [];
 const MAX_UNDO = 20;
@@ -1229,7 +1229,7 @@ document.addEventListener('keydown', e => {
 // HISTÓRICO FINANCEIRO
 // =====================================================
 function renderHistoricoFin() {
-  // Empr�stimos � todos, incluindo quitados
+  // Emprstimos  todos, incluindo quitados
   const empEl = document.getElementById('histFinEmprestimos');
   if (empEl) {
     const todos = emprestimos.sort((a,b) => (b.criadoEm||'').localeCompare(a.criadoEm||''));
@@ -1245,7 +1245,7 @@ function renderHistoricoFin() {
           <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px">
             <div>
               <div style="font-weight:600">${e.descricao}</div>
-              <div style="font-size:0.78rem;color:var(--text3)">${func?.nome||'�'} � ${e.criadoEm?new Date(e.criadoEm).toLocaleDateString('pt-BR'):'�'}</div>
+              <div style="font-size:0.78rem;color:var(--text3)">${func?.nome||''}  ${e.criadoEm?new Date(e.criadoEm).toLocaleDateString('pt-BR'):''}</div>
             </div>
             <span class="badge ${isQuitado?'badge-green':'badge-yellow'}">${isQuitado?'✅ Quitado':'Em andamento'}</span>
           </div>
@@ -1260,7 +1260,7 @@ function renderHistoricoFin() {
     }
   }
 
-  // Vales � todos
+  // Vales  todos
   const valesEl = document.getElementById('histFinVales');
   if (valesEl) {
     const todos = vales.sort((a,b) => (b.data||'').localeCompare(a.data||''));
@@ -1273,8 +1273,8 @@ function renderHistoricoFin() {
           const abatido = (v.abatimentos||[]).reduce((s,a)=>s+a.valor,0);
           const rest = Math.max(0,(v.valor||0)-abatido);
           return `<tr>
-            <td style="font-size:0.8rem">${v.data?fmtData(v.data):'�'}</td>
-            <td>${func?.nome||'�'}</td>
+            <td style="font-size:0.8rem">${v.data?fmtData(v.data):''}</td>
+            <td>${func?.nome||''}</td>
             <td>${v.descricao||'Adiantamento'}</td>
             <td class="mono">R$ ${fmtMoney(v.valor)}</td>
             <td class="mono" style="color:var(--green)">R$ ${fmtMoney(abatido)}</td>
@@ -1293,7 +1293,7 @@ function toggleTodosFolha(checked) {
 async function consolidarPeriodoTodos() {
   const mes = document.getElementById('folhaMes')?.value;
   const ano = document.getElementById('folhaAno')?.value;
-  const confirm = await confirmar('Consolidar per�odo?', `Isso dar� baixa em todos os itens selecionados de todos os funcion�rios marcados para ${mes}/${ano}. Esta a��o pode ser desfeita com Ctrl+Z.`);
+  const confirm = await confirmar('Consolidar perodo?', `Isso dar baixa em todos os itens selecionados de todos os funcionrios marcados para ${mes}/${ano}. Esta ao pode ser desfeita com Ctrl+Z.`);
   if (!confirm) return;
   // Processar cada funcionário marcado
   const marcados = [...document.querySelectorAll('.folha-func-cb:checked')].map(cb => cb.dataset.id);
@@ -1537,14 +1537,14 @@ function temPermissao(acao, modulo) {
 
 
 // =====================================================
-// FUN��ES DE PERMISS�O
+// FUNES DE PERMISSO
 // =====================================================
 function editarMembro(uid) {
   const membro = currentOrg?.membros?.find(m => m.uid === uid);
   document.getElementById('membroId').value = uid;
   document.getElementById('membroNome').value = membro?.nome || '';
   document.getElementById('membroEmail').value = membro?.email || '';
-  document.getElementById('membroModalTitulo').textContent = `Permiss�es � ${membro?.nome || uid}`;
+  document.getElementById('membroModalTitulo').textContent = `Permisses  ${membro?.nome || uid}`;
   renderPermissoesModal(membro?.role, membro?.permissoes || PERFIS_PADRAO[membro?.role||'funcionario']?.permissoes || {}, 'permissoesContainer');
   openModal('modal-membro');
 }
@@ -1622,7 +1622,7 @@ async function aplicarPermissoesPendentes(orgData, uid) {
 
 
 // =====================================================
-// ESCALA � Imprimir / PDF individual por funcion�rio
+// ESCALA  Imprimir / PDF individual por funcionrio
 // =====================================================
 function getEscalaItem(funcId) {
   return escalaGerada?.equipe.find(e => e.funcionario.id === funcId);
@@ -1632,7 +1632,7 @@ function buildEscalaHtml(item) {
   if (!item) return '';
   const orgNome = currentOrg?.nome || 'Empresa';
   const competencia = monthNameFromPeriod(escalaGerada.competencia);
-  return `<!DOCTYPE html><html><head><title>FOLHA DE PONTO � ${item.funcionario.nome}</title>
+  return `<!DOCTYPE html><html><head><title>FOLHA DE PONTO  ${item.funcionario.nome}</title>
   <style>
     body{font-family:Arial,sans-serif;padding:20px;background:#fff;color:#111}
     h2{font-size:16px;margin:0}
@@ -1645,7 +1645,7 @@ function buildEscalaHtml(item) {
     @media print{@page{size:A4 landscape;margin:15mm}}
   </style></head><body>
   <h2>FOLHA DE PONTO</h2>
-  <div class="sub">${orgNome} &nbsp;�&nbsp; ${item.funcionario.nome} &nbsp;�&nbsp; ${item.funcionario.cargo||''} &nbsp;�&nbsp; Compet�ncia: ${competencia} &nbsp;�&nbsp; Total: ${item.totalHorasMes}h &nbsp;�&nbsp; Hora Extra: ${item.totalExtrasMes}h</div>
+  <div class="sub">${orgNome} &nbsp;&nbsp; ${item.funcionario.nome} &nbsp;&nbsp; ${item.funcionario.cargo||''} &nbsp;&nbsp; Competncia: ${competencia} &nbsp;&nbsp; Total: ${item.totalHorasMes}h &nbsp;&nbsp; Hora Extra: ${item.totalExtrasMes}h</div>
   <table>
     <thead><tr><th>DATA</th><th>DIA</th><th>ENTRADA</th><th>SAÍDA INT.</th><th>RETORNO</th><th>SAÍDA</th><th>TOTAL</th><th>H. EXTRA</th></tr></thead>
     <tbody>
@@ -1657,7 +1657,7 @@ function buildEscalaHtml(item) {
         <td>${dia.retornoIntervalo}</td>
         <td>${dia.saidaFinal}</td>
         <td>${dia.horasPrevistas}h</td>
-        <td>${dia.horaExtraPrevista > 0 ? dia.horaExtraPrevista + 'h' : '�'}</td>
+        <td>${dia.horaExtraPrevista > 0 ? dia.horaExtraPrevista + 'h' : ''}</td>
       </tr>`).join('')}
     </tbody>
   </table>
@@ -1688,7 +1688,7 @@ function downloadEscalaPdfFuncionario(funcId) {
   doc.setFontSize(13); doc.setFont('helvetica', 'bold');
   doc.text('FOLHA DE PONTO', 14, 14);
   doc.setFontSize(8); doc.setFont('helvetica', 'normal');
-  doc.text(`${orgNome} � ${item.funcionario.nome} � ${item.funcionario.cargo||''}`, 14, 20);
+  doc.text(`${orgNome}  ${item.funcionario.nome}  ${item.funcionario.cargo||''}`, 14, 20);
   doc.text(`Competência: ${competencia}   Total: ${item.totalHorasMes}h   Hora Extra: ${item.totalExtrasMes}h`, 14, 25);
 
   doc.autoTable({
@@ -1699,7 +1699,7 @@ function downloadEscalaPdfFuncionario(funcId) {
       dayNameShort(dia.diaSemana).toUpperCase(),
       dia.entrada, dia.saidaIntervalo, dia.retornoIntervalo, dia.saidaFinal,
       `${dia.horasPrevistas}h`,
-      dia.horaExtraPrevista > 0 ? `${dia.horaExtraPrevista}h` : '�'
+      dia.horaExtraPrevista > 0 ? `${dia.horaExtraPrevista}h` : ''
     ]),
     styles: { fontSize: 7, cellPadding: 2 },
     headStyles: { fillColor: [27,45,107], textColor: 255, fontStyle: 'bold' },
@@ -1732,7 +1732,7 @@ const DASH_WIDGETS = {
     descricao: 'Botões de acesso rápido a ações frequentes',
     padrao: true,
     render: () => {
-      // Atalhos configur�veis � carregados do localStorage
+      // Atalhos configurveis  carregados do localStorage
       const todosAtalhos = {
         'adiantamento': { label: '💵 Adiantamento Salarial', action: "openModal('modal-vale')" },
         'adiantamento_lote': { label: '📋 Adiantamentos em Lote', action: "openModal('modal-vale-lote')" },
@@ -1782,7 +1782,7 @@ const DASH_WIDGETS = {
         </div>
         <div class="stat-card" style="cursor:pointer" onclick="navigate('historico-folha')">
           <div class="stat-label">Última folha gerada</div>
-          <div class="stat-value" style="font-size:1rem">${ultimaFolha?.mesRef || '�'}</div>
+          <div class="stat-value" style="font-size:1rem">${ultimaFolha?.mesRef || ''}</div>
         </div>
       </div>`;
     }
@@ -1827,7 +1827,7 @@ const DASH_WIDGETS = {
               ${quitado ? '✅ Quitado' : '⚠️ ' + devedor + ' deve R$ ' + fmtMoney(Math.abs(saldo))}
             </div>
           </div>
-          <!-- Bot�es compactos � mesmo estilo do acerto de contas -->
+          <!-- Botes compactos  mesmo estilo do acerto de contas -->
           <button onclick="openLancamentoPar('${par.id}','${par.pessoaA}')"
             class="btn btn-outline btn-sm"
             style="font-size:0.72rem;padding:4px 8px;white-space:nowrap;flex-shrink:0">
@@ -1871,10 +1871,10 @@ const DASH_WIDGETS = {
         <tbody>${pend.map(v=>{
           const f=funcionarios.find(fn=>fn.id===v.funcionarioId);
           return `<tr>
-            <td>${f?.nome||'�'}</td>
+            <td>${f?.nome||''}</td>
             <td>${v.descricao||'Adiantamento'}</td>
             <td class="mono" style="color:var(--red)">R$ ${fmtMoney(v.valor)}</td>
-            <td style="font-size:0.78rem">${v.data?fmtData(v.data):'�'}</td>
+            <td style="font-size:0.78rem">${v.data?fmtData(v.data):''}</td>
           </tr>`;
         }).join('')}</tbody></table>
         ${vales.filter(v=>v.status!=='descontado').length > 5 ? `<p style="font-size:0.78rem;color:var(--text3);margin-top:8px">+${vales.filter(v=>v.status!=='descontado').length-5} outros</p>` : ''}
@@ -1901,7 +1901,7 @@ const DASH_WIDGETS = {
           const f=funcionarios.find(fn=>fn.id===e.funcionarioId);
           const rest=(e.total||0)-(e.pago||0);
           return `<tr>
-            <td>${f?.nome||e.funcionarioNome||'�'}</td>
+            <td>${f?.nome||e.funcionarioNome||''}</td>
             <td>${e.descricao}</td>
             <td class="mono" style="color:var(--red)">R$ ${fmtMoney(rest)}</td>
             <td class="mono">R$ ${fmtMoney(e.valorParcela)}</td>
@@ -2184,7 +2184,7 @@ function exportarAcertoPDF() {
   const lances = filtrarLancamentosExport();
   const de = document.getElementById('exportAcertoDe').value;
   const ate = document.getElementById('exportAcertoAte').value;
-  const periodo = de && ate ? `${fmtData(de)} a ${fmtData(ate)}` : 'Todo o hist�rico';
+  const periodo = de && ate ? `${fmtData(de)} a ${fmtData(ate)}` : 'Todo o histórico';
 
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
@@ -2243,7 +2243,7 @@ function exportarAcertoPDF() {
   doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(8);
   doc.text('DATA', lm+15, y+5, {align:'center'});
   doc.text('QUEM DEVE', lm+50, y+5, {align:'center'});
-  doc.text('DESCRI��O', lm+115, y+5, {align:'center'});
+  doc.text('DESCRIO', lm+115, y+5, {align:'center'});
   doc.text('VALOR', rm-8, y+5, {align:'right'});
   doc.setTextColor(30,30,45);
   y += 8;
@@ -2253,9 +2253,9 @@ function exportarAcertoPDF() {
     doc.setFillColor(i%2===0 ? 255:248, i%2===0 ? 255:250, i%2===0 ? 255:255);
     doc.rect(lm, y, pw, 7, 'FD');
     doc.setFont('helvetica','normal'); doc.setFontSize(8);
-    doc.text(l.data ? fmtData(l.data) : '�', lm+15, y+5, {align:'center'});
-    doc.text(l.de||'�', lm+50, y+5, {align:'center'});
-    const desc = (l.descricao||'�').substring(0,40);
+    doc.text(l.data ? fmtData(l.data) : '', lm+15, y+5, {align:'center'});
+    doc.text(l.de||'', lm+50, y+5, {align:'center'});
+    const desc = (l.descricao||'').substring(0,40);
     doc.text(desc, lm+115, y+5, {align:'center'});
     doc.setFont('helvetica','bold'); doc.setTextColor(46,158,79);
     doc.text(`R$ ${fmtMoney(l.valor)}`, rm-4, y+5, {align:'right'});
@@ -2404,9 +2404,9 @@ function renderParLancamentos() {
       <th style="text-align:right">Valor</th><th></th>
     </tr></thead>
     <tbody>${lances.map(l => `<tr>
-      <td style="font-size:0.8rem">${l.data?fmtData(l.data):'�'}</td>
-      <td><span style="font-weight:600;color:var(--red)">${l.de||'�'}</span></td>
-      <td>${l.descricao||'�'}</td>
+      <td style="font-size:0.8rem">${l.data?fmtData(l.data):''}</td>
+      <td><span style="font-weight:600;color:var(--red)">${l.de||''}</span></td>
+      <td>${l.descricao||''}</td>
       <td style="text-align:right;font-family:var(--mono);font-weight:600;color:var(--green)">R$ ${fmtMoney(l.valor)}</td>
       <td><button class="btn-icon" onclick="excluirLancamentoParPage('${l.id}')">🗑️</button></td>
     </tr>`).join('')}
@@ -2415,7 +2415,7 @@ function renderParLancamentos() {
 }
 
 async function excluirLancamentoParPage(lancId) {
-  if (!await confirmar('Excluir lan�amento?', 'Esta a��o n�o pode ser desfeita.')) return;
+  if (!await confirmar('Excluir lançamento?', 'Esta ao no pode ser desfeita.')) return;
   if (db && currentOrg) {
     await db.collection('orgs').doc(currentOrg.id).collection('lancamentos').doc(lancId).delete();
   } else {
@@ -2443,8 +2443,8 @@ function renderParConsolidacoes(parId) {
       <div style="flex:1">
         <div style="font-weight:600;font-size:0.88rem">Período consolidado em ${fmtData(c.data)}</div>
         <div style="font-size:0.78rem;color:var(--text3)">
-          ${c.pessoaA} devia R$ ${fmtMoney(c.devidoA)} � ${c.pessoaB} devia R$ ${fmtMoney(c.devidoB)}
-          � Saldo quitado: R$ ${fmtMoney(c.saldo)}
+          ${c.pessoaA} devia R$ ${fmtMoney(c.devidoA)}  ${c.pessoaB} devia R$ ${fmtMoney(c.devidoB)}
+           Saldo quitado: R$ ${fmtMoney(c.saldo)}
         </div>
       </div>
       <span class="badge badge-green">Quitado</span>
@@ -2518,7 +2518,7 @@ async function consolidarPeriodoPar(parId) {
 
 
 // =====================================================
-// ESCALA � sele��o para imprimir/baixar
+// ESCALA  seleo para imprimir/baixar
 // =====================================================
 function renderEscalaCheckList() {
   if (!escalaGerada) return;
@@ -2570,7 +2570,7 @@ function downloadEscalasSelecionadasPdf() {
 }
 
 // =====================================================
-// FILTROS PER�ODO � Acerto de Contas
+// FILTROS PERODO  Acerto de Contas
 // =====================================================
 function filtrarParPeriodo(tipo) {
   const hoje = new Date();
@@ -2596,7 +2596,7 @@ function filtrarParPeriodo(tipo) {
 }
 
 // =====================================================
-// UNDO GLOBAL � bot�o flutuante em TODAS as a��es
+// UNDO GLOBAL  boto flutuante em TODAS as aes
 // =====================================================
 function pushUndoGlobal(descricao, reverterFn) {
   pushUndo({ descricao, reverter: reverterFn });
@@ -2609,7 +2609,7 @@ async function excluirComUndo(descricao, deleteFn, undoFn) {
 }
 
 // =====================================================
-// VOLTAR AO TOPO � bot�o flutuante
+// VOLTAR AO TOPO  boto flutuante
 // =====================================================
 function adicionarBotaoTopo() {
   if (document.getElementById('btnVoltarTopo')) return;
@@ -2637,7 +2637,7 @@ function exportFuncionariosPDF() {
   doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(12);
   doc.text('RELATÓRIO DE FUNCIONÁRIOS', lm+6, y+8);
   doc.setFontSize(8); doc.setFont('helvetica','normal');
-  doc.text(`${currentOrg?.nome||''} � ${new Date().toLocaleDateString('pt-BR')}`, lm+6, y+14);
+  doc.text(`${currentOrg?.nome||''}  ${new Date().toLocaleDateString('pt-BR')}`, lm+6, y+14);
   doc.setTextColor(30,30,45); y += 24;
 
   doc.setFillColor(46,158,79); doc.rect(lm, y, pw, 8, 'FD');
@@ -2654,7 +2654,7 @@ function exportFuncionariosPDF() {
     doc.rect(lm, y, pw, 7, 'FD');
     doc.setFont('helvetica','normal'); doc.setFontSize(8);
     doc.text((f.nome||'').substring(0,24), lm+3, y+5);
-    doc.text(f.cpf||'�', lm+55, y+5);
+    doc.text(f.cpf||'', lm+55, y+5);
     doc.text(getNomeCargo(f).substring(0,18), lm+90, y+5);
     doc.setFont('helvetica','bold'); doc.setTextColor(46,158,79);
     doc.text(`R$ ${fmtMoney(f.salario||0)}`, lm+140, y+5);
@@ -2670,7 +2670,7 @@ function exportFuncionariosPDF() {
 
 
 // =====================================================
-// CALCULADORA � FITA DE PAPEL
+// CALCULADORA  FITA DE PAPEL
 // =====================================================
 let calcEstado = {
   display: '0',
@@ -2764,7 +2764,7 @@ function calcExecutar(val, desc) {
   if (opSim === '+') resultado = acc + val;
   if (opSim === '-') resultado = acc - val;
   if (opSim === '×') resultado = acc * val;
-  if (opSim === '�') resultado = val !== 0 ? acc / val : 0;
+  if (opSim === '') resultado = val !== 0 ? acc / val : 0;
 
   calcEstado.fita.push({ tipo:'entrada', op: opSim, valor: val, resultado, desc: '' });
   calcEstado.acumulador = resultado;
@@ -2843,7 +2843,7 @@ function calcImprimir(tipo) {
   }).join('');
 
   const cupomW = tipo==='cupom' ? 'width:72mm;' : '';
-  const html = `<!DOCTYPE html><html><head><title>Calculadora � ${orgNome}</title>
+  const html = `<!DOCTYPE html><html><head><title>Calculadora  ${orgNome}</title>
   <style>
     body{font-family:${tipo==='cupom'?'Courier New,monospace':'Arial,sans-serif'};${cupomW}padding:${tipo==='cupom'?'4mm':'20px'};font-size:${tipo==='cupom'?'10px':'11px'};-webkit-font-smoothing:none;font-weight:${tipo==='cupom'?'bold':'normal'}}
     table{width:100%;border-collapse:collapse}
@@ -2892,7 +2892,7 @@ async function renderFitasSalvas() {
     <div style="display:flex;align-items:center;gap:10px;padding:8px;background:var(--bg2);border-radius:8px;margin-bottom:6px">
       <div style="flex:1">
         <div style="font-weight:600;font-size:0.88rem">${f.nome}</div>
-        <div style="font-size:0.75rem;color:var(--text3)">${f.data?fmtData(f.data):''} � ${f.linhas?.length||0} opera��es</div>
+        <div style="font-size:0.75rem;color:var(--text3)">${f.data?fmtData(f.data):''}  ${f.linhas?.length||0} operaes</div>
       </div>
       <div style="font-family:var(--mono);font-weight:700;color:var(--accent2)">R$ ${fmtMoney(f.total)}</div>
       <button class="btn btn-outline btn-sm" onclick="calcCarregarFita('${f.id}')">Carregar</button>
@@ -2918,13 +2918,13 @@ async function calcExcluirFita(id) {
 }
 
 // =====================================================
-// CONTRATOS � Templates e gera��o
+// CONTRATOS  Templates e gerao
 // =====================================================
 let contratoAtual = { tipo:'', campos:{} };
 
 const CONTRATOS_TEMPLATES = {
   clt: {
-    titulo: 'Contrato de Trabalho � CLT',
+    titulo: 'Contrato de Trabalho  CLT',
     campos: [
       {id:'funcionarioId', label:'Funcionário', tipo:'select-funcionario'},
       {id:'dataAdmissao', label:'Data de admissão', tipo:'date'},
@@ -3158,83 +3158,83 @@ async function gerarContratoPDF() {
 
 function gerarTextoContrato(tipo, d, org) {
   const func = d.funcionarioId_obj;
-  const empresa = `${org.nome}${org.cnpj ? ', inscrita no CNPJ sob o n� ' + org.cnpj : ''}${org.cidade ? ', com sede em ' + org.cidade : ''}`;
+  const empresa = `${org.nome}${org.cnpj ? ', inscrita no CNPJ sob o n ' + org.cnpj : ''}${org.cidade ? ', com sede em ' + org.cidade : ''}`;
 
   const textos = {
-    clt: `Pelo presente instrumento particular, ${empresa}, doravante denominada CONTRATANTE, e ${func?.nome||'___'}, portador(a) do CPF n� ${func?.cpf||'___'}, doravante denominado(a) CONTRATADO(A), t�m justo e acordado o presente Contrato de Trabalho por Prazo Indeterminado, regido pela Consolida��o das Leis do Trabalho (CLT), mediante as seguintes cl�usulas e condi��es:
+    clt: `Pelo presente instrumento particular, ${empresa}, doravante denominada CONTRATANTE, e ${func?.nome||'___'}, portador(a) do CPF n ${func?.cpf||'___'}, doravante denominado(a) CONTRATADO(A), tm justo e acordado o presente Contrato de Trabalho por Prazo Indeterminado, regido pela Consolidao das Leis do Trabalho (CLT), mediante as seguintes clusulas e condies:
 
-CL�USULA 1� � DA FUN��O
-O(A) CONTRATADO(A) � admitido(a) para exercer a fun��o de ${func?.cargo||'___'}, com ingresso em ${d.dataAdmissao ? fmtData(d.dataAdmissao) : '___'}, no local de trabalho: ${d.localTrabalho||'___'}.
+CLUSULA 1  DA FUNO
+O(A) CONTRATADO(A)  admitido(a) para exercer a funo de ${func?.cargo||'___'}, com ingresso em ${d.dataAdmissao ? fmtData(d.dataAdmissao) : '___'}, no local de trabalho: ${d.localTrabalho||'___'}.
 
-CL�USULA 2� � DA REMUNERA��O
+CLUSULA 2  DA REMUNERAO
 O(A) CONTRATADO(A) perceberá salário mensal de R$ ${fmtMoney(parseFloat(d.salario)||0)} (${numberToWords(parseFloat(d.salario)||0)}), pago até o 5º dia útil do mês subsequente ao vencido.
 
-CL�USULA 3� � DA JORNADA DE TRABALHO
+CLUSULA 3  DA JORNADA DE TRABALHO
 A jornada de trabalho será de ${d.jornada||'44'} (${d.jornada||'quarenta e quatro'}) horas semanais, distribuídas de segunda-feira a sexta-feira, de acordo com o horário estabelecido pela CONTRATANTE.
 
-CL�USULA 4� � DAS F�RIAS E 13� SAL�RIO
+CLUSULA 4  DAS FRIAS E 13 SALRIO
 O(A) CONTRATADO(A) fará jus a férias anuais remuneradas acrescidas de 1/3 constitucional, bem como ao 13º salário, nos termos da legislação vigente.
 
-CL�USULA 5� � DO FGTS E INSS
+CLUSULA 5  DO FGTS E INSS
 A CONTRATANTE recolherá, mensalmente, o FGTS e contribuição previdenciária (INSS) sobre a remuneração do(a) CONTRATADO(A), nos percentuais legalmente estabelecidos.
 
-${d.beneficios ? `CL�USULA 6� � DOS BENEF�CIOS\n${d.beneficios}\n\n` : ''}CL�USULA ${d.beneficios?'7':'6'}� � DA RESCIS�O
+${d.beneficios ? `CLUSULA 6  DOS BENEFCIOS\n${d.beneficios}\n\n` : ''}CLUSULA ${d.beneficios?'7':'6'}  DA RESCISO
 O presente contrato poderá ser rescindido por qualquer das partes, mediante aviso prévio, de acordo com as disposições da CLT e legislação vigente.
 
-CL�USULA ${d.beneficios?'8':'7'}� � DO FORO
+CLUSULA ${d.beneficios?'8':'7'}  DO FORO
 As partes elegem o foro da comarca de ${org.cidade||'___'} para dirimir quaisquer controvérsias oriundas deste contrato.
 
 E, por estarem assim justos e contratados, as partes assinam o presente instrumento em 2 (duas) vias de igual teor.`,
 
-    rescisao: `Pelo presente instrumento particular, ${empresa}, doravante denominada EMPREGADORA, e ${func?.nome||'___'}, portador(a) do CPF n� ${func?.cpf||'___'}, admitido(a) em ___ para exercer a fun��o de ${func?.cargo||'___'}, doravante denominado(a) EMPREGADO(A), formalizam o distrato do contrato de trabalho, mediante as seguintes condi��es:
+    rescisao: `Pelo presente instrumento particular, ${empresa}, doravante denominada EMPREGADORA, e ${func?.nome||'___'}, portador(a) do CPF n ${func?.cpf||'___'}, admitido(a) em ___ para exercer a funo de ${func?.cargo||'___'}, doravante denominado(a) EMPREGADO(A), formalizam o distrato do contrato de trabalho, mediante as seguintes condies:
 
-CL�USULA 1� � DA RESCIS�O
+CLUSULA 1  DA RESCISO
 Fica rescindido o contrato de trabalho em ${d.dataRescisao ? fmtData(d.dataRescisao) : '___'}, por ${d.tipoRescisao||'___'}.
 
-CL�USULA 2� � DO AVISO PR�VIO
+CLUSULA 2  DO AVISO PRVIO
 O aviso prévio foi: ${d.avisoPrevio||'___'}.
 
-CL�USULA 3� � DAS VERBAS RESCIS�RIAS
+CLUSULA 3  DAS VERBAS RESCISRIAS
 O(A) EMPREGADO(A) receberá as seguintes verbas rescisórias:
-� Saldo de sal�rio: R$ ${fmtMoney(parseFloat(d.saldoSalario)||0)}
-� FGTS: R$ ${fmtMoney(parseFloat(d.fgts)||0)}
-${d.tipoRescisao?.includes('sem justa causa') ? '� Multa de 40% sobre FGTS conforme legisla��o vigente\n' : ''}
-CL�USULA 4� � DA QUITA��O
+ Saldo de salrio: R$ ${fmtMoney(parseFloat(d.saldoSalario)||0)}
+ FGTS: R$ ${fmtMoney(parseFloat(d.fgts)||0)}
+${d.tipoRescisao?.includes('sem justa causa') ? ' Multa de 40% sobre FGTS conforme legislao vigente\n' : ''}
+CLUSULA 4  DA QUITAO
 Recebidas as verbas devidas, as partes dão plena, geral e irrevogável quitação de todos os direitos e obrigações decorrentes do contrato de trabalho ora rescindido, nada mais podendo reclamar, a qualquer título.
 
 E, por estarem assim justos e acordados, assinam o presente em 2 (duas) vias de igual teor.`,
 
     servico: `Pelo presente instrumento particular, ${empresa}, doravante denominada CONTRATANTE, e ${d.contratadoNome||'___'}, inscrito(a) no CPF/CNPJ sob o nº ${d.contratadoCpfCnpj||'___'}, doravante denominado(a) CONTRATADO(A), têm entre si justo e contratado a prestação de serviços, mediante as seguintes cláusulas:
 
-CL�USULA 1� � DO OBJETO
+CLUSULA 1  DO OBJETO
 O(A) CONTRATADO(A) prestará os seguintes serviços à CONTRATANTE: ${d.descricaoServico||'___'}.
 
-CL�USULA 2� � DO VALOR E PAGAMENTO
+CLUSULA 2  DO VALOR E PAGAMENTO
 Pela prestação dos serviços, a CONTRATANTE pagará ao(à) CONTRATADO(A) o valor de R$ ${fmtMoney(parseFloat(d.valor)||0)} (${numberToWords(parseFloat(d.valor)||0)}), mediante ${d.formaPagamento||'___'}.
 
-CL�USULA 3� � DO PRAZO
-Os servi�os dever�o ser executados no prazo de ${d.prazo||'___'}, contados a partir de ${d.dataInicio ? fmtData(d.dataInicio) : '___'}.
+CLUSULA 3  DO PRAZO
+Os servios devero ser executados no prazo de ${d.prazo||'___'}, contados a partir de ${d.dataInicio ? fmtData(d.dataInicio) : '___'}.
 
-CL�USULA 4� � DA NATUREZA DOS SERVI�OS
+CLUSULA 4  DA NATUREZA DOS SERVIOS
 O(A) CONTRATADO(A) prestará os serviços de forma autônoma, sem subordinação, não configurando vínculo empregatício entre as partes.
 
-CL�USULA 5� � DO FORO
+CLUSULA 5  DO FORO
 Fica eleito o foro da comarca de ${org.cidade||'___'} para dirimir quaisquer controvérsias.
 
 E, por estarem assim justos e contratados, assinam o presente em 2 (duas) vias de igual teor.`,
 
-    emprestimo_func: `Pelo presente instrumento particular, ${empresa}, doravante denominada EMPREGADORA, e ${func?.nome||'___'}, portador(a) do CPF n� ${func?.cpf||'___'}, funcion�rio(a) da EMPREGADORA na fun��o de ${func?.cargo||'___'}, doravante denominado(a) BENEFICI�RIO(A), formalizam o presente Termo de Empr�stimo, nas seguintes condi��es:
+    emprestimo_func: `Pelo presente instrumento particular, ${empresa}, doravante denominada EMPREGADORA, e ${func?.nome||'___'}, portador(a) do CPF n ${func?.cpf||'___'}, funcionrio(a) da EMPREGADORA na funo de ${func?.cargo||'___'}, doravante denominado(a) BENEFICIRIO(A), formalizam o presente Termo de Emprstimo, nas seguintes condies:
 
-CL�USULA 1� � DO VALOR
-A EMPREGADORA concede ao(�) BENEFICI�RIO(A) empr�stimo/adiantamento no valor de R$ ${fmtMoney(parseFloat(d.valor)||0)} (${numberToWords(parseFloat(d.valor)||0)}), em ${d.dataConcessao ? fmtData(d.dataConcessao) : '___'}${d.motivoEmprestimo ? '\nFinalidade: ' + d.motivoEmprestimo : ''}
+CLUSULA 1  DO VALOR
+A EMPREGADORA concede ao() BENEFICIRIO(A) emprstimo/adiantamento no valor de R$ ${fmtMoney(parseFloat(d.valor)||0)} (${numberToWords(parseFloat(d.valor)||0)}), em ${d.dataConcessao ? fmtData(d.dataConcessao) : '___'}${d.motivoEmprestimo ? '\nFinalidade: ' + d.motivoEmprestimo : ''}
 
-CL�USULA 2� � DA DEVOLU��O
+CLUSULA 2  DA DEVOLUO
 O valor será descontado diretamente da folha de pagamento do(a) BENEFICIÁRIO(A), em ${d.parcelas||'___'} (${d.parcelas||'___'}) parcelas mensais iguais, iniciando-se no próximo pagamento.
 
-CL�USULA 3� � DO RECONHECIMENTO DE D�VIDA
+CLUSULA 3  DO RECONHECIMENTO DE DVIDA
 O(A) BENEFICIÁRIO(A) reconhece o débito e autoriza expressamente os descontos em folha de pagamento, nos termos do art. 462 da CLT.
 
-CL�USULA 4� � DA RESCIS�O
+CLUSULA 4  DA RESCISO
 Em caso de rescisão contratual, o saldo devedor será integralmente descontado das verbas rescisórias devidas.
 
 E, por estarem assim justos e acordados, assinam o presente em 2 (duas) vias de igual teor.`,
@@ -3289,7 +3289,7 @@ function previewContrato() {
 
 
 // =====================================================
-// CALCULADORA � TECLADO DO COMPUTADOR
+// CALCULADORA  TECLADO DO COMPUTADOR
 // =====================================================
 function calcHandleKeyboard(e) {
   // Só funciona quando a página da calculadora está ativa
@@ -3320,7 +3320,7 @@ function calcHandleKeyboard(e) {
   if (key === 'Escape') { calcNova(); return; } // Esc = Nova fita
   if (key === 'Delete') { calcFn('CE'); return; } // Del = limpa operação
   if (key === 'F9') { calcFn('CF'); return; } // F9 = limpa fita
-  // Enter no campo descri��o � confirma opera��o pendente
+  // Enter no campo descrio  confirma operao pendente
   if (key === 'Tab' && calcEstado.operacao) { calcFn('='); return; }
 }
 
@@ -3337,7 +3337,7 @@ function getNomeCargo(f) {
     const g = grupos.find(g => g.id === f.grupoId);
     if (g) return g.nome;
   }
-  return f.cargo || '�';
+  return f.cargo || '';
 }
 
 // Helper: lista de funcionários ativos ordenada e filtrada
@@ -3361,7 +3361,7 @@ function getFuncionariosOrdenados(filtro='', cargoFiltro='', ordemAZ=true) {
   return lista;
 }
 // =====================================================
-// CALCULADORA DO DASHBOARD � estado pr�prio
+// CALCULADORA DO DASHBOARD  estado prprio
 // =====================================================
 let dashCalcEstado = {
   display: '0', acumulador: null, operacao: null,
@@ -3438,7 +3438,7 @@ function dashCalcExecutar(val) {
   if (s.operacao === '+') res = acc + val;
   if (s.operacao === '-') res = acc - val;
   if (s.operacao === '×') res = acc * val;
-  if (s.operacao === '�') res = val !== 0 ? acc / val : 0;
+  if (s.operacao === '') res = val !== 0 ? acc / val : 0;
   res = Math.round(res * 100) / 100;
   s.fita.push({ tipo: 'entrada', op: s.operacao, valor: val, resultado: res });
   s.acumulador = res;

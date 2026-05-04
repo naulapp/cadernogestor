@@ -215,7 +215,7 @@ async function doGoogleLogin() {
       await auth.signInWithPopup(provider);
     } catch(popupErr) {
       if (popupErr.code === 'auth/popup-blocked') {
-        // Popup bloqueado pelo browser � usar redirect como fallback
+        // Popup bloqueado pelo browser  usar redirect como fallback
         if (!isStandalone) {
           await auth.signInWithRedirect(provider);
         } else {
@@ -223,7 +223,7 @@ async function doGoogleLogin() {
           toast('Permita popups para fazer login com Google no app instalado', 'error');
         }
       } else if (popupErr.code === 'auth/popup-closed-by-user') {
-        // Usu�rio fechou � n�o mostrar erro
+        // Usurio fechou  no mostrar erro
       } else {
         throw popupErr;
       }
@@ -233,7 +233,7 @@ async function doGoogleLogin() {
   }
 }
 
-// Busca autom�tica de org pelo UID � resolve problema mobile
+// Busca automtica de org pelo UID  resolve problema mobile
 async function buscarOrgDoUsuario(uid) {
   if (!db || !uid) return;
   try {
@@ -298,7 +298,7 @@ function doLogout() {
   showScreen('auth');
 }
 
-// Vers�o for�ada � redireciona para URL com ?logout=1
+// Versão forçada  redireciona para URL com ?logout=1
 // Garante funcionar mesmo quando JS está em estado inconsistente
 function doLogoutForce() {
   clearAppLocalStorage();
@@ -327,7 +327,7 @@ async function createOrg() {
   const org = { nome, cnpj, cidade, invite, dono: uid,
     membroIds: [uid],
     adminIds: [uid],
-    membros: [{ uid, nome: currentUser?.displayName || 'Voc�', role: 'gestor', email: currentUser?.email || '' }],
+    membros: [{ uid, nome: currentUser?.displayName || 'Você', role: 'gestor', email: currentUser?.email || '' }],
     criadoEm: new Date().toISOString() };
 
   if (db) {
@@ -371,7 +371,7 @@ async function joinOrg() {
     };
     afterOrgLoad();
   } else {
-    toast('Firebase n�o configurado � use modo demo', 'error');
+    toast('Firebase no configurado  use modo demo', 'error');
   }
 }
 
@@ -401,7 +401,7 @@ function updateOrgUI() {
   }
   if (!currentOrg) return;
   document.getElementById('currentOrgBadge').textContent = '🏢 ' + currentOrg.nome;
-  document.getElementById('inviteDisplay').textContent = currentOrg.invite || '�';
+  document.getElementById('inviteDisplay').textContent = currentOrg.invite || '';
   const name = currentUser?.displayName || currentUser?.email || 'U';
   document.getElementById('userAvatar').textContent = name[0].toUpperCase();
   // Config fields
@@ -614,7 +614,7 @@ function openModal(id) {
   if (id === 'modal-vale') {
     const vid = document.getElementById('valeId');
     if (vid && !vid.value) {
-      // Novo vale � limpar campos
+      // Novo vale  limpar campos
       document.getElementById('valeData').value = new Date().toISOString().slice(0,10);
       document.getElementById('valeValor').value = '';
       document.getElementById('valeDescricao').value = '';
