@@ -1192,3 +1192,73 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
   .calc-a4 { font-family: Arial, sans-serif; }
 }
 
+
+/* ── SPLASH TAGLINE ────────────────────────── */
+.splash-tagline {
+  font-size: 0.9rem;
+  color: var(--text3, #8892a4);
+  margin-top: 8px;
+  font-style: italic;
+  letter-spacing: 0.02em;
+}
+
+/* ── HAMBURGER BUTTON ──────────────────────── */
+.hamburger-btn {
+  display: none;
+  background: none;
+  border: none;
+  font-size: 1.4rem;
+  color: var(--text, #e2e8f0);
+  cursor: pointer;
+  padding: 4px 8px;
+  line-height: 1;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+.hamburger-btn:hover { background: var(--bg2, rgba(255,255,255,0.08)); }
+
+/* ── SIDEBAR OVERLAY (mobile) ──────────────── */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 299;
+}
+.sidebar-overlay.active { display: block; }
+
+@media (max-width: 768px) {
+  .hamburger-btn { display: flex; align-items: center; }
+
+  /* Sidebar: oculta por padrão, desliza ao abrir */
+  .sidebar {
+    display: block !important;
+    position: fixed;
+    top: 0; left: 0;
+    height: 100dvh;
+    z-index: 300;
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+    overflow-y: auto;
+    width: 260px;
+    box-shadow: 4px 0 24px rgba(0,0,0,0.4);
+  }
+  .sidebar.open { transform: translateX(0); }
+
+  /* Calculadora mobile — tela cheia */
+  #calcLayout {
+    grid-template-columns: 1fr !important;
+    grid-template-rows: auto auto;
+  }
+  /* Fita fica em cima */
+  #calcLayout > div:first-child { order: 1; }
+  /* Teclado fica em baixo, maior */
+  #calcLayout > div:last-child { order: 2; }
+
+  /* Botões da calc maiores no mobile */
+  .calc-btn {
+    padding: 16px 4px !important;
+    font-size: 1.2rem !important;
+  }
+  .calc-btn.calc-eq { padding: 16px 4px !important; }
+}
