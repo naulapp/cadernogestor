@@ -147,6 +147,13 @@
   }
   .calc-layout > div:first-child { order: 1; }
   .calc-layout > div:last-child  { order: 2; }
+
+  /* Dashboard calc: coluna no mobile */
+  #dashCalcLayout {
+    grid-template-columns: 1fr !important;
+  }
+  #dashCalcLayout > div:first-child { order: 1 !important; }
+  #dashCalcLayout > div:last-child  { order: 2 !important; }
 }
 </style>
 </head>
@@ -1873,6 +1880,19 @@
 <script src="operations.js?v=20260502c"></script>
 <script src="admin-scale.js?v=20260502c"></script>
 <script src="extras.js?v=20260502c"></script>
+<script>
+// Garantir toggleSidebar mesmo se core.js não tiver atualizado
+function toggleSidebar() {
+  var sidebar = document.getElementById('sidebar');
+  var overlay = document.getElementById('sidebarOverlay');
+  var btn = document.getElementById('hamburgerBtn');
+  if (!sidebar) return;
+  var isOpen = sidebar.classList.contains('open');
+  sidebar.classList.toggle('open', !isOpen);
+  if (overlay) overlay.classList.toggle('active', !isOpen);
+  if (btn) btn.classList.toggle('open', !isOpen);
+}
+</script>
 <!-- MODAL NOVA CATEGORIA -->
 <div id="modal-nova-categoria" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.5);align-items:center;justify-content:center;padding:16px">
   <div style="background:var(--card);border-radius:16px;padding:24px;width:100%;max-width:360px;box-shadow:0 20px 60px rgba(0,0,0,0.3)">
