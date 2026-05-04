@@ -1,3 +1,84 @@
+
+// =====================================================
+// HISTÓRICO GLOBAL DE AÇÕES
+// =====================================================
+async function registrarHistorico(modulo, descricao, refId) {
+  if (!db || !currentOrg || !currentUser) return;
+  try {
+    await db.collection('orgs').doc(currentOrg.id).collection('historicoAcoes').add({
+      modulo,
+      descricao,
+      refId: refId || '',
+      usuario: currentUser.displayName || currentUser.email || 'Usuário',
+      uid: currentUser.uid,
+      data: new Date().toISOString()
+    });
+  } catch(e) { /* histórico não é crítico */ }
+}
+
+async function renderHistoricoAcoes() {
+  const el = document.getElementById('historicoAcoesList');
+  if (!el) return;
+  el.innerHTML = '<p style="color:var(--text3)">Carregando...</p>';
+  try {
+    const snap = await db.collection('orgs').doc(currentOrg.id)
+      .collection('historicoAcoes')
+      .orderBy('data', 'desc')
+      .limit(100)
+      .get();
+    const items = snap.docs.map(d => ({id: d.id, ...d.data()}));
+    if (!items.length) { el.innerHTML = '<p style="color:var(--text3)">Nenhuma ação registrada ainda.</p>'; return; }
+    const modIcons = { acerto:'🤝', funcionario:'👤', folha:'📋', adiantamento:'💵', emprestimo:'💰', cargo:'👔', sistema:'⚙️' };
+    el.innerHTML = items.map(a => `
+      <div style="display:flex;align-items:flex-start;gap:10px;padding:10px;background:var(--bg2);border-radius:8px;margin-bottom:6px">
+        <div style="font-size:1.3rem;flex-shrink:0">${modIcons[a.modulo]||'📌'}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:0.85rem">${a.descricao}</div>
+          <div style="font-size:0.72rem;color:var(--text3);margin-top:2px">
+            ${a.usuario} • ${a.data ? new Date(a.data).toLocaleString('pt-BR') : '—'}
+          </div>
+        </div>
+      </div>`).join('');
+  } catch(e) {
+    el.innerHTML = '<p style="color:var(--text3)">Erro ao carregar histórico.</p>';
+  }
+}
+
+// =====================================================
+// CATEGORIAS DO ACERTO DE CONTAS
+// =====================================================
+function getCategoriasPar(parId) {
+  const key = 'cgCatAcerto_' + parId;
+  return JSON.parse(localStorage.getItem(key) || '[]');
+}
+
+function salvarCategoriasPar(parId, cats) {
+  localStorage.setItem('cgCatAcerto_' + parId, JSON.stringify(cats));
+}
+
+function popularSelectCategoria(parId) {
+  const sel = document.getElementById('lancCategoria');
+  if (!sel || !parId) return;
+  const cats = getCategoriasPar(parId);
+  sel.innerHTML = '<option value="">Sem categoria</option>' +
+    cats.map(c => `<option value="${c}">${c}</option>`).join('');
+}
+
+function adicionarCategoriaAcerto() {
+  const parId = document.getElementById('lancPar').value;
+  if (!parId) { toast('Selecione um par primeiro', 'error'); return; }
+  const nome = prompt('Nome da categoria:');
+  if (!nome?.trim()) return;
+  const cats = getCategoriasPar(parId);
+  if (!cats.includes(nome.trim())) {
+    cats.push(nome.trim());
+    salvarCategoriasPar(parId, cats);
+  }
+  popularSelectCategoria(parId);
+  document.getElementById('lancCategoria').value = nome.trim();
+  toast('Categoria adicionada!', 'success');
+}
+
 function renderFuncionarios(filter='', cargoFiltro='') {
   const tbody = document.getElementById('tabelaFuncionarios');
   // Popular filtro de cargos
@@ -1748,9 +1829,12 @@ async function salvarLancamento() {
   const data = {
     parId, de, valor,
     data: lancDataVal,
-    descricao: document.getElementById('lancDescricao').value
+    descricao: document.getElementById('lancDescricao').value,
+    categoria: document.getElementById('lancCategoria')?.value || ''
   };
   const novoLanc = await fsAdd('lancamentos', data);
+  // Registrar no histórico global
+  registrarHistorico('acerto', `Lançamento: ${de} deve R$ ${fmtMoney(valor)}${data.descricao ? ' — ' + data.descricao : ''}`, parId);
   // Adicionar ao cache local imediatamente
   lancamentosCache.push(novoLanc || {...data, id: Date.now().toString()});
   // Garantir que as pessoas do par estão na lista
