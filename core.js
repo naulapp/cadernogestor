@@ -559,7 +559,21 @@ async function loadAllData() {
 // =====================================================
 // NAVIGATION
 // =====================================================
+
+// ── SIDEBAR MOBILE ──────────────────────────────────
+function toggleSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebarOverlay');
+  const isOpen = sidebar?.classList.contains('open');
+  sidebar?.classList.toggle('open', !isOpen);
+  overlay?.classList.toggle('active', !isOpen);
+}
+
+// Fechar sidebar ao navegar no mobile
 function navigate(page) {
+  // Fechar sidebar no mobile ao navegar
+  document.getElementById('sidebar')?.classList.remove('open');
+  document.getElementById('sidebarOverlay')?.classList.remove('active');
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.querySelectorAll('.mobile-nav-item').forEach(n => n.classList.remove('active'));
@@ -569,6 +583,7 @@ function navigate(page) {
   if (page === 'relatorio') populateRelatorioGrupos();
   if (page === 'calculadora') { calcRenderFita(); renderFitasSalvas(); }
   if (page === 'contratos') renderContratosLista();
+  if (page === 'historico-acoes') renderHistoricoAcoes();
   if (page === 'historico-fin') renderHistoricoFin();
   if (page === 'historico-folha') renderHistoricoFolhas();
   if (page === 'folha') { const d=new Date(); document.getElementById('folhaMes').value=d.getMonth()+1; document.getElementById('folhaAno').value=d.getFullYear(); }
