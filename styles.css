@@ -301,8 +301,8 @@ select.form-input { cursor: pointer; }
   border-bottom: 1px solid var(--border);
   display: flex;
   align-items: center;
-  padding: 0 20px;
-  gap: 16px;
+  padding: 0 12px;
+  gap: 10px;
   z-index: 100;
 }
 
@@ -1204,32 +1204,41 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
 
 /* ── HAMBURGER BUTTON ──────────────────────── */
 .hamburger-btn {
-  display: flex;
+  /* Sempre visível em todos os dispositivos */
+  display: flex !important;
   flex-direction: column;
   justify-content: center;
   align-items: center;
   gap: 5px;
-  width: 36px;
-  height: 36px;
-  background: none;
+  width: 40px;
+  height: 40px;
+  background: transparent;
   border: none;
   cursor: pointer;
-  padding: 6px;
+  padding: 8px;
   border-radius: 8px;
   flex-shrink: 0;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
 }
-.hamburger-btn:hover { background: rgba(255,255,255,0.1); }
+.hamburger-btn:hover,
+.hamburger-btn:focus { background: rgba(128,128,128,0.15); }
 .hamburger-btn span {
   display: block;
-  width: 20px;
-  height: 2px;
-  background: var(--text, #e2e8f0);
-  border-radius: 2px;
-  transition: all 0.25s ease;
+  width: 22px;
+  height: 2.5px;
+  background: currentColor;
+  border-radius: 3px;
+  transition: transform 0.25s ease, opacity 0.2s ease;
 }
-.hamburger-btn.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+/* Cor visível em qualquer tema */
+.hamburger-btn { color: var(--text, #1e2d3d); }
+[data-theme="dark"] .hamburger-btn,
+.dark .hamburger-btn { color: #e2e8f0; }
+/* Animação X ao abrir */
+.hamburger-btn.open span:nth-child(1) { transform: translateY(7.5px) rotate(45deg); }
 .hamburger-btn.open span:nth-child(2) { opacity: 0; transform: scaleX(0); }
-.hamburger-btn.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+.hamburger-btn.open span:nth-child(3) { transform: translateY(-7.5px) rotate(-45deg); }
 
 
 /* ── CALCULADORA LAYOUT ───────────────────────── */
@@ -1242,22 +1251,26 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
 
 @media (max-width: 768px) {
   .calc-layout {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr !important;
     grid-template-rows: auto auto;
   }
   /* Fita em cima, teclado embaixo */
-  .calc-layout > .section-card:first-child { order: 1; }
-  .calc-layout > .section-card:last-child  { order: 2; }
+  .calc-layout > div:first-child { order: 1; }
+  .calc-layout > div:last-child  { order: 2; }
 
-  /* Botões grandes para toque */
+  /* Botões grandes, quadrados, proporcional à tela */
   .calc-btn {
-    padding: 20px 4px !important;
-    font-size: 1.3rem !important;
-    border-radius: 10px !important;
-    min-height: 56px;
+    aspect-ratio: 1;
+    width: 100% !important;
+    padding: 0 !important;
+    font-size: clamp(1.1rem, 5vw, 1.5rem) !important;
+    border-radius: 12px !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 60px;
   }
-  .calc-btn.calc-fn { font-size: 0.85rem !important; }
-  .calc-btn.calc-eq { min-height: 56px; }
+  .calc-btn.calc-fn { font-size: clamp(0.75rem, 3.5vw, 1rem) !important; }
 }
 
 /* ── SIDEBAR OVERLAY (mobile) ──────────────── */

@@ -1926,11 +1926,11 @@ const DASH_WIDGETS = {
           </div>
         </div>
 
-        <!-- Layout: fita + teclado -->
-        <div style="display:grid;grid-template-columns:1fr 200px;gap:12px">
+        <!-- Layout: fita + teclado — usa mesma classe calc-layout da página dedicada -->
+        <div class="calc-layout" id="dashCalcLayout">
 
           <!-- FITA -->
-          <div>
+          <div class="section-card" style="padding:10px">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
               <span style="font-size:0.72rem;font-weight:700;color:var(--text3)">FITA</span>
               <span id="dashCalcTotal" style="font-family:var(--mono);font-size:1rem;font-weight:700;color:var(--accent2)">0,00</span>
@@ -1940,39 +1940,35 @@ const DASH_WIDGETS = {
             </div>
           </div>
 
-          <!-- TECLADO COMPACTO -->
-          <div>
+          <!-- TECLADO -->
+          <div class="section-card" style="padding:10px">
             <!-- Display -->
-            <div style="background:var(--bg3);border-radius:6px;padding:6px 10px;margin-bottom:6px;text-align:right;border:1px solid var(--border)">
-              <div id="dashCalcDisplay" style="font-family:var(--mono);font-size:1.4rem;font-weight:700;color:var(--text)">0</div>
+            <div style="background:var(--bg3);border-radius:6px;padding:6px 10px;margin-bottom:8px;text-align:right;border:1px solid var(--border)">
+              <div id="dashCalcDisplay" style="font-family:var(--mono);font-size:1.6rem;font-weight:700;color:var(--text)">0</div>
               <div id="dashCalcOp" style="font-size:0.65rem;color:var(--text3);min-height:12px"></div>
             </div>
-            <!-- Grid 4x5 compacto -->
-            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px">
-              <button class="calc-btn calc-fn" style="font-size:0.72rem;padding:7px 2px" onclick="dashCalcFn('%')">%</button>
-              <button class="calc-btn calc-fn" style="font-size:0.72rem;padding:7px 2px" onclick="dashCalcFn('CE')">CE</button>
-              <button class="calc-btn calc-fn" style="font-size:0.72rem;padding:7px 2px" onclick="dashCalcFn('C')">C</button>
-              <button class="calc-btn calc-op" style="font-size:0.85rem;padding:7px 2px" onclick="dashCalcFn('÷')">÷</button>
-
-              <button class="calc-btn" style="padding:7px 2px" onclick="dashCalcNum('7')">7</button>
-              <button class="calc-btn" style="padding:7px 2px" onclick="dashCalcNum('8')">8</button>
-              <button class="calc-btn" style="padding:7px 2px" onclick="dashCalcNum('9')">9</button>
-              <button class="calc-btn calc-op" style="padding:7px 2px" onclick="dashCalcFn('×')">×</button>
-
-              <button class="calc-btn" style="padding:7px 2px" onclick="dashCalcNum('4')">4</button>
-              <button class="calc-btn" style="padding:7px 2px" onclick="dashCalcNum('5')">5</button>
-              <button class="calc-btn" style="padding:7px 2px" onclick="dashCalcNum('6')">6</button>
-              <button class="calc-btn calc-op calc-minus" style="padding:7px 2px" onclick="dashCalcFn('-')">−</button>
-
-              <button class="calc-btn" style="padding:7px 2px" onclick="dashCalcNum('1')">1</button>
-              <button class="calc-btn" style="padding:7px 2px" onclick="dashCalcNum('2')">2</button>
-              <button class="calc-btn" style="padding:7px 2px" onclick="dashCalcNum('3')">3</button>
-              <button class="calc-btn calc-op calc-plus" style="padding:7px 2px" onclick="dashCalcFn('+')">+</button>
-
-              <button class="calc-btn calc-fn" style="font-size:0.65rem;padding:7px 2px" onclick="dashCalcFn('SUB')">SUB</button>
-              <button class="calc-btn" style="padding:7px 2px" onclick="dashCalcNum('0')">0</button>
-              <button class="calc-btn" style="padding:7px 2px" onclick="dashCalcNum(',')">.</button>
-              <button class="calc-btn calc-eq" style="padding:7px 2px" onclick="dashCalcFn('=')">=</button>
+            <!-- Grid sem inline styles — CSS cuida do mobile -->
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px">
+              <button class="calc-btn calc-fn" onclick="dashCalcFn('%')">%</button>
+              <button class="calc-btn calc-fn" onclick="dashCalcFn('CE')">CE</button>
+              <button class="calc-btn calc-fn" onclick="dashCalcFn('C')">C</button>
+              <button class="calc-btn calc-op" onclick="dashCalcFn('÷')">÷</button>
+              <button class="calc-btn" onclick="dashCalcNum('7')">7</button>
+              <button class="calc-btn" onclick="dashCalcNum('8')">8</button>
+              <button class="calc-btn" onclick="dashCalcNum('9')">9</button>
+              <button class="calc-btn calc-op" onclick="dashCalcFn('×')">×</button>
+              <button class="calc-btn" onclick="dashCalcNum('4')">4</button>
+              <button class="calc-btn" onclick="dashCalcNum('5')">5</button>
+              <button class="calc-btn" onclick="dashCalcNum('6')">6</button>
+              <button class="calc-btn calc-op calc-minus" onclick="dashCalcFn('-')">−</button>
+              <button class="calc-btn" onclick="dashCalcNum('1')">1</button>
+              <button class="calc-btn" onclick="dashCalcNum('2')">2</button>
+              <button class="calc-btn" onclick="dashCalcNum('3')">3</button>
+              <button class="calc-btn calc-op calc-plus" onclick="dashCalcFn('+')">+</button>
+              <button class="calc-btn calc-fn" onclick="dashCalcFn('SUB')">SUB</button>
+              <button class="calc-btn" onclick="dashCalcNum('0')">0</button>
+              <button class="calc-btn" onclick="dashCalcNum(',')">.</button>
+              <button class="calc-btn calc-eq" onclick="dashCalcFn('=')">=</button>
             </div>
           </div>
         </div>
