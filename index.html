@@ -1787,5 +1787,18 @@
 <script src="operations.js?v=20260502c"></script>
 <script src="admin-scale.js?v=20260502c"></script>
 <script src="extras.js?v=20260502c"></script>
+<!-- MODAL NOVA CATEGORIA -->
+<div id="modal-nova-categoria" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.5);align-items:center;justify-content:center;padding:16px">
+  <div style="background:var(--card);border-radius:16px;padding:24px;width:100%;max-width:360px;box-shadow:0 20px 60px rgba(0,0,0,0.3)">
+    <div style="font-weight:700;font-size:1rem;margin-bottom:16px">Nova categoria</div>
+    <input type="text" id="novaCategoriaInput" class="form-input" placeholder="Ex: Compras Donena, Pessoal..."
+      style="margin-bottom:16px" onkeydown="if(event.key==='Enter') confirmarNovaCategoria()">
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn btn-outline btn-sm" onclick="fecharModalCategoria()">Cancelar</button>
+      <button class="btn btn-primary btn-sm" onclick="confirmarNovaCategoria()">Adicionar</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>

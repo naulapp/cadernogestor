@@ -67,16 +67,31 @@ function popularSelectCategoria(parId) {
 function adicionarCategoriaAcerto() {
   const parId = document.getElementById('lancPar').value;
   if (!parId) { toast('Selecione um par primeiro', 'error'); return; }
-  const nome = prompt('Nome da categoria:');
-  if (!nome?.trim()) return;
+  // Usar modal personalizado em vez de prompt() (não funciona em iOS PWA)
+  const nomeInput = document.getElementById('novaCategoriaInput');
+  if (nomeInput) nomeInput.value = '';
+  document.getElementById('modal-nova-categoria')?.style &&
+    (document.getElementById('modal-nova-categoria').style.display = 'flex');
+}
+
+function confirmarNovaCategoria() {
+  const parId = document.getElementById('lancPar').value;
+  const nome = document.getElementById('novaCategoriaInput')?.value?.trim();
+  fecharModalCategoria();
+  if (!nome) return;
   const cats = getCategoriasPar(parId);
-  if (!cats.includes(nome.trim())) {
-    cats.push(nome.trim());
+  if (!cats.includes(nome)) {
+    cats.push(nome);
     salvarCategoriasPar(parId, cats);
   }
   popularSelectCategoria(parId);
-  document.getElementById('lancCategoria').value = nome.trim();
+  document.getElementById('lancCategoria').value = nome;
   toast('Categoria adicionada!', 'success');
+}
+
+function fecharModalCategoria() {
+  const m = document.getElementById('modal-nova-categoria');
+  if (m) m.style.display = 'none';
 }
 
 function renderFuncionarios(filter='', cargoFiltro='') {

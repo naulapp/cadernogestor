@@ -1926,8 +1926,8 @@ const DASH_WIDGETS = {
           </div>
         </div>
 
-        <!-- Layout: fita + teclado — usa mesma classe calc-layout da página dedicada -->
-        <div class="calc-layout" id="dashCalcLayout">
+        <!-- Layout: fita + teclado no dashboard -->
+        <div id="dashCalcLayout" style="display:flex;flex-direction:column;gap:10px">
 
           <!-- FITA -->
           <div class="section-card" style="padding:10px">
@@ -1944,11 +1944,11 @@ const DASH_WIDGETS = {
           <div class="section-card" style="padding:10px">
             <!-- Display -->
             <div style="background:var(--bg3);border-radius:6px;padding:6px 10px;margin-bottom:8px;text-align:right;border:1px solid var(--border)">
-              <div id="dashCalcDisplay" style="font-family:var(--mono);font-size:1.6rem;font-weight:700;color:var(--text)">0</div>
+              <div id="dashCalcDisplay" style="font-family:var(--mono);font-size:2rem;font-weight:700;color:var(--text);text-align:right">0</div>
               <div id="dashCalcOp" style="font-size:0.65rem;color:var(--text3);min-height:12px"></div>
             </div>
-            <!-- Grid sem inline styles — CSS cuida do mobile -->
-            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px">
+            <!-- Grid do teclado -->
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px">
               <button class="calc-btn calc-fn" onclick="dashCalcFn('%')">%</button>
               <button class="calc-btn calc-fn" onclick="dashCalcFn('CE')">CE</button>
               <button class="calc-btn calc-fn" onclick="dashCalcFn('C')">C</button>

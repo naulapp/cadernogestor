@@ -357,7 +357,7 @@ select.form-input { cursor: pointer; }
 
 /* SIDEBAR */
 .sidebar {
-  width: 260px;
+  width: 220px;
   background: var(--card);
   border-right: 1px solid var(--border);
   padding: 20px 12px;
@@ -366,14 +366,10 @@ select.form-input { cursor: pointer; }
   left: 0;
   bottom: 0;
   overflow-y: auto;
-  z-index: 300;
-  transform: translateX(-260px);
-  transition: transform 0.25s ease;
-  box-shadow: 4px 0 24px rgba(0,0,0,0.15);
-}
-/* Sidebar aberta em qualquer dispositivo */
-.sidebar.open {
+  z-index: 200;
+  /* Desktop: sempre visível */
   transform: translateX(0);
+  transition: transform 0.25s ease;
 }
 
 .nav-section-title {
@@ -410,6 +406,7 @@ select.form-input { cursor: pointer; }
   flex: 1;
   padding: 28px;
   min-height: calc(100vh - 60px);
+  transition: margin-left 0.25s ease;
 }
 
 /* PAGE */
@@ -1219,8 +1216,8 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
 
 /* ── HAMBURGER BUTTON ──────────────────────── */
 .hamburger-btn {
-  /* Sempre visível em todos os dispositivos */
-  display: flex !important;
+  /* Desktop: esconder */
+  display: none;
   flex-direction: column;
   justify-content: center;
   align-items: center;
@@ -1276,21 +1273,28 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
 .sidebar-overlay.active { display: block; }
 
 @media (max-width: 768px) {
-  /* Mobile: sidebar cobre tela inteira do topo */
+  /* Hamburger aparece só no mobile */
+  .hamburger-btn { display: flex !important; }
+
+  /* Sidebar: oculta por padrão, abre com .open */
   .sidebar {
+    transform: translateX(-220px);
     top: 0;
     height: 100dvh;
     width: 80vw;
-    max-width: 300px;
+    max-width: 260px;
+    z-index: 400;
+    box-shadow: 4px 0 32px rgba(0,0,0,0.4);
   }
+  .sidebar.open { transform: translateX(0); }
+
+  /* Main panel sem margem no mobile */
+  .main-panel { margin-left: 0 !important; padding: 16px; }
 
   /* Calculadora mobile: fita em cima, teclado embaixo */
-  .calc-layout {
-    grid-template-columns: 1fr !important;
-  }
+  .calc-layout { grid-template-columns: 1fr !important; }
   .calc-layout > div:first-child { order: 1; }
   .calc-layout > div:last-child  { order: 2; }
 
-  /* Página sem padding excessivo */
   .page { padding: 12px !important; }
 }
