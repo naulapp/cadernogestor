@@ -1926,28 +1926,28 @@ const DASH_WIDGETS = {
           </div>
         </div>
 
-        <!-- Layout: fita + teclado no dashboard -->
-        <div id="dashCalcLayout" class="calc-layout">
+        <!-- Layout: fita em cima, teclado embaixo (dashboard sempre coluna) -->
+        <div id="dashCalcLayout" style="display:flex;flex-direction:column;gap:10px">
 
           <!-- FITA -->
-          <div class="section-card" style="padding:10px">
+          <div style="background:var(--bg3);border-radius:10px;padding:10px">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
               <span style="font-size:0.72rem;font-weight:700;color:var(--text3)">FITA</span>
               <span id="dashCalcTotal" style="font-family:var(--mono);font-size:1rem;font-weight:700;color:var(--accent2)">0,00</span>
             </div>
-            <div id="dashCalcFita" style="font-family:var(--mono);font-size:0.78rem;min-height:80px;max-height:200px;overflow-y:auto;border:1px solid var(--border);border-radius:6px;padding:6px;background:var(--bg3)">
+            <div id="dashCalcFita" style="font-family:var(--mono);font-size:0.78rem;min-height:60px;max-height:150px;overflow-y:auto">
               <p style="color:var(--text3);font-size:0.72rem;text-align:center;margin:12px 0">Nenhuma operação</p>
             </div>
           </div>
 
           <!-- TECLADO -->
-          <div class="section-card" style="padding:10px">
+          <div>
             <!-- Display -->
-            <div style="background:var(--bg3);border-radius:6px;padding:6px 10px;margin-bottom:8px;text-align:right;border:1px solid var(--border)">
-              <div id="dashCalcDisplay" style="font-family:var(--mono);font-size:2rem;font-weight:700;color:var(--text);text-align:right">0</div>
+            <div style="background:var(--bg3);border-radius:8px;padding:8px 12px;margin-bottom:8px;text-align:right">
+              <div id="dashCalcDisplay" style="font-family:var(--mono);font-size:1.8rem;font-weight:700;color:var(--text)">0</div>
               <div id="dashCalcOp" style="font-size:0.65rem;color:var(--text3);min-height:12px"></div>
             </div>
-            <!-- Grid do teclado -->
+            <!-- Teclado: botões quadrados via aspect-ratio -->
             <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px">
               <button class="calc-btn calc-fn" onclick="dashCalcFn('%')">%</button>
               <button class="calc-btn calc-fn" onclick="dashCalcFn('CE')">CE</button>

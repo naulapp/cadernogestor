@@ -1166,32 +1166,34 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
 .calc-btn {
   background: var(--bg2);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 10px;
   padding: 0;
-  height: 48px;
-  font-size: 1.1rem;
+  aspect-ratio: 1; /* quadrados */
+  width: 100%;
+  font-size: 1.2rem;
   font-weight: 600;
   cursor: pointer;
   color: var(--text);
-  transition: all 0.1s;
   font-family: var(--font);
   display: flex;
   align-items: center;
   justify-content: center;
+  /* Sem transition — elimina lag no mobile */
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
 }
-.calc-btn:hover { background: var(--bg3); }
-.calc-btn:active { transform: scale(0.95); }
+.calc-btn:active { opacity: 0.7; }
 .calc-btn.calc-op { background: rgba(27,45,107,0.12); color: var(--navy); }
 .calc-btn.calc-minus { background: rgba(239,68,68,0.1); color: var(--red); }
 .calc-btn.calc-plus { background: rgba(46,158,79,0.12); color: var(--green); }
-.calc-btn.calc-eq { background: var(--accent2); color: white; border-color: var(--accent2); height: 48px; }
-.calc-btn.calc-fn { background: var(--bg3); color: var(--text2); font-size: 0.82rem; }
+.calc-btn.calc-eq { background: var(--accent2); color: white; border-color: var(--accent2); }
+.calc-btn.calc-fn { background: var(--bg3); color: var(--text2); font-size: 0.78rem; }
 
-/* Mobile — botões maiores */
+/* Mobile — fonte maior */
 @media (max-width: 768px) {
-  .calc-btn { height: 62px; font-size: 1.25rem; border-radius: 12px; }
-  .calc-btn.calc-fn { font-size: 0.88rem; }
-  .calc-btn.calc-eq { height: 62px; }
+  .calc-btn { font-size: 1.5rem; border-radius: 12px; }
+  .calc-btn.calc-fn { font-size: 0.9rem; }
 }
 .calc-linha { display:flex; align-items:center; gap:8px; padding:5px 0; border-bottom:1px solid var(--border); }
 .calc-linha .cl-op { width:18px; font-weight:700; text-align:center; }
@@ -1216,41 +1218,37 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
 
 /* ── HAMBURGER BUTTON ──────────────────────── */
 .hamburger-btn {
-  /* Desktop: esconder */
-  display: none;
+  display: none; /* desktop: oculto */
   flex-direction: column;
   justify-content: center;
   align-items: center;
   gap: 5px;
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
   background: transparent;
   border: none;
   cursor: pointer;
-  padding: 8px;
+  padding: 10px;
   border-radius: 8px;
   flex-shrink: 0;
   outline: none;
   -webkit-tap-highlight-color: transparent;
+  position: relative;
+  z-index: 101; /* acima da topbar */
 }
-.hamburger-btn:hover,
-.hamburger-btn:focus { background: rgba(128,128,128,0.15); }
 .hamburger-btn span {
   display: block;
   width: 22px;
-  height: 2.5px;
-  background: currentColor;
-  border-radius: 3px;
-  transition: transform 0.25s ease, opacity 0.2s ease;
+  height: 2px;
+  background: var(--accent2, #2e9e4f); /* cor verde visível em qualquer tema */
+  border-radius: 2px;
+  transition: transform 0.2s ease, opacity 0.15s ease;
+  pointer-events: none;
 }
-/* Cor visível em qualquer tema */
-.hamburger-btn { color: var(--text, #1e2d3d); }
-[data-theme="dark"] .hamburger-btn,
-.dark .hamburger-btn { color: #e2e8f0; }
-/* Animação X ao abrir */
-.hamburger-btn.open span:nth-child(1) { transform: translateY(7.5px) rotate(45deg); }
-.hamburger-btn.open span:nth-child(2) { opacity: 0; transform: scaleX(0); }
-.hamburger-btn.open span:nth-child(3) { transform: translateY(-7.5px) rotate(-45deg); }
+.hamburger-btn.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.hamburger-btn.open span:nth-child(2) { opacity: 0; }
+.hamburger-btn.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
 
 
 /* ── CALCULADORA LAYOUT ───────────────────────── */
