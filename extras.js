@@ -1926,8 +1926,8 @@ const DASH_WIDGETS = {
           </div>
         </div>
 
-        <!-- Mesmo layout da página dedicada: lado a lado desktop, coluna mobile -->
-        <div id="dashCalcLayout" class="calc-layout">
+        <!-- Layout responsivo via JS -->
+        <div id="dashCalcLayout" class="calc-layout" style="display:grid;grid-template-columns:${window.innerWidth<=768?'1fr':'1fr 280px'};gap:12px">
 
           <!-- FITA -->
           <div style="background:var(--bg3);border-radius:10px;padding:10px">
@@ -2037,6 +2037,15 @@ function renderDashboard() {
     .filter(k => DASH_WIDGETS[k])
     .map(k => DASH_WIDGETS[k].render())
     .join('');
+
+  // Corrigir layout da calculadora após renderizar
+  setTimeout(() => {
+    const lay = document.getElementById('dashCalcLayout');
+    if (lay) {
+      const isMobile = window.innerWidth <= 768;
+      lay.style.gridTemplateColumns = isMobile ? '1fr' : '1fr 280px';
+    }
+  }, 0);
 }
 
 function openDashConfig() {
