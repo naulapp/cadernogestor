@@ -121,17 +121,19 @@
   .hamburger-btn { display: flex !important; }
 
   .sidebar {
-    transform: translateX(-260px) !important;
+    transform: translateX(-100%) !important;
     top: 0 !important;
     height: 100dvh !important;
     width: 80vw !important;
     max-width: 280px !important;
     z-index: 999 !important;
-    box-shadow: 4px 0 32px rgba(0,0,0,0.5) !important;
-    transition: transform 0.25s ease !important;
+    /* Sombra só quando aberta */
+    box-shadow: none !important;
+    transition: transform 0.25s ease, box-shadow 0.25s ease !important;
   }
   .sidebar.open {
     transform: translateX(0) !important;
+    box-shadow: 4px 0 32px rgba(0,0,0,0.45) !important;
   }
 
   .main-panel {
@@ -142,17 +144,15 @@
   .calc-btn { font-size: 1.5rem !important; }
   .calc-btn.calc-fn { font-size: 0.9rem !important; }
 
-  .calc-layout {
-    grid-template-columns: 1fr !important;
-  }
-  .calc-layout > div:first-child { order: 1; }
-  .calc-layout > div:last-child  { order: 2; }
-
-  /* Dashboard calc: coluna no mobile */
+  /* Calculadora: fita em cima, teclado embaixo */
+  .calc-layout,
   #dashCalcLayout {
+    display: grid !important;
     grid-template-columns: 1fr !important;
   }
+  .calc-layout > div:first-child,
   #dashCalcLayout > div:first-child { order: 1 !important; }
+  .calc-layout > div:last-child,
   #dashCalcLayout > div:last-child  { order: 2 !important; }
 }
 </style>
