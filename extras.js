@@ -1927,7 +1927,7 @@ const DASH_WIDGETS = {
         </div>
 
         <!-- Layout: fita + teclado no dashboard -->
-        <div id="dashCalcLayout" style="display:flex;flex-direction:column;gap:10px">
+        <div id="dashCalcLayout" class="calc-layout">
 
           <!-- FITA -->
           <div class="section-card" style="padding:10px">
