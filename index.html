@@ -62,7 +62,93 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
-<link rel="stylesheet" href="styles.css?v=20260502d">
+<link rel="stylesheet" href="styles.css?v=20260504">
+<style>
+/* CSS CRÍTICO — hamburguer, sidebar mobile, calculadora */
+
+/* Hamburguer: sempre oculto no desktop */
+.hamburger-btn {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+  width: 44px; height: 44px; min-width: 44px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 10px;
+  border-radius: 8px;
+  flex-shrink: 0;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+  z-index: 500;
+  position: relative;
+}
+.hamburger-btn span {
+  display: block;
+  width: 22px; height: 2px;
+  background: #2e9e4f;
+  border-radius: 2px;
+  transition: transform 0.2s, opacity 0.15s;
+  pointer-events: none;
+}
+.hamburger-btn.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.hamburger-btn.open span:nth-child(2) { opacity: 0; }
+.hamburger-btn.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+/* Calculadora: botões sem lag, quadrados */
+.calc-btn {
+  aspect-ratio: 1;
+  width: 100%;
+  font-size: 1.3rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  border-radius: 10px;
+  border: 1px solid var(--border, #e2e8f0);
+  cursor: pointer;
+}
+.calc-btn:active { opacity: 0.6; }
+.calc-btn.calc-fn { font-size: 0.85rem; }
+
+/* Mobile */
+@media (max-width: 768px) {
+  .hamburger-btn { display: flex !important; }
+
+  .sidebar {
+    transform: translateX(-260px) !important;
+    top: 0 !important;
+    height: 100dvh !important;
+    width: 80vw !important;
+    max-width: 280px !important;
+    z-index: 999 !important;
+    box-shadow: 4px 0 32px rgba(0,0,0,0.5) !important;
+    transition: transform 0.25s ease !important;
+  }
+  .sidebar.open {
+    transform: translateX(0) !important;
+  }
+
+  .main-panel {
+    margin-left: 0 !important;
+    padding: 16px !important;
+  }
+
+  .calc-btn { font-size: 1.5rem !important; }
+  .calc-btn.calc-fn { font-size: 0.9rem !important; }
+
+  .calc-layout {
+    grid-template-columns: 1fr !important;
+  }
+  .calc-layout > div:first-child { order: 1; }
+  .calc-layout > div:last-child  { order: 2; }
+}
+</style>
 </head>
 <body>
 
