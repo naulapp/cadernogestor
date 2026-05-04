@@ -74,6 +74,7 @@
   <img src="logo.png" style="width:100px;height:100px;object-fit:contain;margin-bottom:16px;animation:float 3s ease-in-out infinite;filter:drop-shadow(0 8px 24px rgba(46,158,79,0.4));border-radius:20px">
   <div class="splash-title">CadernoGestor</div>
   <div class="splash-sub">Gestão simplificada. Resultado real.</div>
+  <div class="splash-tagline">Saia do papel. Sem sair do caderno.</div>
   <div class="splash-loader"></div>
 </div>
 
@@ -186,6 +187,7 @@
 <div class="screen" id="screen-app">
   <!-- TOP BAR -->
   <div class="topbar">
+    <button class="hamburger-btn" onclick="toggleSidebar()" id="hamburgerBtn" aria-label="Menu">&#9776;</button>
     <div class="topbar-logo">
       <img src="logo.png" style="height:28px;width:28px;object-fit:contain;border-radius:6px">
       <div style="display:flex;flex-direction:column;line-height:1.1">
@@ -209,6 +211,7 @@
     </div>
   </div>
 
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
   <!-- APP CONTENT -->
   <div class="app-content">
     <!-- SIDEBAR -->
@@ -252,6 +255,9 @@
       </div>
       <div class="nav-item" onclick="navigate('relatorio')" id="nav-relatorio">
         <span class="icon">📊</span> Relatório de Funcionários
+      </div>
+      <div class="nav-item" onclick="navigate('historico-acoes')" id="nav-historico-acoes">
+        <span class="icon">📜</span> Histórico de Ações
       </div>
       <div class="nav-item" onclick="navigate('historico-folha')" id="nav-historico-folha">
         <span class="icon">📁</span> Histórico de Folhas
@@ -1059,6 +1065,21 @@
       </div>
 
     </div><!-- /main-panel -->
+      <!-- ===== HISTÓRICO DE AÇÕES ===== -->
+      <div class="page" id="page-historico-acoes">
+        <div class="page-header">
+          <div>
+            <div class="page-title">📜 Histórico de Ações</div>
+            <div class="page-sub">Log de todas as ações realizadas no sistema</div>
+          </div>
+        </div>
+        <div class="section-card">
+          <div id="historicoAcoesList">
+            <p style="color:var(--text3)">Selecione esta página para carregar o histórico.</p>
+          </div>
+        </div>
+      </div>
+
   </div><!-- /app-content -->
 
   <!-- MOBILE NAV -->
@@ -1620,6 +1641,15 @@
         <div class="form-group">
           <label class="form-label">Descrição</label>
           <input type="text" class="form-input" id="lancDescricao" placeholder="Ex: Pagamento conta de água">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Categoria</label>
+          <div style="display:flex;gap:6px">
+            <select class="form-input" id="lancCategoria" style="flex:1">
+              <option value="">Sem categoria</option>
+            </select>
+            <button class="btn btn-outline btn-sm" onclick="adicionarCategoriaAcerto()" style="white-space:nowrap">+ Nova</button>
+          </div>
         </div>
       </div>
     </div>
