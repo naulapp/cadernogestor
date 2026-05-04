@@ -1979,6 +1979,18 @@ const DASH_WIDGETS = {
       </div>`;
     }
   },
+  historicoAcoes: {
+    label: '📜 Histórico de Ações',
+    descricao: 'Log de todas as ações realizadas no sistema',
+    padrao: false,
+    render: () => `<div class="section-card" style="margin-bottom:16px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div class="section-card-title" style="margin:0">📜 HISTÓRICO DE AÇÕES</div>
+        <button class="btn btn-outline btn-sm" onclick="navigate('historico-acoes')">Ver tudo →</button>
+      </div>
+      <div id="dashHistoricoAcoes"><p style="color:var(--text3);font-size:0.82rem">Carregando...</p></div>
+    </div>`
+  },
   historicoFolhas: {
     label: '📁 Histórico de Folhas',
     descricao: 'Últimas folhas geradas',
@@ -2329,23 +2341,28 @@ async function renderParPage(parId) {
     ? '✅ Sem pendências no período atual'
     : `${devedor} deve R$ ${fmtMoney(Math.abs(saldo))} para ${credor}`;
 
-  // Cards
+  // Cards — labels corretos mostrando quem deve a quem
+  const diferencaLabel = quitado
+    ? '✅ Sem pendências'
+    : `${devedor} deve a ${credor}`;
   document.getElementById('parCards').innerHTML = `
     <div class="stat-card">
-      <div class="stat-label">${par.pessoaA} deve</div>
+      <div class="stat-label">Total lançado por ${par.pessoaA}</div>
       <div class="stat-value red" style="font-size:1.2rem">R$ ${fmtMoney(devidoPorA)}</div>
+      <div style="font-size:0.72rem;color:var(--text3)">${par.pessoaA} deve</div>
     </div>
     <div class="stat-card">
-      <div class="stat-label">${par.pessoaB} deve</div>
+      <div class="stat-label">Total lançado por ${par.pessoaB}</div>
       <div class="stat-value red" style="font-size:1.2rem">R$ ${fmtMoney(devidoPorB)}</div>
+      <div style="font-size:0.72rem;color:var(--text3)">${par.pessoaB} deve</div>
     </div>
     <div class="stat-card">
-      <div class="stat-label">SALDO LÍQUIDO</div>
+      <div class="stat-label">DIFERENÇA</div>
       <div class="stat-value ${quitado?'green':'yellow'}" style="font-size:1.3rem">R$ ${fmtMoney(Math.abs(saldo))}</div>
-      <div style="font-size:0.75rem;color:var(--text3)">${quitado?'Quitado':devedor+' deve'}</div>
+      <div style="font-size:0.75rem;color:var(--text3)">${diferencaLabel}</div>
     </div>
     <div class="stat-card">
-      <div class="stat-label">Total de lançamentos</div>
+      <div class="stat-label">Lançamentos</div>
       <div class="stat-value accent">${lancesAtivos.length}</div>
     </div>
   `;
