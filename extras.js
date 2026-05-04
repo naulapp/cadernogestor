@@ -1926,8 +1926,8 @@ const DASH_WIDGETS = {
           </div>
         </div>
 
-        <!-- Layout responsivo via JS -->
-        <div id="dashCalcLayout" class="calc-layout" style="display:grid;grid-template-columns:${window.innerWidth<=768?'1fr':'1fr 280px'};gap:12px">
+        <!-- Layout: SEMPRE coluna — fita em cima, teclado embaixo -->
+        <div id="dashCalcLayout" style="display:flex;flex-direction:column;gap:10px">
 
           <!-- FITA -->
           <div style="background:var(--bg3);border-radius:10px;padding:10px">
@@ -1935,19 +1935,17 @@ const DASH_WIDGETS = {
               <span style="font-size:0.72rem;font-weight:700;color:var(--text3)">FITA</span>
               <span id="dashCalcTotal" style="font-family:var(--mono);font-size:1rem;font-weight:700;color:var(--accent2)">0,00</span>
             </div>
-            <div id="dashCalcFita" style="font-family:var(--mono);font-size:0.78rem;min-height:80px;max-height:300px;overflow-y:auto">
+            <div id="dashCalcFita" style="font-family:var(--mono);font-size:0.78rem;min-height:60px;max-height:200px;overflow-y:auto">
               <p style="color:var(--text3);font-size:0.72rem;text-align:center;margin:12px 0">Nenhuma operação</p>
             </div>
           </div>
 
           <!-- TECLADO -->
           <div>
-            <!-- Display -->
             <div style="background:var(--bg3);border-radius:8px;padding:8px 12px;margin-bottom:8px;text-align:right">
               <div id="dashCalcDisplay" style="font-family:var(--mono);font-size:1.8rem;font-weight:700;color:var(--text)">0</div>
               <div id="dashCalcOp" style="font-size:0.65rem;color:var(--text3);min-height:12px"></div>
             </div>
-            <!-- Teclado -->
             <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px">
               <button class="calc-btn calc-fn" onclick="dashCalcFn('%')">%</button>
               <button class="calc-btn calc-fn" onclick="dashCalcFn('CE')">CE</button>
