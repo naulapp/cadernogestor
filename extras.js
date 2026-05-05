@@ -2187,91 +2187,159 @@ function exportarAcertoPDF() {
   const lances = filtrarLancamentosExport();
   const de = document.getElementById('exportAcertoDe').value;
   const ate = document.getElementById('exportAcertoAte').value;
-  const periodo = de && ate ? `${fmtData(de)} a ${fmtData(ate)}` : 'Todo o histórico';
+
+  // Determinar se é período em aberto ou histórico completo
+  const temFiltro = de || ate;
+  const consolidadoEm = par.consolidadoEm;
+  let labelPeriodo;
+  if (de && ate) {
+    labelPeriodo = `${fmtData(de)} a ${fmtData(ate)}`;
+  } else if (!de && !ate && consolidadoEm) {
+    labelPeriodo = `Periodo em aberto (apos ${fmtData(consolidadoEm)})`;
+  } else {
+    labelPeriodo = 'Historico completo';
+  }
 
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const lm = 14, pw = 182, rm = lm + pw;
   let y = 14;
 
-  // Cabeçalho
-  doc.setFillColor(27,45,107);
-  doc.rect(lm, y, pw, 20, 'FD');
-  doc.setTextColor(255,255,255);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(13);
-  doc.text('ACERTO DE CONTAS PESSOAIS', lm+6, y+8);
-  doc.setFontSize(9);
-  doc.setFont('helvetica', 'normal');
-  doc.text(`${par.pessoaA} ↔ ${par.pessoaB}`, lm+6, y+14);
-  doc.text(`Período: ${periodo}`, rm-6, y+14, { align:'right' });
-  doc.setTextColor(30,30,45);
-  y += 26;
+  const COR_NAVY = [27,45,107];
+  const COR_GREEN = [46,158,79];
+  const COR_RED = [200,40,40];
+  const COR_GRAY = [245,248,252];
+  const COR_TEXT = [30,30,45];
 
-  // Calcular totais do período
-  const totalAB = lances.filter(l=>l.de===par.pessoaA).reduce((s,l)=>s+l.valor,0);
-  const totalBA = lances.filter(l=>l.de===par.pessoaB).reduce((s,l)=>s+l.valor,0);
-  const saldo = totalAB - totalBA;
-  const devedor = saldo > 0 ? par.pessoaB : par.pessoaA;
-  const credor  = saldo > 0 ? par.pessoaA : par.pessoaB;
+  // Funcao segura para texto (remove caracteres nao-latin)
+  function t(str) {
+    return (str || '').replace(/[\u0100-\uffff]/g, c => {
+      const map = {
+        '\u00e7':'c','\u00c7':'C','\u00e3':'a','\u00c3':'A',
+        '\u00e1':'a','\u00e9':'e','\u00ed':'i','\u00f3':'o','\u00fa':'u',
+        '\u00c1':'A','\u00c9':'E','\u00cd':'I','\u00d3':'O','\u00da':'U',
+        '\u00e2':'a','\u00ea':'e','\u00f4':'o','\u00c2':'A','\u00ca':'E','\u00d4':'O',
+        '\u00e0':'a','\u00e8':'e','\u00f2':'o',
+        '\u00fc':'u','\u00f5':'o','\u00d5':'O','\u00e4':'a','\u00f6':'o',
+        '\u2194':' x ','\u2190':'<','\u2192':'>',
+      };
+      return map[c] || '';
+    });
+  }
+
+  // ── CABECALHO ──────────────────────────────────────
+  doc.setFillColor(...COR_NAVY);
+  doc.rect(lm, y, pw, 22, 'F');
+  doc.setTextColor(255,255,255);
+  doc.setFont('helvetica','bold'); doc.setFontSize(13);
+  doc.text('ACERTO DE CONTAS PESSOAIS', lm+6, y+9);
+  doc.setFont('helvetica','normal'); doc.setFontSize(9);
+  doc.text(t(par.pessoaA) + ' x ' + t(par.pessoaB), lm+6, y+16);
+  doc.text(t(labelPeriodo), rm-6, y+16, {align:'right'});
+  doc.setTextColor(...COR_TEXT);
+  y += 28;
+
+  // ── TOTAIS POR PESSOA ──────────────────────────────
+  const lancesA = lances.filter(l => l.de === par.pessoaA);
+  const lancesB = lances.filter(l => l.de === par.pessoaB);
+  const totalA = lancesA.reduce((s,l) => s+l.valor, 0);
+  const totalB = lancesB.reduce((s,l) => s+l.valor, 0);
+  const saldo = totalA - totalB;
+  const devedor = saldo > 0 ? par.pessoaA : par.pessoaB;
+  const credor  = saldo > 0 ? par.pessoaB : par.pessoaA;
+  const quitado = Math.abs(saldo) < 0.01;
 
   // Cards resumo
-  doc.setFillColor(245,248,252);
-  doc.rect(lm, y, pw/3-2, 16, 'FD');
-  doc.rect(lm+pw/3, y, pw/3-2, 16, 'FD');
-  doc.rect(lm+pw*2/3, y, pw/3, 16, 'FD');
-  doc.setFontSize(7); doc.setTextColor(100,110,130);
-  doc.text(par.pessoaA+' pagou', lm+pw/6, y+5, {align:'center'});
-  doc.text(par.pessoaB+' pagou', lm+pw/2, y+5, {align:'center'});
-  doc.text('SALDO', lm+pw*5/6, y+5, {align:'center'});
-  doc.setFontSize(10); doc.setFont('helvetica','bold');
-  doc.setTextColor(46,158,79);
-  doc.text(`R$ ${fmtMoney(totalAB)}`, lm+pw/6, y+12, {align:'center'});
-  doc.setTextColor(46,158,79);
-  doc.text(`R$ ${fmtMoney(totalBA)}`, lm+pw/2, y+12, {align:'center'});
-  doc.setTextColor(Math.abs(saldo)<0.01?46:200, Math.abs(saldo)<0.01?158:100, Math.abs(saldo)<0.01?79:30);
-  doc.text(`R$ ${fmtMoney(Math.abs(saldo))}`, lm+pw*5/6, y+12, {align:'center'});
-  doc.setTextColor(30,30,45);
-  y += 22;
-
-  if (Math.abs(saldo) > 0.01) {
-    doc.setFontSize(8);
-    doc.text(`${devedor} deve R$ ${fmtMoney(Math.abs(saldo))} para ${credor}`, lm+pw/2, y, {align:'center'});
-    y += 8;
-  }
-
-  // Tabela lançamentos
-  doc.setFillColor(46,158,79);
-  doc.rect(lm, y, pw, 8, 'FD');
-  doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(8);
-  doc.text('DATA', lm+15, y+5, {align:'center'});
-  doc.text('QUEM DEVE', lm+50, y+5, {align:'center'});
-  doc.text('DESCRIO', lm+115, y+5, {align:'center'});
-  doc.text('VALOR', rm-8, y+5, {align:'right'});
-  doc.setTextColor(30,30,45);
-  y += 8;
-
-  lances.forEach((l, i) => {
-    if (y > 270) { doc.addPage(); y = 14; }
-    doc.setFillColor(i%2===0 ? 255:248, i%2===0 ? 255:250, i%2===0 ? 255:255);
-    doc.rect(lm, y, pw, 7, 'FD');
-    doc.setFont('helvetica','normal'); doc.setFontSize(8);
-    doc.text(l.data ? fmtData(l.data) : '', lm+15, y+5, {align:'center'});
-    doc.text(l.de||'', lm+50, y+5, {align:'center'});
-    const desc = (l.descricao||'').substring(0,40);
-    doc.text(desc, lm+115, y+5, {align:'center'});
-    doc.setFont('helvetica','bold'); doc.setTextColor(46,158,79);
-    doc.text(`R$ ${fmtMoney(l.valor)}`, rm-4, y+5, {align:'right'});
-    doc.setTextColor(30,30,45);
-    y += 7;
+  const w3 = pw / 3;
+  [[t(par.pessoaA)+' deve', totalA, COR_RED],
+   [t(par.pessoaB)+' deve', totalB, COR_RED],
+   ['DIFERENCA', Math.abs(saldo), quitado ? COR_GREEN : [200,120,0]]].forEach(([label, val, cor], i) => {
+    doc.setFillColor(...COR_GRAY);
+    doc.rect(lm + i*w3 + (i>0?2:0), y, w3 - (i<2?2:0), 18, 'F');
+    doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(100,110,130);
+    doc.text(label, lm + i*w3 + w3/2, y+5, {align:'center'});
+    doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(...cor);
+    doc.text('R$ ' + fmtMoney(val), lm + i*w3 + w3/2, y+13, {align:'center'});
   });
+  doc.setTextColor(...COR_TEXT);
+  y += 24;
 
-  if (lances.length === 0) {
-    doc.setFontSize(9); doc.setTextColor(150,150,160);
-    doc.text('Nenhum lançamento no período selecionado.', lm+pw/2, y+8, {align:'center'});
+  if (!quitado) {
+    doc.setFontSize(8); doc.setFont('helvetica','bold');
+    doc.text(t(devedor) + ' deve R$ ' + fmtMoney(Math.abs(saldo)) + ' para ' + t(credor), lm+pw/2, y, {align:'center'});
+    y += 9;
   }
 
-  doc.save(`AcertoContas_${par.pessoaA}_${par.pessoaB}.pdf`);
+  // ── FUNCAO: renderizar secao de uma pessoa ─────────
+  function renderSecao(nome, lista) {
+    if (lista.length === 0) return;
+
+    // Cabecalho da pessoa
+    doc.setFillColor(...COR_NAVY);
+    doc.rect(lm, y, pw, 8, 'F');
+    doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(9);
+    doc.text(t(nome) + ' deve', lm+5, y+5.5);
+    const totalPessoa = lista.reduce((s,l)=>s+l.valor,0);
+    doc.text('Total: R$ ' + fmtMoney(totalPessoa), rm-5, y+5.5, {align:'right'});
+    doc.setTextColor(...COR_TEXT);
+    y += 8;
+
+    // Agrupar por categoria
+    const porCat = {};
+    lista.forEach(l => {
+      const cat = t(l.categoria) || 'Sem categoria';
+      if (!porCat[cat]) porCat[cat] = [];
+      porCat[cat].push(l);
+    });
+
+    Object.entries(porCat).forEach(([cat, items]) => {
+      if (y > 260) { doc.addPage(); y = 14; }
+
+      // Label categoria
+      doc.setFillColor(235,240,250);
+      doc.rect(lm, y, pw, 6, 'F');
+      doc.setFont('helvetica','bold'); doc.setFontSize(7.5); doc.setTextColor(50,70,120);
+      doc.text(cat.toUpperCase(), lm+4, y+4.2);
+      const subTotal = items.reduce((s,l)=>s+l.valor,0);
+      doc.text('R$ ' + fmtMoney(subTotal), rm-4, y+4.2, {align:'right'});
+      doc.setTextColor(...COR_TEXT);
+      y += 6;
+
+      // Linhas da categoria
+      items.forEach((l, i) => {
+        if (y > 270) { doc.addPage(); y = 14; }
+        doc.setFillColor(i%2===0 ? 255:250, i%2===0 ? 255:251, i%2===0 ? 255:252);
+        doc.rect(lm, y, pw, 7, 'F');
+        doc.setFont('helvetica','normal'); doc.setFontSize(8);
+        doc.text(l.data ? fmtData(l.data) : '', lm+4, y+5);
+        const desc = t(l.descricao || '');
+        doc.text(desc.substring(0,45), lm+30, y+5);
+        doc.setFont('helvetica','bold'); doc.setTextColor(...COR_GREEN);
+        doc.text('R$ ' + fmtMoney(l.valor), rm-4, y+5, {align:'right'});
+        doc.setTextColor(...COR_TEXT);
+        y += 7;
+      });
+
+      y += 2; // espacinho entre categorias
+    });
+
+    y += 4;
+  }
+
+  // Renderizar cada pessoa
+  renderSecao(par.pessoaA, lancesA);
+  renderSecao(par.pessoaB, lancesB);
+
+  // ── TOTAL FINAL ─────────────────────────────────────
+  if (y > 265) { doc.addPage(); y = 14; }
+  doc.setFillColor(...COR_NAVY);
+  doc.rect(lm, y, pw, 10, 'F');
+  doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(255,255,255);
+  doc.text('TOTAL GERAL: R$ ' + fmtMoney(totalA + totalB), lm+5, y+7);
+  const difLabel = quitado ? 'Quitado' : t(devedor) + ' deve R$ ' + fmtMoney(Math.abs(saldo));
+  doc.text(difLabel, rm-5, y+7, {align:'right'});
+
+  doc.save('AcertoContas_' + t(par.pessoaA) + '_' + t(par.pessoaB) + '.pdf');
   closeModal('modal-exportar-acerto');
   toast('PDF exportado!', 'success');
 }
