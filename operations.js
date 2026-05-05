@@ -198,9 +198,11 @@ async function salvarFuncionario() {
     await fsUpdate('funcionarios', id, data);
     const idx = funcionarios.findIndex(f => f.id === id);
     if (idx >= 0) funcionarios[idx] = { ...funcionarios[idx], ...data };
+    registrarHistorico('funcionario', `Atualizou funcionário: ${nome}`, id);
   } else {
     const novo = await fsAdd('funcionarios', data);
     funcionarios.push(novo);
+    registrarHistorico('funcionario', `Cadastrou funcionário: ${nome}`, novo?.id || '');
   }
 
   closeModal('modal-funcionario');
@@ -386,6 +388,8 @@ async function salvarGrupo() {
     toast('Grupo salvo!', 'success');
   }
 
+  registrarHistorico('cargo', id ? `Atualizou cargo: ${nome}` : `Cadastrou cargo: ${nome}`, grupoIdFinal || '');
+
   closeModal('modal-grupo');
   renderGrupos();
   renderFuncionarios();
@@ -493,10 +497,12 @@ async function salvarEmprestimo() {
     const idx = emprestimos.findIndex(e=>e.id===id);
     if (idx>=0) Object.assign(emprestimos[idx], data);
     toast('Empréstimo atualizado!', 'success');
+    registrarHistorico('emprestimo', `Atualizou empréstimo: ${descricao} (${func?.nome || ''})`, id);
   } else {
     const novo = await fsAdd('emprestimos', {...data, pago:0, parcelasPagas:0, status:'ativo'});
     emprestimos.push(novo);
     toast('Empréstimo a funcionário registrado!', 'success');
+    registrarHistorico('emprestimo', `Novo empréstimo: ${descricao} — ${func?.nome || ''}`, novo?.id || '');
   }
   closeModal('modal-emprestimo');
   renderEmprestimos();
@@ -616,10 +622,12 @@ async function salvarVale() {
     const idx = vales.findIndex(v => v.id===id);
     if (idx>=0) vales[idx] = {...vales[idx], ...data};
     toast('Adiantamento atualizado!', 'success');
+    registrarHistorico('adiantamento', `Atualizou adiantamento: ${data.descricao || '—'} — ${func?.nome || ''}`, id);
   } else {
     const novo = await fsAdd('vales', data);
     vales.push(novo);
     toast('Adiantamento registrado!', 'success');
+    registrarHistorico('adiantamento', `Registrou adiantamento: ${data.descricao || '—'} — ${func?.nome || ''}`, novo?.id || '');
   }
   document.getElementById('valeId').value = '';
   document.getElementById('valeTituloModal').textContent = 'Registrar Adiantamento';
@@ -1301,6 +1309,8 @@ function salvarFolhaDetalhe() {
   const card = document.getElementById('fc-' + id);
   if (card) card.outerHTML = buildFolhaCard(d.funcionario, d);
 
+  registrarHistorico('folha', `Editou dados da folha: ${d.funcionario?.nome || ''}`, id);
+
   closeModal('modal-folha-detalhe');
   toast('Folha salva!', 'success');
 }
@@ -1352,6 +1362,7 @@ function gerarPdfFuncionario(funcId) {
   const novoEntry = { nome: f.nome, totalProventos: calc.totalProventos, totalDescontos: calc.totalDescontos, liquido: calc.liquido };
   if (jaExiste >= 0) snapAtual[jaExiste] = novoEntry; else snapAtual.push(novoEntry);
   salvarHistoricoFolha(mesRef2, snapAtual);
+  registrarHistorico('folha', `Gerou PDF contracheque: ${f.nome} (${mesRef2})`, funcId);
 }
 
 function gerarPdfFolhaCompleto(doc, params, startY = 10, save = false) {
@@ -1615,6 +1626,7 @@ function gerarTodosPDFs() {
   });
   const mesRef = `${String(mes.selectedIndex+1).padStart(2,'0')}/${ano}`;
   salvarHistoricoFolha(mesRef, snapshot);
+  registrarHistorico('folha', `Gerou PDF coletivo da folha ${mesRef} (${ids.length} funcionário(s))`, mesRef);
   toast(`${ids.length} folhas geradas e histórico salvo!`, 'success');
 }
 

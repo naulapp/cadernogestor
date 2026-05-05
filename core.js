@@ -590,7 +590,10 @@ function navigate(page) {
   if (page === 'historico-fin') renderHistoricoFin();
   if (page === 'historico-folha') renderHistoricoFolhas();
   if (page === 'folha') { const d=new Date(); document.getElementById('folhaMes').value=d.getMonth()+1; document.getElementById('folhaAno').value=d.getFullYear(); }
-  if (page === 'dashboard') setTimeout(() => { if (document.getElementById('dashCalcFita')) dashCalcRenderFita(); }, 80);
+  if (page === 'dashboard') setTimeout(() => {
+    if (typeof applyDashCalcLayout === 'function') applyDashCalcLayout();
+    if (document.getElementById('dashCalcFita')) dashCalcRenderFita();
+  }, 80);
   const n = document.getElementById('nav-' + page);
   if (n) n.classList.add('active');
   // Close dropdown

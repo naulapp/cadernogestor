@@ -1154,11 +1154,8 @@
             </div>
           </div>
         </div>
-
-
       </div>
 
-    </div><!-- /main-panel -->
       <!-- ===== HISTÓRICO DE AÇÕES ===== -->
       <div class="page" id="page-historico-acoes">
         <div class="page-header">
@@ -1173,6 +1170,8 @@
           </div>
         </div>
       </div>
+
+    </div><!-- /main-panel -->
 
   </div><!-- /app-content -->
 
@@ -1823,16 +1822,7 @@
       </div>
       <div class="form-group" style="margin-bottom:16px">
         <label class="form-label">Perfil base</label>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-          ${Object.entries(PERFIS_PADRAO).map(([id, p]) => `
-          <button class="btn btn-outline btn-sm" onclick="aplicarPerfil('${id}')"
-            style="border-color:${p.cor};color:${p.cor}">
-            ${p.label}  ${p.descricao}
-          </button>`).join('')}
-          <button class="btn btn-outline btn-sm" onclick="aplicarPerfil('custom')" style="border-color:var(--yellow);color:var(--yellow)">
-            ⚙️ Personalizado
-          </button>
-        </div>
+        <div id="membroPerfisBotoes" style="display:flex;gap:8px;flex-wrap:wrap"></div>
       </div>
       <div class="section-card-title">PERMISSÕES DETALHADAS</div>
       <div id="permissoesContainer" style="max-height:350px;overflow-y:auto;padding-right:4px"></div>
@@ -1860,10 +1850,7 @@
         </div>
         <div class="form-group">
           <label class="form-label">Perfil base</label>
-          <select class="form-input" id="preConvitePerfil" onchange="aplicarPerfilConvite(this.value)">
-            ${Object.entries(PERFIS_PADRAO).map(([id,p])=>`<option value="${id}">${p.label}</option>`).join('')}
-            <option value="custom">⚙️ Personalizado</option>
-          </select>
+          <select class="form-input" id="preConvitePerfil" onchange="aplicarPerfilConvite(this.value)"></select>
         </div>
       </div>
       <div class="section-card-title">PERMISSÕES</div>

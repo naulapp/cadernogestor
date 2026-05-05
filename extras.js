@@ -999,6 +999,7 @@ async function salvarValesLote() {
   closeModal('modal-vale-lote');
   renderVales();
   renderAlertasDashboard();
+  if (salvos.length) registrarHistorico('adiantamento', `Adiantamentos em lote: ${salvos.length} — ${desc}`, '');
   toast(`${salvos.length} vale(s) lançado(s)!`, 'success');
 }
 
@@ -1539,12 +1540,32 @@ function temPermissao(acao, modulo) {
 // =====================================================
 // FUNES DE PERMISSO
 // =====================================================
+function renderBotoesPerfilMembro() {
+  const wrap = document.getElementById('membroPerfisBotoes');
+  if (!wrap) return;
+  wrap.innerHTML = Object.entries(PERFIS_PADRAO).map(([id, p]) => `
+    <button type="button" class="btn btn-outline btn-sm" onclick="aplicarPerfil('${id}')"
+      style="border-color:${p.cor};color:${p.cor}">
+      ${p.label} ${p.descricao}
+    </button>`).join('') +
+    `<button type="button" class="btn btn-outline btn-sm" onclick="aplicarPerfil('custom')" style="border-color:var(--yellow);color:var(--yellow)">⚙️ Personalizado</button>`;
+}
+
+function popularSelectPreConvite() {
+  const sel = document.getElementById('preConvitePerfil');
+  if (!sel) return;
+  sel.innerHTML = Object.entries(PERFIS_PADRAO).map(([id, p]) =>
+    `<option value="${id}">${p.label}</option>`).join('') +
+    '<option value="custom">⚙️ Personalizado</option>';
+}
+
 function editarMembro(uid) {
   const membro = currentOrg?.membros?.find(m => m.uid === uid);
   document.getElementById('membroId').value = uid;
   document.getElementById('membroNome').value = membro?.nome || '';
   document.getElementById('membroEmail').value = membro?.email || '';
   document.getElementById('membroModalTitulo').textContent = `Permisses  ${membro?.nome || uid}`;
+  renderBotoesPerfilMembro();
   renderPermissoesModal(membro?.role, membro?.permissoes || PERFIS_PADRAO[membro?.role||'funcionario']?.permissoes || {}, 'permissoesContainer');
   openModal('modal-membro');
 }
@@ -1585,6 +1606,9 @@ async function salvarMembro() {
 }
 
 function openPreConvite() {
+  popularSelectPreConvite();
+  const sel = document.getElementById('preConvitePerfil');
+  if (sel) sel.value = 'empregador';
   aplicarPerfilConvite('empregador');
   openModal('modal-pre-convite');
 }
@@ -1926,8 +1950,8 @@ const DASH_WIDGETS = {
           </div>
         </div>
 
-        <!-- Layout: SEMPRE coluna — fita em cima, teclado embaixo -->
-        <div id="dashCalcLayout" style="display:flex;flex-direction:column;gap:10px">
+        <!-- Desktop: mesma grade da página Calculadora; mobile via CSS -->
+        <div id="dashCalcLayout" class="calc-layout">
 
           <!-- FITA -->
           <div style="background:var(--bg3);border-radius:10px;padding:10px">
@@ -2036,14 +2060,20 @@ function renderDashboard() {
     .map(k => DASH_WIDGETS[k].render())
     .join('');
 
-  // Corrigir layout da calculadora após renderizar
   setTimeout(() => {
-    const lay = document.getElementById('dashCalcLayout');
-    if (lay) {
-      const isMobile = window.innerWidth <= 768;
-      lay.style.gridTemplateColumns = isMobile ? '1fr' : '1fr 280px';
-    }
+    applyDashCalcLayout();
+    if (document.getElementById('dashCalcFita')) dashCalcRenderFita();
   }, 0);
+}
+
+function applyDashCalcLayout() {
+  const lay = document.getElementById('dashCalcLayout');
+  if (!lay) return;
+  const isMobile = window.innerWidth <= 768;
+  lay.style.display = 'grid';
+  lay.style.gridTemplateColumns = isMobile ? '1fr' : '1fr minmax(240px,280px)';
+  lay.style.gap = '16px';
+  lay.style.alignItems = 'start';
 }
 
 function openDashConfig() {
@@ -2167,7 +2197,7 @@ function exportarAcertoExcel() {
   const lances = filtrarLancamentosExport();
   const data = lances.map(l => ({
     'Data': l.data || '',
-    'Quem Deve': l.de || '',
+    'De (quem deve)': l.de || '',
     'Descrição': l.descricao || '',
     'Valor (R$)': (l.valor||0).toFixed(2).replace('.',',')
   }));
@@ -2188,16 +2218,24 @@ function exportarAcertoPDF() {
   const de = document.getElementById('exportAcertoDe').value;
   const ate = document.getElementById('exportAcertoAte').value;
 
-  // Determinar se é período em aberto ou histórico completo
-  const temFiltro = de || ate;
-  const consolidadoEm = par.consolidadoEm;
+  const datasOrd = lances.map(l => l.data).filter(Boolean).sort();
+  const hojeStr = new Date().toISOString().slice(0,10);
+  const primeiroData = datasOrd[0];
+  const ultimoData = datasOrd.length ? datasOrd[datasOrd.length - 1] : '';
+
   let labelPeriodo;
+  let subPeriodo = '';
   if (de && ate) {
     labelPeriodo = `${fmtData(de)} a ${fmtData(ate)}`;
-  } else if (!de && !ate && consolidadoEm) {
-    labelPeriodo = `Periodo em aberto (apos ${fmtData(consolidadoEm)})`;
+  } else if (de && !ate) {
+    labelPeriodo = 'Periodo em aberto';
+    const fimExib = ultimoData || hojeStr;
+    subPeriodo = `Inicio do periodo: ${fmtData(de)}   Fim do periodo: ${fmtData(fimExib)}`;
   } else {
     labelPeriodo = 'Historico completo';
+    if (primeiroData && ultimoData) {
+      subPeriodo = `De ${fmtData(primeiroData)} a ${fmtData(ultimoData)}`;
+    }
   }
 
   const { jsPDF } = window.jspdf;
@@ -2205,10 +2243,11 @@ function exportarAcertoPDF() {
   const lm = 14, pw = 182, rm = lm + pw;
   let y = 14;
 
-  const COR_NAVY = [27,45,107];
+  const COR_HEADER = [46,158,79];
   const COR_GREEN = [46,158,79];
-  const COR_RED = [200,40,40];
-  const COR_GRAY = [245,248,252];
+  const COR_GREEN_SOFT = [232,248,238];
+  const COR_GREEN_BAND = [210,235,220];
+  const COR_GRAY = [245,252,247];
   const COR_TEXT = [30,30,45];
 
   // Funcao segura para texto (remove caracteres nao-latin)
@@ -2228,16 +2267,21 @@ function exportarAcertoPDF() {
   }
 
   // ── CABECALHO ──────────────────────────────────────
-  doc.setFillColor(...COR_NAVY);
-  doc.rect(lm, y, pw, 22, 'F');
+  doc.setFillColor(...COR_HEADER);
+  doc.rect(lm, y, pw, subPeriodo ? 28 : 22, 'F');
   doc.setTextColor(255,255,255);
   doc.setFont('helvetica','bold'); doc.setFontSize(13);
   doc.text('ACERTO DE CONTAS PESSOAIS', lm+6, y+9);
   doc.setFont('helvetica','normal'); doc.setFontSize(9);
   doc.text(t(par.pessoaA) + ' x ' + t(par.pessoaB), lm+6, y+16);
   doc.text(t(labelPeriodo), rm-6, y+16, {align:'right'});
+  if (subPeriodo) {
+    doc.setFontSize(8);
+    doc.text(t(subPeriodo), lm+6, y+23);
+    doc.text('', rm-6, y+23, {align:'right'});
+  }
   doc.setTextColor(...COR_TEXT);
-  y += 28;
+  y += subPeriodo ? 34 : 28;
 
   // ── TOTAIS POR PESSOA ──────────────────────────────
   const lancesA = lances.filter(l => l.de === par.pessoaA);
@@ -2251,22 +2295,28 @@ function exportarAcertoPDF() {
 
   // Cards resumo
   const w3 = pw / 3;
-  [[t(par.pessoaA)+' deve', totalA, COR_RED],
-   [t(par.pessoaB)+' deve', totalB, COR_RED],
-   ['DIFERENCA', Math.abs(saldo), quitado ? COR_GREEN : [200,120,0]]].forEach(([label, val, cor], i) => {
+  const saldoLabel = quitado
+    ? 'Quitado'
+    : (t(devedor) + ' deve a ' + t(credor));
+  [[`Total lancamentos\n${t(par.pessoaA)}`, totalA, COR_GREEN],
+   [`Total lancamentos\n${t(par.pessoaB)}`, totalB, COR_GREEN],
+   ['Saldo liquido\n' + saldoLabel, Math.abs(saldo), quitado ? COR_GREEN : [180,130,0]]].forEach(([label, val, cor], i) => {
     doc.setFillColor(...COR_GRAY);
-    doc.rect(lm + i*w3 + (i>0?2:0), y, w3 - (i<2?2:0), 18, 'F');
-    doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(100,110,130);
-    doc.text(label, lm + i*w3 + w3/2, y+5, {align:'center'});
+    doc.rect(lm + i*w3 + (i>0?2:0), y, w3 - (i<2?2:0), 22, 'F');
+    doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor(60,90,75);
+    const lines = String(label).split('\n');
+    doc.text(lines[0], lm + i*w3 + w3/2, y+5, {align:'center'});
+    if (lines[1]) doc.text(lines[1], lm + i*w3 + w3/2, y+9.5, {align:'center'});
     doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(...cor);
-    doc.text('R$ ' + fmtMoney(val), lm + i*w3 + w3/2, y+13, {align:'center'});
+    doc.text('R$ ' + fmtMoney(val), lm + i*w3 + w3/2, y+17, {align:'center'});
   });
   doc.setTextColor(...COR_TEXT);
-  y += 24;
+  y += 28;
 
   if (!quitado) {
-    doc.setFontSize(8); doc.setFont('helvetica','bold');
-    doc.text(t(devedor) + ' deve R$ ' + fmtMoney(Math.abs(saldo)) + ' para ' + t(credor), lm+pw/2, y, {align:'center'});
+    doc.setFontSize(8); doc.setFont('helvetica','bold'); doc.setTextColor(...COR_GREEN);
+    doc.text(t(devedor) + ' deve R$ ' + fmtMoney(Math.abs(saldo)) + ' a ' + t(credor), lm+pw/2, y, {align:'center'});
+    doc.setTextColor(...COR_TEXT);
     y += 9;
   }
 
@@ -2275,10 +2325,10 @@ function exportarAcertoPDF() {
     if (lista.length === 0) return;
 
     // Cabecalho da pessoa
-    doc.setFillColor(...COR_NAVY);
+    doc.setFillColor(...COR_HEADER);
     doc.rect(lm, y, pw, 8, 'F');
     doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(9);
-    doc.text(t(nome) + ' deve', lm+5, y+5.5);
+    doc.text('Lançamentos de ' + t(nome), lm+5, y+5.5);
     const totalPessoa = lista.reduce((s,l)=>s+l.valor,0);
     doc.text('Total: R$ ' + fmtMoney(totalPessoa), rm-5, y+5.5, {align:'right'});
     doc.setTextColor(...COR_TEXT);
@@ -2296,9 +2346,9 @@ function exportarAcertoPDF() {
       if (y > 260) { doc.addPage(); y = 14; }
 
       // Label categoria
-      doc.setFillColor(235,240,250);
+      doc.setFillColor(...COR_GREEN_BAND);
       doc.rect(lm, y, pw, 6, 'F');
-      doc.setFont('helvetica','bold'); doc.setFontSize(7.5); doc.setTextColor(50,70,120);
+      doc.setFont('helvetica','bold'); doc.setFontSize(7.5); doc.setTextColor(25,90,55);
       doc.text(cat.toUpperCase(), lm+4, y+4.2);
       const subTotal = items.reduce((s,l)=>s+l.valor,0);
       doc.text('R$ ' + fmtMoney(subTotal), rm-4, y+4.2, {align:'right'});
@@ -2308,7 +2358,7 @@ function exportarAcertoPDF() {
       // Linhas da categoria
       items.forEach((l, i) => {
         if (y > 270) { doc.addPage(); y = 14; }
-        doc.setFillColor(i%2===0 ? 255:250, i%2===0 ? 255:251, i%2===0 ? 255:252);
+        doc.setFillColor(...(i%2===0 ? COR_GREEN_SOFT : [255,255,255]));
         doc.rect(lm, y, pw, 7, 'F');
         doc.setFont('helvetica','normal'); doc.setFontSize(8);
         doc.text(l.data ? fmtData(l.data) : '', lm+4, y+5);
@@ -2332,11 +2382,11 @@ function exportarAcertoPDF() {
 
   // ── TOTAL FINAL ─────────────────────────────────────
   if (y > 265) { doc.addPage(); y = 14; }
-  doc.setFillColor(...COR_NAVY);
+  doc.setFillColor(...COR_HEADER);
   doc.rect(lm, y, pw, 10, 'F');
   doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(255,255,255);
   doc.text('TOTAL GERAL: R$ ' + fmtMoney(totalA + totalB), lm+5, y+7);
-  const difLabel = quitado ? 'Quitado' : t(devedor) + ' deve R$ ' + fmtMoney(Math.abs(saldo));
+  const difLabel = quitado ? 'Saldo: quitado' : 'Saldo: ' + t(devedor) + ' deve R$ ' + fmtMoney(Math.abs(saldo)) + ' a ' + t(credor);
   doc.text(difLabel, rm-5, y+7, {align:'right'});
 
   doc.save('AcertoContas_' + t(par.pessoaA) + '_' + t(par.pessoaB) + '.pdf');
@@ -3602,6 +3652,16 @@ function calcHandleKeyboardDash(e) {
 document.addEventListener('keydown', calcHandleKeyboardDash);
 
 // Dashboard calc init handled in navigate()
+
+function initModaisEquipe() {
+  renderBotoesPerfilMembro();
+  popularSelectPreConvite();
+}
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initModaisEquipe);
+} else {
+  initModaisEquipe();
+}
 
 // Service worker for PWA
 if ('serviceWorker' in navigator) {
