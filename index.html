@@ -62,7 +62,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
-<link rel="stylesheet" href="styles.css?v=20260506">
+<link rel="stylesheet" href="styles.css?v=20260504">
 <style>
 /* CSS CRÍTICO — hamburguer, sidebar mobile, calculadora */
 
@@ -284,7 +284,7 @@
     </button>
     <div class="topbar-logo" onclick="navigate('dashboard')" style="cursor:pointer" title="Ir para Dashboard">
       <img src="logo.png" style="height:28px;width:28px;object-fit:contain;border-radius:6px">
-      <div class="topbar-logo-text" style="display:flex;flex-direction:column;line-height:1.1">
+      <div style="display:flex;flex-direction:column;line-height:1.1">
         <span>CadernoGestor</span>
         <span style="font-size:0.62rem;font-weight:400;color:var(--text3);letter-spacing:0.01em">Saia do papel. Sem sair do caderno.</span>
       </div>
@@ -310,13 +310,6 @@
   <div class="app-content">
     <!-- SIDEBAR -->
     <div class="sidebar" id="sidebar">
-      <div class="sidebar-brand">
-        <img src="logo.png" width="32" height="32" alt="" decoding="async">
-        <div class="sidebar-brand-text">
-          <span class="sidebar-brand-name">CadernoGestor</span>
-          <span class="sidebar-brand-tag">Navegação</span>
-        </div>
-      </div>
       <div class="nav-section-title">Principal</div>
       <div class="nav-item active" onclick="navigate('dashboard')" id="nav-dashboard">
         <span class="icon">📊</span> Dashboard
@@ -376,17 +369,16 @@
 
       <!-- ===== DASHBOARD ===== -->
       <div class="page active" id="page-dashboard">
-        <div class="dash-hero">
-          <div class="dash-hero-inner">
-            <div>
-              <p class="dash-hero-kicker">Visão geral</p>
-              <h1 class="dash-hero-title">Dashboard</h1>
-              <p class="dash-hero-date" id="dashDate"></p>
-            </div>
-            <button type="button" class="btn btn-outline btn-sm dash-hero-btn" onclick="openModal('modal-dash-config')" title="Personalizar painel">⚙️ Personalizar</button>
+        <div class="page-header">
+          <div>
+            <div class="page-title">Dashboard</div>
+            <div class="page-sub" id="dashDate"></div>
           </div>
+          <button class="btn btn-outline btn-sm" onclick="openModal('modal-dash-config')" title="Personalizar">⚙️ Personalizar Dashboard</button>
         </div>
-        <div id="dashConteudo" class="dash-widgets"></div>
+
+        <!-- WIDGETS DINMICOS -->
+        <div id="dashConteudo"></div>
       </div>
 
       <!-- MODAL PERSONALIZAR DASHBOARD -->
