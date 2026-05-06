@@ -2261,7 +2261,6 @@ function exportarAcertoPDF() {
   const GREEN = [40, 160, 80];
   const GREEN_D = [28, 128, 62];
   const GREEN_L = [230, 246, 236];
-  const GREEN_M = [60, 170, 96];
   const TEXT = [25, 30, 42];
   const MUTED = [95, 108, 126];
   const LINE = [223, 230, 238];
@@ -2313,7 +2312,7 @@ function exportarAcertoPDF() {
   const hojeDataStr = agora.toLocaleDateString('pt-BR');
   const horaStr = agora.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
 
-  y += 20;
+  y += 16;
 
   doc.setFillColor(...GREEN_D);
   if (typeof doc.roundedRect === 'function') doc.roundedRect(ML, y, CW, 16, 2.5, 2.5, 'F');
@@ -2328,62 +2327,7 @@ function exportarAcertoPDF() {
   const periodoLinha = `${t(labelPeriodo)}: ${t(subPeriodo || 'Historico completo')} | Emitido em: ${hojeDataStr} as ${horaStr}`;
   doc.text(periodoLinha, ML + 6, y + 12.7);
   doc.setTextColor(...TEXT);
-  y += 22;
-
-  doc.setFont('helvetica','bold');
-  doc.setFontSize(9.5);
-  doc.setTextColor(...TEXT);
-  doc.text('RESUMO', ML, y);
-  doc.setDrawColor(...LINE);
-  doc.setLineWidth(0.35);
-  doc.line(ML, y + 2.5, MR, y + 2.5);
-
-  y += 8;
-  doc.setFont('helvetica','normal');
-  doc.setFontSize(7.2);
-  doc.setTextColor(...MUTED);
-  doc.text('Cada total e a soma dos valores em que a pessoa aparece em "Quem deve".', ML, y);
-  doc.text(`Diferenca = total ${t(par.pessoaA)} - total ${t(par.pessoaB)}.`, ML, y + 4);
-  y += 8;
-
-  const cardW = (CW - 8) / 3;
-  const cards = [
-    { title1:'TOTAL QUE', title2:t(par.pessoaA), title3:'DEVE:', valor: totalA, cor: GREEN_D, bg: [236,247,240] },
-    { title1:'TOTAL QUE', title2:t(par.pessoaB), title3:'DEVE:', valor: totalB, cor: GREEN_M, bg: [236,247,240] },
-    { title1:'DIFERENCA', title2:'', title3:'', valor: Math.abs(saldo), cor: GREEN_D, bg: [236,247,240] }
-  ];
-  cards.forEach((c, i) => {
-    const cx = ML + i * (cardW + 4);
-    doc.setFillColor(...c.bg);
-    if (typeof doc.roundedRect === 'function') doc.roundedRect(cx, y, cardW, 23, 2.2, 2.2, 'F');
-    else doc.rect(cx, y, cardW, 23, 'F');
-    doc.setDrawColor(...LINE);
-    doc.setLineWidth(0.25);
-    if (typeof doc.roundedRect === 'function') doc.roundedRect(cx, y, cardW, 23, 2.2, 2.2, 'S');
-    else doc.rect(cx, y, cardW, 23, 'S');
-
-    doc.setFont('helvetica','bold'); doc.setFontSize(6.1); doc.setTextColor(...MUTED);
-    const tituloCard = c.title2 ? `${c.title1} ${c.title2} ${c.title3}`.trim() : c.title1;
-    const titLines = doc.splitTextToSize(tituloCard, cardW - 8);
-    const titY = y + (titLines.length > 1 ? 6.0 : 8.2);
-    doc.text(titLines, cx + cardW / 2, titY, { align:'center' });
-
-    doc.setFont('helvetica','bold'); doc.setFontSize(10.8); doc.setTextColor(...c.cor);
-    doc.text('R$ ' + fmtMoney(c.valor), cx + cardW / 2, y + 19.3, { align:'center' });
-  });
-  y += 29;
-
-  doc.setFillColor(...GREEN_L);
-  if (typeof doc.roundedRect === 'function') doc.roundedRect(ML, y, CW, 10, 2, 2, 'F');
-  else doc.rect(ML, y, CW, 10, 'F');
-  doc.setFont('helvetica','bold');
-  doc.setFontSize(8);
-  doc.setTextColor(...GREEN_D);
-  const concStr = quitado
-    ? 'Conclusao: Contas quitadas! Nenhum deve ao outro.'
-    : `Conclusao: ${t(devedor)} deve R$ ${fmtMoney(Math.abs(saldo))} a ${t(credor)}.`;
-  doc.text(t(concStr), ML + 4, y + 6.3);
-  y += 15;
+  y += 14;
 
   function drawTableHeader() {
     doc.setFillColor(...BG_SOFT);
