@@ -2255,10 +2255,11 @@ function exportarAcertoPDF() {
   const C_GREEN = [46, 158, 79];
   const C_GREEN_D = [34, 118, 62];
   const C_AMBER = [217, 119, 6];
-  const C_LINE = [226, 232, 240];
-  const C_BG = [248, 250, 252];
-  const C_MUTED = [95, 105, 120];
+  const C_LINE = [232, 236, 242];
+  const C_BG = [246, 248, 251];
+  const C_MUTED = [100, 112, 126];
   const C_TEXT = [28, 32, 42];
+  const C_SOFT = [252, 253, 255];
 
   function t(str) {
     return (str || '').replace(/[\u0100-\uffff]/g, c => {
@@ -2298,11 +2299,11 @@ function exportarAcertoPDF() {
   const agora = new Date();
   const emitidoStr = agora.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 
-  const COL_DT = lm + 4;
-  const COL_CAT = lm + 26;
-  const COL_DESC = lm + 52;
-  const COL_VAL = rm - 4;
-  const DESC_W = pw - 52 - 38;
+  const COL_DT = lm + 5;
+  const COL_CAT = lm + 27;
+  const COL_DESC = lm + 53;
+  const COL_VAL = rm - 5;
+  const DESC_W = pw - 53 - 40;
 
   let pdfRowZ = 0;
 
@@ -2320,7 +2321,7 @@ function exportarAcertoPDF() {
   }
 
   function drawNotebookPaperBg() {
-    doc.setFillColor(243, 245, 250);
+    doc.setFillColor(248, 249, 252);
     doc.rect(SPIRAL_W, 0, PAGE_W - SPIRAL_W, PAGE_H, 'F');
   }
 
@@ -2363,7 +2364,7 @@ function exportarAcertoPDF() {
     pdfPageIdx++;
     drawSpiralFullPage();
     drawNotebookPaperBg();
-    y = 16;
+    y = 18;
     doc.setTextColor(...C_TEXT);
   }
 
@@ -2371,130 +2372,120 @@ function exportarAcertoPDF() {
   drawNotebookPaperBg();
   drawRightTabsDecor();
 
-  let y = 10;
+  let y = 11;
   const titPar = t(par.pessoaA) + '   x   ' + t(par.pessoaB);
-
-  doc.setFillColor(...C_GREEN);
-  doc.rect(lm, y - 1.5, pw, 1.6, 'F');
+  const padX = 5;
 
   doc.setFillColor(255, 255, 255);
+  if (typeof doc.roundedRect === 'function') doc.roundedRect(lm, y, pw, 35, 3, 3, 'F');
+  else doc.rect(lm, y, pw, 35, 'F');
   doc.setDrawColor(...C_LINE);
-  doc.setLineWidth(0.25);
-  if (typeof doc.roundedRect === 'function') doc.roundedRect(lm, y, pw, 36, 2.5, 2.5, 'FD');
-  else doc.rect(lm, y, pw, 36, 'FD');
+  doc.setLineWidth(0.12);
+  doc.line(lm + padX, y + 33, rm - padX, y + 33);
 
   doc.setFillColor(...C_GREEN);
-  doc.circle(lm + 4, y + 6, 1.35, 'F');
+  doc.circle(lm + 4, y + 5.5, 1.15, 'F');
   doc.setFillColor(...C_NAVY_L);
-  doc.circle(lm + 7, y + 6, 1.35, 'F');
+  doc.circle(lm + 6.8, y + 5.5, 1.15, 'F');
   doc.setFillColor(...C_AMBER);
-  doc.circle(lm + 10, y + 6, 1.35, 'F');
+  doc.circle(lm + 9.6, y + 5.5, 1.15, 'F');
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(7.5);
+  doc.setFontSize(7.2);
   doc.setTextColor(...C_NAVY);
-  doc.text('CadernoGestor', lm + 13, y + 7.2);
+  doc.text('CadernoGestor', lm + 12.5, y + 6.5);
   doc.setFont('helvetica', 'italic');
-  doc.setFontSize(5.4);
+  doc.setFontSize(5.2);
   doc.setTextColor(...C_MUTED);
-  doc.text('Saia do papel. Sem sair do caderno.', lm + 3, y + 32);
+  doc.text('Saia do papel. Sem sair do caderno.', lm + padX, y + 30);
 
-  const cxHead = lm + pw * 0.48;
+  const cxHead = lm + pw * 0.42;
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(15);
+  doc.setFontSize(13);
   doc.setTextColor(...C_GREEN);
-  doc.text('RELATORIO', cxHead, y + 11, { align: 'center' });
-  doc.setFontSize(8.2);
+  doc.text('Relatorio', cxHead, y + 10, { align: 'center' });
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.4);
   doc.setTextColor(...C_NAVY);
-  doc.text('ACERTO DE CONTAS PESSOAIS', cxHead, y + 17, { align: 'center' });
+  doc.text('Acerto de contas pessoais', cxHead, y + 16, { align: 'center' });
 
-  const mx = lm + pw - 72;
-  const mw = 69;
+  const mx = lm + pw - 70;
+  const mw = 67;
   doc.setFillColor(...C_BG);
-  if (typeof doc.roundedRect === 'function') doc.roundedRect(mx, y + 3, mw, 28, 1.5, 1.5, 'F');
-  else doc.rect(mx, y + 3, mw, 28, 'F');
-  doc.setDrawColor(...C_LINE);
-  doc.setLineWidth(0.15);
-  if (typeof doc.roundedRect === 'function') doc.roundedRect(mx, y + 3, mw, 28, 1.5, 1.5, 'S');
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(6);
-  doc.setTextColor(...C_MUTED);
-  doc.text('Periodo', mx + 3, y + 9);
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(...C_TEXT);
-  doc.text(t(labelPeriodo), mx + 3, y + 14);
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(...C_MUTED);
-  doc.text('Emitido em', mx + 3, y + 19);
-  doc.setTextColor(...C_TEXT);
-  doc.text(t(emitidoStr), mx + 3, y + 24);
-  doc.setTextColor(...C_MUTED);
-  doc.text('Emitido por', mx + 3, y + 29);
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(...C_NAVY);
-  doc.text('CadernoGestor', mx + 3, y + 34);
+  if (typeof doc.roundedRect === 'function') doc.roundedRect(mx, y + 4, mw, 26, 2, 2, 'F');
+  else doc.rect(mx, y + 4, mw, 26, 'F');
 
   doc.setFont('helvetica', 'normal');
-  y += 40;
+  doc.setFontSize(5.8);
+  doc.setTextColor(...C_MUTED);
+  doc.text('Periodo', mx + 4, y + 10);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(6.5);
+  doc.setTextColor(...C_TEXT);
+  doc.text(t(labelPeriodo), mx + 4, y + 15);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(5.8);
+  doc.setTextColor(...C_MUTED);
+  doc.text('Emitido em', mx + 4, y + 20);
+  doc.setTextColor(...C_TEXT);
+  doc.text(t(emitidoStr), mx + 4, y + 24.5);
+  doc.setTextColor(...C_MUTED);
+  doc.text('Emitido por CadernoGestor', mx + 4, y + 29);
+
+  doc.setFont('helvetica', 'normal');
+  y += 41;
   doc.setTextColor(...C_TEXT);
 
   doc.setFillColor(...C_NAVY);
-  if (typeof doc.roundedRect === 'function') doc.roundedRect(lm, y, pw, 12, 2, 2, 'F');
-  else doc.rect(lm, y, pw, 12, 'F');
-  doc.setFillColor(...C_GREEN);
-  doc.circle(lm + 6, y + 6.2, 3.4, 'F');
-  doc.setFillColor(255, 255, 255);
-  doc.circle(lm + 4.7, y + 5.8, 0.9, 'F');
-  doc.circle(lm + 7.3, y + 5.8, 0.9, 'F');
-  doc.setFontSize(10.5);
-  doc.setTextColor(255, 255, 255);
-  doc.text(titPar, lm + 12, y + 7.8);
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(7.2);
-  doc.setTextColor(180, 235, 200);
-  doc.text(subPeriodo ? t(subPeriodo) : t('Historico completo'), lm + 12, y + 11);
-  doc.setTextColor(...C_TEXT);
-  y += 15;
-
-  const boxH = 56;
-  doc.setFillColor(255, 255, 255);
-  doc.setDrawColor(...C_LINE);
-  doc.setLineWidth(0.28);
-  if (typeof doc.roundedRect === 'function') doc.roundedRect(lm, y, pw, boxH, 2.5, 2.5, 'FD');
-  else doc.rect(lm, y, pw, boxH, 'FD');
+  if (typeof doc.roundedRect === 'function') doc.roundedRect(lm, y, pw, 13, 2.5, 2.5, 'F');
+  else doc.rect(lm, y, pw, 13, 'F');
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(10);
-  doc.setTextColor(...C_NAVY);
-  doc.text('RESUMO', lm + 6, y + 8);
+  doc.setTextColor(255, 255, 255);
+  doc.text(titPar, lm + padX + 1, y + 8);
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(6.4);
-  doc.setTextColor(...C_MUTED);
-  const leg = 'Cada total e a soma dos valores em que essa pessoa consta em Quem deve (deve ao outro). DIFERENCA = (total ' + t(par.pessoaA) + ') - (total ' + t(par.pessoaB) + ').';
-  const legLines = doc.splitTextToSize(leg, pw - 12);
-  doc.text(legLines, lm + 6, y + 13);
+  doc.setFontSize(6.8);
+  doc.setTextColor(200, 218, 240);
+  doc.text(subPeriodo ? t(subPeriodo) : t('Historico completo'), lm + padX + 1, y + 11.5);
+  doc.setTextColor(...C_TEXT);
+  y += 17;
 
-  const zgap = 3.5;
-  const zw = (pw - 12 - 2 * zgap) / 3;
-  const zx = [lm + 6, lm + 6 + zw + zgap, lm + 6 + 2 * (zw + zgap)];
+  const boxH = 54;
+  doc.setFillColor(...C_SOFT);
+  if (typeof doc.roundedRect === 'function') doc.roundedRect(lm, y, pw, boxH, 3, 3, 'F');
+  else doc.rect(lm, y, pw, boxH, 'F');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8.5);
+  doc.setTextColor(...C_NAVY);
+  doc.text('Resumo', lm + padX, y + 7);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.2);
+  doc.setTextColor(...C_MUTED);
+  const leg = 'Cada total e a soma dos valores em que essa pessoa consta em Quem deve. Diferenca = total ' + t(par.pessoaA) + ' menos total ' + t(par.pessoaB) + '.';
+  const legLines = doc.splitTextToSize(leg, pw - 2 * padX - 2);
+  doc.text(legLines, lm + padX, y + 12.5);
+
+  const zgap = 5;
+  const zw = (pw - 2 * padX - 2 * zgap) / 3;
+  const zx = [lm + padX, lm + padX + zw + zgap, lm + padX + 2 * (zw + zgap)];
 
   function miniCard(ix, stripeRgb, label1, label2, label3, valueStr, valueRgb) {
     const x0 = zx[ix];
-    const pastel = ix === 0 ? [232, 246, 236] : ix === 1 ? [232, 238, 250] : [255, 244, 229];
+    const pastel = ix === 0 ? [241, 247, 243] : ix === 1 ? [241, 244, 250] : [254, 249, 242];
     doc.setFillColor(...pastel);
-    doc.setDrawColor(...C_LINE);
-    doc.setLineWidth(0.15);
-    if (typeof doc.roundedRect === 'function') doc.roundedRect(x0, y + 24, zw, 28, 2, 2, 'FD');
-    else doc.rect(x0, y + 24, zw, 28, 'FD');
+    if (typeof doc.roundedRect === 'function') doc.roundedRect(x0, y + 25, zw, 25, 2, 2, 'F');
+    else doc.rect(x0, y + 25, zw, 25, 'F');
     doc.setFillColor(...stripeRgb);
-    doc.rect(x0, y + 24, 2.4, 28, 'F');
+    doc.rect(x0, y + 25, 1.1, 25, 'F');
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(5.5);
+    doc.setFontSize(5.3);
     doc.setTextColor(...C_MUTED);
-    if (label1) doc.text(t(label1), x0 + 4.5, y + 29);
-    if (label2) doc.text(t(label2), x0 + 4.5, y + 32.8);
-    if (label3) doc.text(t(label3), x0 + 4.5, y + 36.6);
-    doc.setFontSize(10.5);
+    if (label1) doc.text(t(label1), x0 + 3.8, y + 30);
+    if (label2) doc.text(t(label2), x0 + 3.8, y + 33.5);
+    if (label3) doc.text(t(label3), x0 + 3.8, y + 37);
+    doc.setFontSize(10);
     doc.setTextColor(...valueRgb);
-    doc.text(valueStr, x0 + zw / 2 + 1.2, y + 47, { align: 'center' });
+    doc.text(valueStr, x0 + zw / 2 + 0.5, y + 45, { align: 'center' });
     doc.setTextColor(...C_TEXT);
   }
 
@@ -2502,48 +2493,49 @@ function exportarAcertoPDF() {
   miniCard(1, C_NAVY_L, 'TOTAL QUE', par.pessoaB, 'DEVE:', 'R$ ' + fmtMoney(totalB), C_NAVY);
   miniCard(2, C_AMBER, 'DIFERENCA', '', '', 'R$ ' + fmtMoney(Math.abs(saldo)), quitado ? C_GREEN_D : C_AMBER);
 
-  y += boxH + 8;
+  y += boxH + 10;
 
   if (!quitado) {
-    doc.setFillColor(236, 253, 245);
-    doc.setDrawColor(...C_GREEN);
-    doc.setLineWidth(0.35);
-    if (typeof doc.roundedRect === 'function') doc.roundedRect(lm, y, pw, 13, 2, 2, 'FD');
-    else doc.rect(lm, y, pw, 13, 'FD');
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(8.2);
+    doc.setFillColor(241, 248, 244);
+    if (typeof doc.roundedRect === 'function') doc.roundedRect(lm, y, pw, 11, 2, 2, 'F');
+    else doc.rect(lm, y, pw, 11, 'F');
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
     doc.setTextColor(...C_GREEN_D);
     doc.text(
-      '[v] Conclusao: ' + t(devedor) + ' deve R$ ' + fmtMoney(Math.abs(saldo)) + ' a ' + t(credor) + ' (credito de quem recebe).',
+      'Conclusao: ' + t(devedor) + ' deve R$ ' + fmtMoney(Math.abs(saldo)) + ' a ' + t(credor) + '.',
       lm + pw / 2,
-      y + 8,
+      y + 7,
       { align: 'center' }
     );
     doc.setTextColor(...C_TEXT);
-    y += 17;
+    y += 15;
   } else {
-    doc.setFillColor(236, 253, 245);
-    if (typeof doc.roundedRect === 'function') doc.roundedRect(lm, y, pw, 11, 2, 2, 'F');
-    else doc.rect(lm, y, pw, 11, 'F');
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(8.2);
+    doc.setFillColor(241, 248, 244);
+    if (typeof doc.roundedRect === 'function') doc.roundedRect(lm, y, pw, 9, 2, 2, 'F');
+    else doc.rect(lm, y, pw, 9, 'F');
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
     doc.setTextColor(...C_GREEN_D);
-    doc.text('[v] Conclusao: Quitado entre as partes neste periodo.', lm + pw / 2, y + 7, { align: 'center' });
+    doc.text('Conclusao: quitado entre as partes neste periodo.', lm + pw / 2, y + 6, { align: 'center' });
     doc.setTextColor(...C_TEXT);
-    y += 14;
+    y += 12;
   }
 
   function drawTableHeader() {
-    doc.setFillColor(218, 230, 248);
-    doc.rect(lm, y, pw, 7, 'F');
+    doc.setFillColor(...C_SOFT);
+    doc.rect(lm, y, pw, 8, 'F');
+    doc.setDrawColor(...C_LINE);
+    doc.setLineWidth(0.1);
+    doc.line(lm + padX, y + 7.6, rm - padX, y + 7.6);
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(6.8);
-    doc.setTextColor(...C_NAVY_D);
-    doc.text('DATA', COL_DT, y + 5);
-    doc.text('CAT.', COL_CAT, y + 5);
-    doc.text('DESCRICAO', COL_DESC, y + 5);
-    doc.text('VALOR', COL_VAL, y + 5, { align: 'right' });
-    y += 9;
+    doc.setFontSize(6);
+    doc.setTextColor(...C_MUTED);
+    doc.text('Data', COL_DT, y + 5);
+    doc.text('Categoria', COL_CAT, y + 5);
+    doc.text('Descricao', COL_DESC, y + 5);
+    doc.text('Valor', COL_VAL, y + 5, { align: 'right' });
+    y += 10;
   }
 
   function renderLinha(l) {
@@ -2553,48 +2545,58 @@ function exportarAcertoPDF() {
     const rawDesc = (l.descricao || '-').trim();
     const descTxt = t(rawDesc.length > 160 ? rawDesc.slice(0, 160) + '...' : rawDesc);
     const lines = doc.splitTextToSize(descTxt || '-', DESC_W);
-    const linhaH = Math.max(8, lines.length * 3.8 + 3);
-    if (y + linhaH > 278) {
+    const linhaH = Math.max(9, lines.length * 4 + 3.5);
+    if (y + linhaH > 276) {
       pdfNewPage();
     }
-    const rowFill = pdfRowZ++ % 2 === 0 ? [255, 255, 255] : [248, 250, 252];
+    const rowFill = pdfRowZ++ % 2 === 0 ? [255, 255, 255] : [250, 251, 253];
     doc.setFillColor(...rowFill);
-    doc.setDrawColor(...C_LINE);
-    doc.rect(lm, y, pw, linhaH, 'FD');
+    doc.rect(lm, y, pw, linhaH, 'F');
     doc.setFillColor(...rgb);
-    doc.rect(lm, y, 1.3, linhaH, 'F');
+    doc.rect(lm, y, 0.65, linhaH, 'F');
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(7.5);
+    doc.setFontSize(7.2);
     doc.setTextColor(...C_TEXT);
-    doc.text(dt, COL_DT + 1.5, y + 5);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(6.3);
-    const catShow = t(catRaw).toUpperCase();
-    doc.text(catShow.length > 12 ? catShow.slice(0, 12) + '.' : catShow, COL_CAT + 1.5, y + 5);
+    doc.text(dt, COL_DT + 1, y + 5.2);
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(7.5);
-    lines.forEach((ln, i) => doc.text(ln, COL_DESC, y + 5 + i * 3.8));
+    doc.setFontSize(6.4);
+    doc.setTextColor(...C_MUTED);
+    const catShow = t(catRaw);
+    doc.text(catShow.length > 14 ? catShow.slice(0, 13) + '.' : catShow, COL_CAT + 1, y + 5.2);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.2);
+    doc.setTextColor(...C_TEXT);
+    lines.forEach((ln, i) => doc.text(ln, COL_DESC, y + 5.2 + i * 4));
     doc.setFont('helvetica', 'bold');
-    doc.text('R$ ' + fmtMoney(l.valor || 0), COL_VAL, y + 5, { align: 'right' });
+    doc.setTextColor(...C_GREEN_D);
+    doc.text('R$ ' + fmtMoney(l.valor || 0), COL_VAL, y + 5.2, { align: 'right' });
+    doc.setTextColor(...C_TEXT);
     y += linhaH;
   }
 
   function renderSecao(nome, lista) {
     if (!lista.length) return;
-    if (y > 230) {
+    if (y > 228) {
       pdfNewPage();
     }
-    doc.setFillColor(...C_NAVY_D);
-    if (typeof doc.roundedRect === 'function') doc.roundedRect(lm, y, pw, 9, 1.2, 1.2, 'F');
-    else doc.rect(lm, y, pw, 9, 'F');
-    doc.setTextColor(255, 255, 255);
+    y += 2;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.setTextColor(...C_NAVY);
+    doc.text('Dividas em nome de ' + t(nome), lm + padX, y + 5);
+    const sub = lista.reduce((s, l) => s + (Number(l.valor) || 0), 0);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.5);
+    doc.setTextColor(...C_MUTED);
+    doc.text('Subtotal', rm - 48, y + 5);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(8);
-    doc.text('DIVIDAS REGISTRADAS EM NOME DE ' + t(nome).toUpperCase(), lm + 4, y + 6);
-    const sub = lista.reduce((s, l) => s + (Number(l.valor) || 0), 0);
-    doc.text('Subtotal R$ ' + fmtMoney(sub), rm - 4, y + 6, { align: 'right' });
     doc.setTextColor(...C_TEXT);
-    y += 11;
+    doc.text('R$ ' + fmtMoney(sub), rm - padX, y + 5, { align: 'right' });
+    doc.setDrawColor(...C_LINE);
+    doc.setLineWidth(0.12);
+    doc.line(lm + padX, y + 8, rm - padX, y + 8);
+    y += 12;
 
     const porCat = {};
     lista.forEach(l => {
@@ -2604,101 +2606,118 @@ function exportarAcertoPDF() {
     });
 
     Object.entries(porCat).forEach(([catRaw, items]) => {
-      if (y > 244) {
+      if (y > 242) {
         pdfNewPage();
       }
       const rgbBar = corCategoriaPdf(catRaw === 'Sem categoria' ? '' : catRaw);
+      doc.setFillColor(247, 249, 252);
+      doc.rect(lm, y, pw, 5.8, 'F');
       doc.setFillColor(...rgbBar);
-      doc.rect(lm, y, pw, 6, 'F');
+      doc.rect(lm, y, 0.9, 5.8, 'F');
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(7.2);
-      doc.setTextColor(255, 255, 255);
-      doc.text(t(catRaw).toUpperCase(), lm + 4, y + 4.2);
-      const subCat = items.reduce((s, x) => s + (Number(x.valor) || 0), 0);
-      doc.text('R$ ' + fmtMoney(subCat), rm - 4, y + 4.2, { align: 'right' });
+      doc.setFontSize(6.4);
       doc.setTextColor(...C_TEXT);
-      y += 8;
+      doc.text(t(catRaw), lm + 3.2, y + 4);
+      const subCat = items.reduce((s, x) => s + (Number(x.valor) || 0), 0);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(6.4);
+      doc.setTextColor(...C_MUTED);
+      doc.text('R$ ' + fmtMoney(subCat), rm - padX, y + 4, { align: 'right' });
+      doc.setTextColor(...C_TEXT);
+      y += 7;
       drawTableHeader();
       items.forEach(renderLinha);
-      y += 3;
+      y += 5;
     });
 
-    y += 3;
+    y += 4;
   }
 
   renderSecao(par.pessoaA, lancesA);
   renderSecao(par.pessoaB, lancesB);
 
-  if (y > 232) {
+  y += 4;
+  if (y > 218) {
     pdfNewPage();
   }
-  const finalH = quitado ? 24 : 34;
-  doc.setFillColor(248, 255, 252);
-  doc.setDrawColor(...C_GREEN);
-  doc.setLineWidth(0.4);
-  if (typeof doc.roundedRect === 'function') doc.roundedRect(lm, y, pw, finalH, 2.8, 2.8, 'FD');
-  else doc.rect(lm, y, pw, finalH, 'FD');
-  doc.setFillColor(...C_GREEN);
-  doc.circle(lm + 10, y + (quitado ? 10 : 15), 5, 'F');
-  doc.setFillColor(255, 255, 255);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(6.5);
-  doc.text('R$', lm + 7.2, y + (quitado ? 11.8 : 16.5));
-  doc.setTextColor(...C_GREEN_D);
-  doc.setFontSize(8.2);
-  doc.text('SALDO LIQUIDO', lm + 18, y + (quitado ? 9 : 10));
-  doc.setFontSize(10.5);
+
   const rod1 = quitado
     ? 'Quitado entre as partes neste periodo.'
     : t(devedor) + ' deve R$ ' + fmtMoney(Math.abs(saldo)) + ' a ' + t(credor);
-  doc.text(rod1, lm + 18, y + (quitado ? 16 : 17));
+
+  const baseExplica = 'Base: soma do que ' + t(par.pessoaA) + ' deve ao outro menos soma do que ' + t(par.pessoaB) + ' deve ao outro.';
+  let finalH = quitado ? 30 : 50;
   if (!quitado) {
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(6.6);
-    doc.setTextColor(...C_MUTED);
-    const baseTxt = 'Base: soma do que ' + t(par.pessoaA) + ' deve ao outro menos soma do que ' + t(par.pessoaB) + ' deve ao outro.';
-    const baseLines = doc.splitTextToSize(baseTxt, pw * 0.4);
-    let by = y + 9;
-    baseLines.forEach(line => {
-      doc.text(line, lm + pw * 0.52, by);
-      by += 3.5;
-    });
-    doc.setDrawColor(...C_GREEN);
-    doc.setLineWidth(0.2);
-    if (typeof doc.roundedRect === 'function') doc.roundedRect(lm + pw * 0.82, y + 10, 12, 14, 1, 1, 'S');
-    else doc.rect(lm + pw * 0.82, y + 10, 12, 14, 'S');
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(8);
-    doc.setTextColor(...C_GREEN_D);
-    doc.text('OK', lm + pw * 0.82 + 3.2, y + 18);
+    const rodH = doc.splitTextToSize(rod1, pw - 18).length * 4.2;
+    const baseH = doc.splitTextToSize(baseExplica, pw - 18).length * 3.5;
+    finalH = Math.max(48, 26 + rodH + baseH);
   }
 
-  const fy = 282;
-  doc.setDrawColor(...C_LINE);
-  doc.setLineWidth(0.2);
-  doc.line(lm, fy - 10, rm, fy - 10);
+  doc.setFillColor(234, 246, 238);
+  if (typeof doc.roundedRect === 'function') doc.roundedRect(lm, y, pw, finalH, 4, 4, 'F');
+  else doc.rect(lm, y, pw, finalH, 'F');
   doc.setFillColor(...C_GREEN);
-  doc.circle(lm + 3, fy - 6, 1, 'F');
-  doc.setFillColor(...C_NAVY_L);
-  doc.circle(lm + 6, fy - 6, 1, 'F');
-  doc.setFillColor(...C_AMBER);
-  doc.circle(lm + 9, fy - 6, 1, 'F');
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(7);
-  doc.setTextColor(...C_NAVY);
-  doc.text('CadernoGestor', lm + 12, fy - 5.2);
-  doc.setFont('helvetica', 'italic');
-  doc.setFontSize(5.8);
-  doc.setTextColor(...C_MUTED);
-  doc.text('Saia do papel. Sem sair do caderno.', lm + 12, fy - 1.5);
+  doc.rect(lm, y, 3.2, finalH, 'F');
 
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(5.5);
+  doc.setFontSize(6.8);
   doc.setTextColor(...C_MUTED);
-  const colW = (pw - 20) / 3;
-  doc.text('Organizacao: lancamentos e categorias claras.', lm + 6, fy + 3, { maxWidth: colW });
-  doc.text('Confianca: totais e diferenca explicitos.', lm + 6 + colW, fy + 3, { maxWidth: colW });
-  doc.text('Pratico: feito para o dia a dia do negocio.', lm + 6 + 2 * colW, fy + 3, { maxWidth: colW });
+  doc.text('Resultado', lm + 8, y + 9);
+
+  if (!quitado) {
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(16);
+    doc.setTextColor(...C_GREEN_D);
+    doc.text('R$ ' + fmtMoney(Math.abs(saldo)), lm + 8, y + 21);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.setTextColor(...C_TEXT);
+    let ry = y + 30;
+    doc.splitTextToSize(rod1, pw - 18).forEach(line => {
+      doc.text(line, lm + 8, ry);
+      ry += 4.2;
+    });
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(5.9);
+    doc.setTextColor(...C_MUTED);
+    let by = ry + 3;
+    doc.splitTextToSize(baseExplica, pw - 18).forEach(line => {
+      doc.text(line, lm + 8, by);
+      by += 3.5;
+    });
+  } else {
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(12);
+    doc.setTextColor(...C_GREEN_D);
+    doc.text('Quitado', lm + 8, y + 20);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(...C_TEXT);
+    doc.text(rod1, lm + 8, y + 28);
+  }
+
+  const fy = 283;
+  doc.setDrawColor(...C_LINE);
+  doc.setLineWidth(0.08);
+  doc.line(lm + padX, fy - 12, rm - padX, fy - 12);
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(6.5);
+  doc.setTextColor(...C_NAVY);
+  doc.text('CadernoGestor', lm + padX, fy - 7);
+  doc.setFont('helvetica', 'italic');
+  doc.setFontSize(5.4);
+  doc.setTextColor(...C_MUTED);
+  doc.text('Saia do papel. Sem sair do caderno.', lm + padX, fy - 2.5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(5.2);
+  doc.setTextColor(...C_MUTED);
+  const colW = (pw - 2 * padX - 8) / 3;
+  const fy2 = fy + 2;
+  doc.text('Organizacao clara.', lm + padX, fy2, { maxWidth: colW });
+  doc.text('Totais explicitos.', lm + padX + colW + 4, fy2, { maxWidth: colW });
+  doc.text('Pratico no dia a dia.', lm + padX + 2 * colW + 8, fy2, { maxWidth: colW });
 
   doc.save('AcertoContas_' + t(par.pessoaA) + '_' + t(par.pessoaB) + '.pdf');
   closeModal('modal-exportar-acerto');
