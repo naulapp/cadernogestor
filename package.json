@@ -1,0 +1,7 @@
+{
+  "name": "cadernogestor",
+  "private": true,
+  "scripts": {
+    "test": "node tests/acerto-logic.test.js"
+  }
+}

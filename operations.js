@@ -1633,6 +1633,24 @@ function gerarTodosPDFs() {
 // =====================================================
 // ACERTO DE CONTAS PESSOAIS
 // =====================================================
+
+/** Campo "Quem deve" vs nome no par: ignora espaços e diferenças só de maiúsculas. */
+function acertoNomeIgual(deNome, nomePar) {
+  const a = String(deNome || '').trim().normalize('NFC');
+  const b = String(nomePar || '').trim().normalize('NFC');
+  if (a === b) return true;
+  try {
+    return a.localeCompare(b, 'pt-BR', { sensitivity: 'accent' }) === 0;
+  } catch (_) {
+    return false;
+  }
+}
+
+/** Soma valores dos lançamentos em que `de` corresponde a essa pessoa. */
+function acertoSomaOndeDeve(lances, nome) {
+  return lances.reduce((s, l) => (acertoNomeIgual(l.de, nome) ? s + (Number(l.valor) || 0) : s), 0);
+}
+
 function renderAcerto() {
   const container = document.getElementById('acertoPares');
   if (!container) return;
@@ -1669,9 +1687,9 @@ async function carregarERenderAcerto(container) {
       if (!l.data) return true;
       return l.data > periodoAtual;
     }).sort((a,b) => (b.data||'').localeCompare(a.data||''));
-    // "de" = quem DEVE (lógica invertida da versão anterior)
-    const devidoPorA = lances.filter(l => l.de === par.pessoaA).reduce((s,l) => s+l.valor, 0);
-    const devidoPorB = lances.filter(l => l.de === par.pessoaB).reduce((s,l) => s+l.valor, 0);
+    // "de" = quem DEVE (valor positivo = essa pessoa deve ao outro do par)
+    const devidoPorA = acertoSomaOndeDeve(lances, par.pessoaA);
+    const devidoPorB = acertoSomaOndeDeve(lances, par.pessoaB);
     const totalAB = devidoPorA; // quanto A deve
     const totalBA = devidoPorB; // quanto B deve
     // saldo: positivo = A deve mais que B → A é devedor líquido

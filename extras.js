@@ -1834,8 +1834,8 @@ const DASH_WIDGETS = {
           if (!l.data) return true;
           return l.data > periodoAtual;
         }).sort((a,b) => (b.data||'').localeCompare(a.data||''));
-        const devidoPorA = lances.filter(l=>l.de===par.pessoaA).reduce((s,l)=>s+l.valor,0);
-        const devidoPorB = lances.filter(l=>l.de===par.pessoaB).reduce((s,l)=>s+l.valor,0);
+        const devidoPorA = acertoSomaOndeDeve(lances, par.pessoaA);
+        const devidoPorB = acertoSomaOndeDeve(lances, par.pessoaB);
         const totalAB = devidoPorA;
         const totalBA = devidoPorB;
         const saldo = totalAB - totalBA; // positivo = A deve mais
@@ -2245,10 +2245,9 @@ function exportarAcertoPDF() {
 
   const COR_HEADER = [46,158,79];
   const COR_GREEN = [46,158,79];
-  const COR_GREEN_SOFT = [232,248,238];
-  const COR_GREEN_BAND = [210,235,220];
-  const COR_GRAY = [245,252,247];
+  const COR_LINE = [220,230,222];
   const COR_TEXT = [30,30,45];
+  const COR_MUTED = [100,110,120];
 
   // Funcao segura para texto (remove caracteres nao-latin)
   function t(str) {
@@ -2284,8 +2283,8 @@ function exportarAcertoPDF() {
   y += subPeriodo ? 34 : 28;
 
   // ── TOTAIS POR PESSOA ──────────────────────────────
-  const lancesA = lances.filter(l => l.de === par.pessoaA);
-  const lancesB = lances.filter(l => l.de === par.pessoaB);
+  const lancesA = lances.filter(l => acertoNomeIgual(l.de, par.pessoaA));
+  const lancesB = lances.filter(l => acertoNomeIgual(l.de, par.pessoaB));
   const totalA = lancesA.reduce((s,l) => s+l.valor, 0);
   const totalB = lancesB.reduce((s,l) => s+l.valor, 0);
   const saldo = totalA - totalB;
@@ -2293,25 +2292,26 @@ function exportarAcertoPDF() {
   const credor  = saldo > 0 ? par.pessoaB : par.pessoaA;
   const quitado = Math.abs(saldo) < 0.01;
 
-  // Cards resumo
+  // Cards resumo (não somar A+B no rodapé — saldo líquido é a única "dívida" global)
   const w3 = pw / 3;
-  const saldoLabel = quitado
+  const saldoSub = quitado
     ? 'Quitado'
-    : (t(devedor) + ' deve a ' + t(credor));
-  [[`Total lancamentos\n${t(par.pessoaA)}`, totalA, COR_GREEN],
-   [`Total lancamentos\n${t(par.pessoaB)}`, totalB, COR_GREEN],
-   ['Saldo liquido\n' + saldoLabel, Math.abs(saldo), quitado ? COR_GREEN : [180,130,0]]].forEach(([label, val, cor], i) => {
-    doc.setFillColor(...COR_GRAY);
-    doc.rect(lm + i*w3 + (i>0?2:0), y, w3 - (i<2?2:0), 22, 'F');
-    doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor(60,90,75);
+    : (t(credor) + ' com credito / ' + t(devedor) + ' deve');
+  [[`Soma\n${t(par.pessoaA)} deve`, totalA, COR_GREEN],
+   [`Soma\n${t(par.pessoaB)} deve`, totalB, COR_GREEN],
+   ['Saldo liquido\n' + saldoSub, Math.abs(saldo), quitado ? COR_GREEN : [180,130,0]]].forEach(([label, val, cor], i) => {
+    doc.setDrawColor(...COR_LINE);
+    doc.setFillColor(255,255,255);
+    doc.rect(lm + i*w3 + (i>0?2:0), y, w3 - (i<2?2:0), 24, 'FD');
+    doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor(...COR_MUTED);
     const lines = String(label).split('\n');
-    doc.text(lines[0], lm + i*w3 + w3/2, y+5, {align:'center'});
-    if (lines[1]) doc.text(lines[1], lm + i*w3 + w3/2, y+9.5, {align:'center'});
+    doc.text(lines[0], lm + i*w3 + w3/2, y+6, {align:'center'});
+    if (lines[1]) doc.text(lines[1], lm + i*w3 + w3/2, y+10.5, {align:'center'});
     doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(...cor);
-    doc.text('R$ ' + fmtMoney(val), lm + i*w3 + w3/2, y+17, {align:'center'});
+    doc.text('R$ ' + fmtMoney(val), lm + i*w3 + w3/2, y+19, {align:'center'});
   });
   doc.setTextColor(...COR_TEXT);
-  y += 28;
+  y += 30;
 
   if (!quitado) {
     doc.setFontSize(8); doc.setFont('helvetica','bold'); doc.setTextColor(...COR_GREEN);
@@ -2324,17 +2324,18 @@ function exportarAcertoPDF() {
   function renderSecao(nome, lista) {
     if (lista.length === 0) return;
 
-    // Cabecalho da pessoa
-    doc.setFillColor(...COR_HEADER);
-    doc.rect(lm, y, pw, 8, 'F');
-    doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(9);
-    doc.text('Lançamentos de ' + t(nome), lm+5, y+5.5);
-    const totalPessoa = lista.reduce((s,l)=>s+l.valor,0);
-    doc.text('Total: R$ ' + fmtMoney(totalPessoa), rm-5, y+5.5, {align:'right'});
-    doc.setTextColor(...COR_TEXT);
-    y += 8;
+    if (y > 250) { doc.addPage(); y = 14; }
 
-    // Agrupar por categoria
+    // Cabecalho da secao (pessoa) — unica faixa verde por bloco
+    doc.setFillColor(...COR_HEADER);
+    doc.rect(lm, y, pw, 9, 'F');
+    doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(9.5);
+    doc.text('Lançamentos de ' + t(nome), lm+5, y+6);
+    const totalPessoa = lista.reduce((s,l)=>s+l.valor,0);
+    doc.text('Subtotal: R$ ' + fmtMoney(totalPessoa), rm-5, y+6, {align:'right'});
+    doc.setTextColor(...COR_TEXT);
+    y += 11;
+
     const porCat = {};
     lista.forEach(l => {
       const cat = t(l.categoria) || 'Sem categoria';
@@ -2343,51 +2344,58 @@ function exportarAcertoPDF() {
     });
 
     Object.entries(porCat).forEach(([cat, items]) => {
-      if (y > 260) { doc.addPage(); y = 14; }
+      if (y > 258) { doc.addPage(); y = 14; }
 
-      // Label categoria
-      doc.setFillColor(...COR_GREEN_BAND);
-      doc.rect(lm, y, pw, 6, 'F');
-      doc.setFont('helvetica','bold'); doc.setFontSize(7.5); doc.setTextColor(25,90,55);
-      doc.text(cat.toUpperCase(), lm+4, y+4.2);
+      // Cabecalho categoria: fundo branco + linha superior verde (sem faixa cheia)
+      doc.setDrawColor(...COR_HEADER);
+      doc.setLineWidth(0.35);
+      doc.line(lm, y, rm, y);
+      doc.setFillColor(255,255,255);
+      doc.rect(lm, y, pw, 6.5, 'F');
+      doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(...COR_HEADER);
+      doc.text(cat.toUpperCase(), lm+4, y+4.5);
       const subTotal = items.reduce((s,l)=>s+l.valor,0);
-      doc.text('R$ ' + fmtMoney(subTotal), rm-4, y+4.2, {align:'right'});
+      doc.text('R$ ' + fmtMoney(subTotal), rm-4, y+4.5, {align:'right'});
       doc.setTextColor(...COR_TEXT);
-      y += 6;
+      y += 6.5;
 
-      // Linhas da categoria
-      items.forEach((l, i) => {
-        if (y > 270) { doc.addPage(); y = 14; }
-        doc.setFillColor(...(i%2===0 ? COR_GREEN_SOFT : [255,255,255]));
-        doc.rect(lm, y, pw, 7, 'F');
+      items.forEach(l => {
+        if (y > 272) { doc.addPage(); y = 14; }
+        doc.setFillColor(255,255,255);
+        doc.setDrawColor(...COR_LINE);
+        doc.rect(lm, y, pw, 7.2, 'FD');
         doc.setFont('helvetica','normal'); doc.setFontSize(8);
         doc.text(l.data ? fmtData(l.data) : '', lm+4, y+5);
         const desc = t(l.descricao || '');
-        doc.text(desc.substring(0,45), lm+30, y+5);
-        doc.setFont('helvetica','bold'); doc.setTextColor(...COR_GREEN);
+        doc.text(desc.substring(0,48), lm+28, y+5);
+        doc.setFont('helvetica','bold'); doc.setTextColor(...COR_TEXT);
         doc.text('R$ ' + fmtMoney(l.valor), rm-4, y+5, {align:'right'});
-        doc.setTextColor(...COR_TEXT);
-        y += 7;
+        y += 7.2;
       });
 
-      y += 2; // espacinho entre categorias
+      y += 3;
     });
 
-    y += 4;
+    y += 2;
   }
 
   // Renderizar cada pessoa
   renderSecao(par.pessoaA, lancesA);
   renderSecao(par.pessoaB, lancesB);
 
-  // ── TOTAL FINAL ─────────────────────────────────────
-  if (y > 265) { doc.addPage(); y = 14; }
+  // ── Rodape: saldo liquido (sem somar lancamentos A + B) ─────────────────────
+  if (y > 262) { doc.addPage(); y = 14; }
   doc.setFillColor(...COR_HEADER);
-  doc.rect(lm, y, pw, 10, 'F');
+  doc.rect(lm, y, pw, quitado ? 9 : 13, 'F');
   doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(255,255,255);
-  doc.text('TOTAL GERAL: R$ ' + fmtMoney(totalA + totalB), lm+5, y+7);
-  const difLabel = quitado ? 'Saldo: quitado' : 'Saldo: ' + t(devedor) + ' deve R$ ' + fmtMoney(Math.abs(saldo)) + ' a ' + t(credor);
-  doc.text(difLabel, rm-5, y+7, {align:'right'});
+  const linha1 = quitado
+    ? 'Saldo liquido: quitado (sem diferenca entre as partes)'
+    : ('Saldo liquido: ' + t(devedor) + ' deve R$ ' + fmtMoney(Math.abs(saldo)) + ' a ' + t(credor));
+  doc.text(linha1, lm + pw/2, y+6, {align:'center'});
+  if (!quitado) {
+    doc.setFont('helvetica','normal'); doc.setFontSize(8);
+    doc.text(t(credor) + ' tem credito de R$ ' + fmtMoney(Math.abs(saldo)) + ' neste periodo', lm + pw/2, y+11, {align:'center'});
+  }
 
   doc.save('AcertoContas_' + t(par.pessoaA) + '_' + t(par.pessoaB) + '.pdf');
   closeModal('modal-exportar-acerto');
@@ -2450,8 +2458,8 @@ async function renderParPage(parId) {
     return l.data > periodoAtual;
   }).sort((a,b) => (b.data||'').localeCompare(a.data||''));
 
-  const devidoPorA = lancesAtivos.filter(l => l.de === par.pessoaA).reduce((s,l)=>s+l.valor,0);
-  const devidoPorB = lancesAtivos.filter(l => l.de === par.pessoaB).reduce((s,l)=>s+l.valor,0);
+  const devidoPorA = acertoSomaOndeDeve(lancesAtivos, par.pessoaA);
+  const devidoPorB = acertoSomaOndeDeve(lancesAtivos, par.pessoaB);
   const saldo = devidoPorA - devidoPorB;
   const devedor = saldo > 0 ? par.pessoaA : par.pessoaB;
   const credor  = saldo > 0 ? par.pessoaB : par.pessoaA;
@@ -2462,25 +2470,21 @@ async function renderParPage(parId) {
     ? '✅ Sem pendências no período atual'
     : `${devedor} deve R$ ${fmtMoney(Math.abs(saldo))} para ${credor}`;
 
-  // Cards — labels corretos mostrando quem deve a quem
-  const diferencaLabel = quitado
-    ? '✅ Sem pendências'
-    : `${devedor} deve a ${credor}`;
   document.getElementById('parCards').innerHTML = `
     <div class="stat-card">
-      <div class="stat-label">Total lançado por ${par.pessoaA}</div>
+      <div class="stat-label">Soma em que ${escapeHtml(par.pessoaA)} deve</div>
       <div class="stat-value red" style="font-size:1.2rem">R$ ${fmtMoney(devidoPorA)}</div>
-      <div style="font-size:0.72rem;color:var(--text3)">${par.pessoaA} deve</div>
+      <div style="font-size:0.72rem;color:var(--text3)">Lançamentos com "${escapeHtml(par.pessoaA)}" em Quem deve</div>
     </div>
     <div class="stat-card">
-      <div class="stat-label">Total lançado por ${par.pessoaB}</div>
+      <div class="stat-label">Soma em que ${escapeHtml(par.pessoaB)} deve</div>
       <div class="stat-value red" style="font-size:1.2rem">R$ ${fmtMoney(devidoPorB)}</div>
-      <div style="font-size:0.72rem;color:var(--text3)">${par.pessoaB} deve</div>
+      <div style="font-size:0.72rem;color:var(--text3)">Lançamentos com "${escapeHtml(par.pessoaB)}" em Quem deve</div>
     </div>
     <div class="stat-card">
-      <div class="stat-label">DIFERENÇA</div>
+      <div class="stat-label">Saldo líquido</div>
       <div class="stat-value ${quitado?'green':'yellow'}" style="font-size:1.3rem">R$ ${fmtMoney(Math.abs(saldo))}</div>
-      <div style="font-size:0.75rem;color:var(--text3)">${diferencaLabel}</div>
+      <div style="font-size:0.75rem;color:var(--text3)">${quitado ? 'Nenhuma diferença entre as partes' : `${escapeHtml(credor)} tem crédito • ${escapeHtml(devedor)} deve ao outro`}</div>
     </div>
     <div class="stat-card">
       <div class="stat-label">Lançamentos</div>
@@ -2584,8 +2588,8 @@ async function consolidarPeriodoPar(parId) {
     return l.data > periodoAtual;
   });
 
-  const devidoPorA = lancesAtivos.filter(l=>l.de===par.pessoaA).reduce((s,l)=>s+l.valor,0);
-  const devidoPorB = lancesAtivos.filter(l=>l.de===par.pessoaB).reduce((s,l)=>s+l.valor,0);
+  const devidoPorA = acertoSomaOndeDeve(lancesAtivos, par.pessoaA);
+  const devidoPorB = acertoSomaOndeDeve(lancesAtivos, par.pessoaB);
   const saldo = Math.abs(devidoPorA - devidoPorB);
 
   if (lancesAtivos.length === 0) { toast('Nenhum lançamento ativo para consolidar', 'error'); return; }
