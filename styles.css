@@ -1432,9 +1432,9 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
   border-radius: 12px 0 0 12px;
 }
 .par-stat-card--a::before { background: linear-gradient(180deg, #2e9e4f, #1e7a3a); }
-.par-stat-card--b::before { background: linear-gradient(180deg, #2b4a9e, #1b2d6b); }
-.par-stat-card--diff::before { background: linear-gradient(180deg, #d97706, #b45309); }
-.par-stat-card--count::before { background: linear-gradient(180deg, #64748b, #475569); }
+.par-stat-card--b::before { background: linear-gradient(180deg, #2e9e4f, #247f41); }
+.par-stat-card--diff::before { background: linear-gradient(180deg, #2e9e4f, #1e7a3a); }
+.par-stat-card--count::before { background: linear-gradient(180deg, #2e9e4f, #2a8e49); }
 .par-stat-card .stat-label {
   font-size: 0.72rem;
   font-weight: 700;
@@ -1460,7 +1460,7 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
   font-size: 0.82rem;
 }
 .par-lanc-table-wrap thead th {
-  background: #1b2d6b;
+  background: #2e9e4f;
   color: #fff;
   font-weight: 600;
   text-align: left;
@@ -1470,11 +1470,11 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
   text-transform: uppercase;
 }
 .par-lanc-table-wrap tbody tr:nth-child(even) {
-  background: rgba(27, 45, 107, 0.04);
+  background: rgba(46, 158, 79, 0.05);
 }
 .par-lanc-table-wrap tbody td {
   padding: 10px 12px;
-  border-bottom: 1px solid rgba(27, 45, 107, 0.08);
+  border-bottom: 1px solid rgba(46, 158, 79, 0.14);
   vertical-align: middle;
 }
 .par-lanc-table-wrap tbody tr:last-child td {

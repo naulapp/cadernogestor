@@ -2143,22 +2143,27 @@ function resetarDashboard() {
 // =====================================================
 // EXPORTAR ACERTO DE CONTAS
 // =====================================================
+let exportAcertoModo = 'tudo';
+
 function setExportPeriodo(tipo) {
   const parId = document.getElementById('exportAcertoParId').value;
   const par = acertoPares.find(p => p.id === parId);
   const hoje = new Date();
   if (tipo === 'aberto') {
-    // Após última consolidação
-    const desde = par?.consolidadoEm || '';
-    document.getElementById('exportAcertoDe').value = desde;
+    exportAcertoModo = 'aberto';
+    // Em aberto usa corte por consolidação, não data manual fixa
+    document.getElementById('exportAcertoDe').value = '';
     document.getElementById('exportAcertoAte').value = '';
   } else if (tipo === 'este_mes') {
+    exportAcertoModo = 'intervalo';
     document.getElementById('exportAcertoDe').value = new Date(hoje.getFullYear(), hoje.getMonth(), 1).toISOString().slice(0,10);
     document.getElementById('exportAcertoAte').value = new Date(hoje.getFullYear(), hoje.getMonth()+1, 0).toISOString().slice(0,10);
   } else if (tipo === 'mes_passado') {
+    exportAcertoModo = 'intervalo';
     document.getElementById('exportAcertoDe').value = new Date(hoje.getFullYear(), hoje.getMonth()-1, 1).toISOString().slice(0,10);
     document.getElementById('exportAcertoAte').value = new Date(hoje.getFullYear(), hoje.getMonth(), 0).toISOString().slice(0,10);
   } else {
+    exportAcertoModo = 'tudo';
     document.getElementById('exportAcertoDe').value = '';
     document.getElementById('exportAcertoAte').value = '';
   }
@@ -2166,22 +2171,23 @@ function setExportPeriodo(tipo) {
 
 function abrirExportarAcerto(parId) {
   document.getElementById('exportAcertoParId').value = parId;
-  // Datas padrão: último mês
-  const hoje = new Date();
-  const primeiroDia = new Date(hoje.getFullYear(), hoje.getMonth()-1, 1);
-  const ultimoDia = new Date(hoje.getFullYear(), hoje.getMonth(), 0);
-  document.getElementById('exportAcertoDe').value = primeiroDia.toISOString().slice(0,10);
-  document.getElementById('exportAcertoAte').value = ultimoDia.toISOString().slice(0,10);
+  exportAcertoModo = 'aberto';
+  document.getElementById('exportAcertoDe').value = '';
+  document.getElementById('exportAcertoAte').value = '';
   openModal('modal-exportar-acerto');
 }
 
 function filtrarLancamentosExport() {
   const parId = document.getElementById('exportAcertoParId').value;
+  const par = acertoPares.find(p => p.id === parId);
   const de = document.getElementById('exportAcertoDe').value;
   const ate = document.getElementById('exportAcertoAte').value;
+  const corteConsolidacao = par?.consolidadoEm || null;
   return lancamentosCache
     .filter(l => {
       if (l.parId !== parId) return false;
+      // Período em aberto: só lançamentos após a última consolidação
+      if (exportAcertoModo === 'aberto' && corteConsolidacao && l.data && l.data <= corteConsolidacao) return false;
       if (de && l.data && l.data < de) return false;
       if (ate && l.data && l.data > ate) return false;
       return true;
@@ -2226,7 +2232,16 @@ function exportarAcertoPDF() {
 
   let labelPeriodo;
   let subPeriodo = '';
-  if (de && ate) {
+  if (exportAcertoModo === 'aberto') {
+    labelPeriodo = 'Periodo em aberto';
+    if (par?.consolidadoEm) {
+      const fimExib = ultimoData || hojeStr;
+      subPeriodo = `Apos consolidacao de ${fmtData(par.consolidadoEm)} ate ${fmtData(fimExib)}`;
+    } else {
+      labelPeriodo = 'Periodo em aberto (sem consolidacao anterior)';
+      if (primeiroData && ultimoData) subPeriodo = `De ${fmtData(primeiroData)} a ${fmtData(ultimoData)}`;
+    }
+  } else if (de && ate) {
     labelPeriodo = `${fmtData(de)} a ${fmtData(ate)}`;
   } else if (de && !ate) {
     labelPeriodo = 'Periodo em aberto';
@@ -2358,13 +2373,14 @@ function exportarAcertoPDF() {
     if (typeof doc.roundedRect === 'function') doc.roundedRect(cx, y, cardW, 28, 2.5, 2.5, 'S');
     else doc.rect(cx, y, cardW, 28, 'S');
 
-    doc.setFont('helvetica','bold'); doc.setFontSize(6.4); doc.setTextColor(...MUTED);
-    if (c.title1) doc.text(c.title1, cx + 4, y + 6.5);
-    if (c.title2) doc.text(c.title2.substring(0, 16), cx + 4, y + 10.5);
-    if (c.title3) doc.text(c.title3, cx + 4, y + 14.5);
+    doc.setFont('helvetica','bold'); doc.setFontSize(6.3); doc.setTextColor(...MUTED);
+    const tituloCard = c.title2 ? `${c.title1} ${c.title2} ${c.title3}`.trim() : c.title1;
+    const titLines = doc.splitTextToSize(tituloCard, cardW - 8);
+    const titY = y + (titLines.length > 1 ? 6.5 : 9);
+    doc.text(titLines, cx + cardW / 2, titY, { align:'center' });
 
     doc.setFont('helvetica','bold'); doc.setFontSize(11.5); doc.setTextColor(...c.cor);
-    doc.text('R$ ' + fmtMoney(c.valor), cx + cardW / 2, y + 23, { align:'center' });
+    doc.text('R$ ' + fmtMoney(c.valor), cx + cardW / 2, y + 23.5, { align:'center' });
   });
   y += 34;
 
@@ -2381,15 +2397,18 @@ function exportarAcertoPDF() {
   y += 15;
 
   function drawTableHeader() {
-    doc.setFillColor(...GREEN_D);
+    doc.setFillColor(...BG_SOFT);
     doc.rect(ML, y, CW, 7.5, 'F');
     doc.setFont('helvetica','bold');
     doc.setFontSize(6.7);
-    doc.setTextColor(...WHITE);
+    doc.setTextColor(...GREEN_D);
     doc.text('DATA', ML + 3, y + 5);
     doc.text('CATEGORIA', ML + 28, y + 5);
     doc.text('DESCRICAO', ML + 63, y + 5);
     doc.text('VALOR', MR - 3, y + 5, { align:'right' });
+    doc.setDrawColor(...LINE);
+    doc.setLineWidth(0.25);
+    doc.line(ML, y + 7.2, MR, y + 7.2);
     y += 8.5;
   }
 
@@ -2460,6 +2479,19 @@ function exportarAcertoPDF() {
 
       y += 3;
     });
+
+    // Subtotal ao final da seção
+    doc.setDrawColor(...LINE);
+    doc.setLineWidth(0.3);
+    doc.line(ML, y, MR, y);
+    y += 4;
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(8.2);
+    doc.setTextColor(...GREEN_D);
+    doc.text('Subtotal da seção', ML, y + 1.5);
+    doc.setTextColor(...TEXT);
+    doc.text('R$ ' + fmtMoney(totalPessoa), MR, y + 1.5, { align:'right' });
+    y += 7;
   }
 
   renderSecao(par.pessoaA, lancesA);
@@ -2666,7 +2698,9 @@ function renderParConsolidacoes(parId) {
   if (!par) return;
   const el = document.getElementById('parConsolidacoes');
   if (!el) return;
-  const consolidacoes = (par.consolidacoes || []).sort((a,b) => (b.data||'').localeCompare(a.data||''));
+  const consolidacoes = (par.consolidacoes || [])
+    .map((c, idx) => ({ ...c, __idx: idx }))
+    .sort((a,b) => (b.data||'').localeCompare(a.data||''));
   if (consolidacoes.length === 0) {
     el.innerHTML = '<p style="color:var(--text3);font-size:0.82rem">Nenhuma consolidação ainda.</p>';
     return;
@@ -2681,8 +2715,54 @@ function renderParConsolidacoes(parId) {
            Saldo quitado: R$ ${fmtMoney(c.saldo)}
         </div>
       </div>
+      <button class="btn-icon" title="Excluir histórico" onclick="excluirConsolidacaoPar('${parId}','${c.__idx}')">🗑️</button>
       <span class="badge badge-green">Quitado</span>
     </div>`).join('');
+}
+
+async function excluirConsolidacaoPar(parId, idxStr) {
+  const idxAlvo = Number(idxStr);
+  const par = acertoPares.find(p => p.id === parId);
+  if (!par) return;
+  const listaAtual = Array.isArray(par.consolidacoes) ? [...par.consolidacoes] : [];
+  if (idxAlvo < 0 || idxAlvo >= listaAtual.length) return;
+  if (!await confirmar('Excluir histórico de consolidação?', 'Esse registro será removido permanentemente.')) return;
+
+  const removida = listaAtual[idxAlvo];
+  const novaLista = listaAtual.filter((_, i) => i !== idxAlvo);
+  const novoConsolidadoEm = novaLista.length
+    ? novaLista.map(c => c.data).filter(Boolean).sort().slice(-1)[0] || null
+    : null;
+  const updates = { consolidacoes: novaLista, consolidadoEm: novoConsolidadoEm };
+
+  if (db && currentOrg) {
+    await db.collection('orgs').doc(currentOrg.id).collection('acertoPares').doc(parId).update(updates);
+  } else {
+    getCol('acertoPares').update(parId, updates);
+  }
+  const pidx = acertoPares.findIndex(p => p.id === parId);
+  if (pidx >= 0) Object.assign(acertoPares[pidx], updates);
+
+  pushUndo({
+    descricao: `Excluir consolidação ${par.pessoaA} ↔ ${par.pessoaB}`,
+    reverter: async () => {
+      const listaRevertida = [...novaLista];
+      listaRevertida.splice(idxAlvo, 0, removida);
+      const consolidadoRevertido = listaRevertida.length
+        ? listaRevertida.map(c => c.data).filter(Boolean).sort().slice(-1)[0] || null
+        : null;
+      const reverts = { consolidacoes: listaRevertida, consolidadoEm: consolidadoRevertido };
+      if (db && currentOrg) await db.collection('orgs').doc(currentOrg.id).collection('acertoPares').doc(parId).update(reverts);
+      else getCol('acertoPares').update(parId, reverts);
+      const ridx = acertoPares.findIndex(p => p.id === parId);
+      if (ridx >= 0) Object.assign(acertoPares[ridx], reverts);
+      renderParPage(parId); renderAcerto();
+    }
+  });
+
+  renderParPage(parId);
+  renderAcerto();
+  toast('Histórico de consolidação excluído!', 'success');
 }
 
 async function consolidarPeriodoPar(parId) {
