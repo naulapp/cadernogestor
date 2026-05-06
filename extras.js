@@ -2243,20 +2243,18 @@ function exportarAcertoPDF() {
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const PW = 210;
   const PH = 297;
-  const ML = 18;
-  const MR = 195;
+  const ML = 14;
+  const MR = 196;
   const CW = MR - ML;
-  const ABA_W = 12;
 
-  const NAVY  = [22, 42, 100];
   const GREEN = [40, 160, 80];
-  const BLUE  = [50, 120, 200];
-  const ORANGE= [220, 140, 20];
-  const PURPLE= [100, 80, 160];
-  const GRAY  = [108, 112, 120];
-  const LGRAY = [245, 247, 250];
-  const TEXT  = [30, 35, 50];
-  const WHITE = [255,255,255];
+  const GREEN_D = [28, 128, 62];
+  const GREEN_L = [230, 246, 236];
+  const TEXT = [25, 30, 42];
+  const MUTED = [95, 108, 126];
+  const LINE = [223, 230, 238];
+  const BG_SOFT = [248, 250, 252];
+  const WHITE = [255, 255, 255];
 
   function t(str) {
     return (str||'').replace(/[\u0080-\uffff]/g, c => {
@@ -2265,9 +2263,8 @@ function exportarAcertoPDF() {
         '\u00ed':'i','\u00f3':'o','\u00fa':'u','\u00c1':'A','\u00c9':'E','\u00cd':'I',
         '\u00d3':'O','\u00da':'U','\u00e2':'a','\u00ea':'e','\u00f4':'o','\u00c2':'A',
         '\u00ca':'E','\u00d4':'O','\u00e0':'a','\u00f5':'o','\u00d5':'O','\u2194':' x ',
-        '\u00b0':'o','\u00ba':'o','\u00aa':'a',
       };
-      return m[c]||'';
+      return m[c] || '';
     });
   }
 
@@ -2280,224 +2277,139 @@ function exportarAcertoPDF() {
   const credor  = saldo > 0 ? par.pessoaB : par.pessoaA;
   const quitado = Math.abs(saldo) < 0.01;
 
-  let pageNum = 0;
-
-  function novaPageLayout() {
-    pageNum++;
-    if (pageNum > 1) doc.addPage();
-
-    doc.setFillColor(252, 251, 248);
-    doc.rect(0, 0, PW, PH, 'F');
-
-    doc.setFillColor(180, 185, 195);
-    for (let sy = 14; sy < PH - 10; sy += 8.5) {
-      doc.circle(8, sy, 2, 'F');
-    }
-    doc.setDrawColor(200, 205, 210);
-    doc.setLineWidth(0.3);
-    doc.line(8, 10, 8, PH - 10);
-
-    doc.setDrawColor(225, 228, 235);
-    doc.setLineWidth(0.3);
-    doc.line(MR, 0, MR, PH);
-
-    const abas = [
-      { label: 'RESUMO', cor: GREEN,  y: 30 },
-      { label: t(par.pessoaA).substring(0,10), cor: BLUE,   y: 78 },
-      { label: t(par.pessoaB).substring(0,10), cor: ORANGE, y: 126 },
-      { label: 'HISTORICO', cor: PURPLE, y: 174 },
-      { label: 'DETALHES',  cor: GRAY,   y: 222 },
-    ];
-    abas.forEach(a => {
-      doc.setFillColor(...a.cor);
-      if (typeof doc.roundedRect === 'function') doc.roundedRect(MR, a.y, ABA_W + 2, 40, 2, 2, 'F');
-      else doc.rect(MR, a.y, ABA_W + 2, 40, 'F');
-      doc.setTextColor(...WHITE);
-      doc.setFont('helvetica','bold');
-      doc.setFontSize(6.5);
-      try {
-        doc.text(a.label, MR + ABA_W / 2 + 1, a.y + 20, { align:'center', angle: 90 });
-      } catch (e) {
-        doc.text(a.label, MR + 2, a.y + 20);
-      }
-    });
-
-    doc.setDrawColor(220, 225, 235);
-    doc.setLineWidth(0.4);
-    doc.line(ML, PH - 20, MR, PH - 20);
+  function novaPagina() {
+    doc.addPage();
+    return 18;
   }
 
-  function desenharRodape() {
-    const ry = PH - 17;
-    doc.setFillColor(...LGRAY);
-    doc.rect(ML, ry, CW, 14, 'F');
-    doc.setDrawColor(210, 215, 225);
-    doc.setLineWidth(0.3);
-    doc.rect(ML, ry, CW, 14, 'S');
+  let y = 14;
 
-    doc.setFont('helvetica','bold'); doc.setFontSize(8);
-    doc.setTextColor(...NAVY);
-    doc.text('Caderno', ML + 4, ry + 5.5);
-    doc.setTextColor(...GREEN);
-    doc.text('Gestor', ML + 4 + doc.getTextWidth('Caderno') + 0.5, ry + 5.5);
-
-    doc.setFont('helvetica','italic'); doc.setFontSize(6); doc.setTextColor(120,125,140);
-    doc.text('Saia do papel. Sem sair do caderno.', ML + 4, ry + 10.5);
-
-    const cols = [
-      ['Seguranca', 'Seus dados protegidos com confianca.'],
-      ['Acessivel',  'De onde estiver, quando precisar.'],
-      ['Organizacao','Tudo em um so lugar, do seu jeito.'],
-    ];
-    cols.forEach((col, i) => {
-      const cx = ML + 45 + i * 42;
-      doc.setFont('helvetica','bold'); doc.setFontSize(6.5); doc.setTextColor(...NAVY);
-      doc.text(col[0], cx, ry + 5.5);
-      doc.setFont('helvetica','normal'); doc.setFontSize(5.5); doc.setTextColor(110,115,130);
-      doc.text(col[1], cx, ry + 9.5);
-    });
-
-    doc.setFont('helvetica','normal'); doc.setFontSize(6); doc.setTextColor(150,155,165);
-    doc.text(`Pag. ${pageNum}`, MR - 8, ry + 8, {align:'right'});
-  }
-
-  novaPageLayout();
-  let y = 12;
-
-  doc.setFillColor(...WHITE);
-  if (typeof doc.roundedRect === 'function') doc.roundedRect(ML, y, 62, 22, 2, 2, 'F');
-  else doc.rect(ML, y, 62, 22, 'F');
-  doc.setDrawColor(220, 225, 235);
-  doc.setLineWidth(0.3);
-  if (typeof doc.roundedRect === 'function') doc.roundedRect(ML, y, 62, 22, 2, 2, 'S');
-  else doc.rect(ML, y, 62, 22, 'S');
-
-  doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(...NAVY);
-  doc.text('Caderno', ML + 8, y + 9);
-  doc.setTextColor(...GREEN);
-  doc.text('Gestor', ML + 8 + doc.getTextWidth('Caderno') + 0.5, y + 9);
-  doc.setFont('helvetica','italic'); doc.setFontSize(6); doc.setTextColor(130,135,150);
-  doc.text('Saia do papel. Sem sair do caderno.', ML + 8, y + 15);
-
-  const titX = ML + 68, titW = 62;
-  doc.setFillColor(...LGRAY);
-  if (typeof doc.roundedRect === 'function') doc.roundedRect(titX, y, titW, 22, 2, 2, 'F');
-  else doc.rect(titX, y, titW, 22, 'F');
-  doc.setFont('helvetica','bold'); doc.setFontSize(13); doc.setTextColor(...NAVY);
-  doc.text('RELATORIO', titX + titW/2, y + 10, {align:'center'});
-  doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(...GRAY);
-  doc.text('ACERTO DE CONTAS PESSOAIS', titX + titW/2, y + 16, {align:'center'});
-
-  const metX = titX + titW + 4, metW = MR - metX;
-  doc.setFillColor(...LGRAY);
-  if (typeof doc.roundedRect === 'function') doc.roundedRect(metX, y, metW, 22, 2, 2, 'F');
-  else doc.rect(metX, y, metW, 22, 'F');
-
-  const hoje = new Date();
-  const hojeDataStr = hoje.toLocaleDateString('pt-BR');
-  const horaStr = hoje.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
-
-  doc.setFont('helvetica','bold'); doc.setFontSize(6); doc.setTextColor(...TEXT);
-  doc.text('Periodo:', metX + 3, y + 5);
-  doc.setFont('helvetica','normal'); doc.setTextColor(...GRAY);
-  doc.text(t(labelPeriodo), metX + 3, y + 9);
-  doc.setFont('helvetica','bold'); doc.setTextColor(...TEXT);
-  doc.text('Emitido em:', metX + 3, y + 14);
-  doc.setFont('helvetica','normal'); doc.setTextColor(...GRAY);
-  doc.text(`${hojeDataStr} as ${horaStr}`, metX + 3, y + 18);
-
-  y += 27;
-
-  doc.setFillColor(...NAVY);
-  if (typeof doc.roundedRect === 'function') doc.roundedRect(ML, y, CW, 16, 3, 3, 'F');
-  else doc.rect(ML, y, CW, 16, 'F');
-  doc.setFillColor(...GREEN);
-  doc.circle(ML + 9, y + 8, 5, 'F');
-  doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.setTextColor(...WHITE);
-  doc.text(t(par.pessoaA).toUpperCase() + '  x  ' + t(par.pessoaB).toUpperCase(), ML + 18, y + 8.5);
-  doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(...GREEN);
-  doc.text(t(subPeriodo || 'Historico completo'), ML + 18, y + 13.5);
-  y += 22;
-
-  doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(...TEXT);
-  doc.text('RESUMO', ML, y + 5);
-  doc.setDrawColor(...GRAY);
-  doc.setLineWidth(0.5);
-  doc.line(ML, y + 7, MR, y + 7);
-  y += 10;
-
-  doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor(...GRAY);
-  doc.text('Cada total e a soma dos valores em que essa pessoa consta em "Quem deve" (deve ao outro).', ML, y + 4);
-  doc.text(`Saldo = (total ${t(par.pessoaA)}) - (total ${t(par.pessoaB)}).`, ML, y + 8);
-  y += 12;
-
-  const cardW = (CW - 6) / 3;
-  const cards = [
-    { cor: GREEN,  corFundo: [235,248,240], label1: 'Total que', label2: t(par.pessoaA), label3: 'deve ao outro', valor: totalA },
-    { cor: BLUE,   corFundo: [235,240,252], label1: 'Total que', label2: t(par.pessoaB), label3: 'deve ao outro', valor: totalB },
-    { cor: ORANGE, corFundo: [252,245,230], label1: '', label2: 'Saldo', label3: 'liquido', valor: Math.abs(saldo) },
-  ];
-  cards.forEach((card, i) => {
-    const cx = ML + i * (cardW + 3);
-    doc.setFillColor(...card.corFundo);
-    if (typeof doc.roundedRect === 'function') doc.roundedRect(cx, y, cardW, 30, 3, 3, 'F');
-    else doc.rect(cx, y, cardW, 30, 'F');
-    doc.setDrawColor(...card.cor.map(v => Math.min(v + 30, 255)));
-    doc.setLineWidth(0.4);
-    if (typeof doc.roundedRect === 'function') doc.roundedRect(cx, y, cardW, 30, 3, 3, 'S');
-    else doc.rect(cx, y, cardW, 30, 'S');
-
-    doc.setFillColor(...card.cor);
-    doc.circle(cx + 7, y + 8, 4, 'F');
-
-    doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(...GRAY);
-    if (card.label1) doc.text(card.label1, cx + 14, y + 6);
-    doc.setFont('helvetica','bold'); doc.setFontSize(7.5); doc.setTextColor(...card.cor);
-    doc.text(card.label2.substring(0,14), cx + 14, y + 11);
-    doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor(...GRAY);
-    doc.text(card.label3, cx + 14, y + 15.5);
-
-    doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(...card.cor);
-    doc.text('R$ ' + fmtMoney(card.valor).replace('.',','), cx + cardW / 2, y + 25, {align:'center'});
-  });
-  y += 35;
-
-  doc.setFillColor(235, 248, 240);
-  if (typeof doc.roundedRect === 'function') doc.roundedRect(ML, y, CW, 11, 2, 2, 'F');
-  else doc.rect(ML, y, CW, 11, 'F');
   doc.setDrawColor(...GREEN);
-  doc.setLineWidth(0.4);
-  if (typeof doc.roundedRect === 'function') doc.roundedRect(ML, y, CW, 11, 2, 2, 'S');
-  else doc.rect(ML, y, CW, 11, 'S');
-  doc.setFillColor(...GREEN);
-  doc.circle(ML + 6, y + 5.5, 3.5, 'F');
-  doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(...WHITE);
-  doc.text('v', ML + 5, y + 6.8);
-  doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(...TEXT);
-  const concStr = quitado
-    ? 'Contas quitadas! Nenhum deve ao outro.'
-    : `Conclusao: ${t(devedor)} deve R$ ${fmtMoney(Math.abs(saldo))} a ${t(credor)} (credito de quem recebe).`;
-  doc.text(t(concStr), ML + 13, y + 6.5);
-  y += 17;
+  doc.setLineWidth(1.1);
+  doc.line(ML, y - 6, MR, y - 6);
 
-  function renderSecao(nome, lista, corPessoa) {
-    if (lista.length === 0) return;
-    if (y > 220) { desenharRodape(); novaPageLayout(); y = 14; }
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(16);
+  doc.setTextColor(...GREEN_D);
+  doc.text('RELATORIO', ML, y);
+  doc.setFont('helvetica','normal');
+  doc.setFontSize(9);
+  doc.setTextColor(...TEXT);
+  doc.text('ACERTO DE CONTAS PESSOAIS', ML, y + 6);
+
+  const agora = new Date();
+  const hojeDataStr = agora.toLocaleDateString('pt-BR');
+  const horaStr = agora.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(7);
+  doc.setTextColor(...MUTED);
+  doc.text('Periodo:', MR - 62, y);
+  doc.setFont('helvetica','normal');
+  doc.text(t(labelPeriodo), MR - 62, y + 4.5);
+  doc.setFont('helvetica','bold');
+  doc.text('Emitido em:', MR - 62, y + 9);
+  doc.setFont('helvetica','normal');
+  doc.text(`${hojeDataStr} as ${horaStr}`, MR - 62, y + 13.5);
+
+  y += 20;
+
+  doc.setFillColor(...GREEN_D);
+  if (typeof doc.roundedRect === 'function') doc.roundedRect(ML, y, CW, 14, 2.5, 2.5, 'F');
+  else doc.rect(ML, y, CW, 14, 'F');
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(12);
+  doc.setTextColor(...WHITE);
+  doc.text(t(par.pessoaA).toUpperCase() + '  x  ' + t(par.pessoaB).toUpperCase(), ML + 6, y + 8);
+  doc.setFont('helvetica','normal');
+  doc.setFontSize(8);
+  doc.setTextColor(205, 242, 216);
+  doc.text(t(subPeriodo || 'Historico completo'), ML + 6, y + 12);
+  y += 20;
+
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(9.5);
+  doc.setTextColor(...TEXT);
+  doc.text('RESUMO', ML, y);
+  doc.setDrawColor(...LINE);
+  doc.setLineWidth(0.35);
+  doc.line(ML, y + 2.5, MR, y + 2.5);
+
+  y += 8;
+  doc.setFont('helvetica','normal');
+  doc.setFontSize(7.2);
+  doc.setTextColor(...MUTED);
+  doc.text('Cada total e a soma dos valores em que a pessoa aparece em "Quem deve".', ML, y);
+  doc.text(`Diferenca = total ${t(par.pessoaA)} - total ${t(par.pessoaB)}.`, ML, y + 4);
+  y += 8;
+
+  const cardW = (CW - 8) / 3;
+  const cards = [
+    { title1:'TOTAL QUE', title2:t(par.pessoaA), title3:'DEVE:', valor: totalA, cor: GREEN_D, bg: [236,247,240] },
+    { title1:'TOTAL QUE', title2:t(par.pessoaB), title3:'DEVE:', valor: totalB, cor: [36,88,170], bg: [238,243,252] },
+    { title1:'DIFERENCA', title2:'', title3:'', valor: Math.abs(saldo), cor: [210,130,24], bg: [253,246,235] }
+  ];
+  cards.forEach((c, i) => {
+    const cx = ML + i * (cardW + 4);
+    doc.setFillColor(...c.bg);
+    if (typeof doc.roundedRect === 'function') doc.roundedRect(cx, y, cardW, 28, 2.5, 2.5, 'F');
+    else doc.rect(cx, y, cardW, 28, 'F');
+    doc.setDrawColor(...LINE);
+    doc.setLineWidth(0.25);
+    if (typeof doc.roundedRect === 'function') doc.roundedRect(cx, y, cardW, 28, 2.5, 2.5, 'S');
+    else doc.rect(cx, y, cardW, 28, 'S');
+
+    doc.setFont('helvetica','bold'); doc.setFontSize(6.4); doc.setTextColor(...MUTED);
+    if (c.title1) doc.text(c.title1, cx + 4, y + 6.5);
+    if (c.title2) doc.text(c.title2.substring(0, 16), cx + 4, y + 10.5);
+    if (c.title3) doc.text(c.title3, cx + 4, y + 14.5);
+
+    doc.setFont('helvetica','bold'); doc.setFontSize(11.5); doc.setTextColor(...c.cor);
+    doc.text('R$ ' + fmtMoney(c.valor), cx + cardW / 2, y + 23, { align:'center' });
+  });
+  y += 34;
+
+  doc.setFillColor(...GREEN_L);
+  if (typeof doc.roundedRect === 'function') doc.roundedRect(ML, y, CW, 10, 2, 2, 'F');
+  else doc.rect(ML, y, CW, 10, 'F');
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(8);
+  doc.setTextColor(...GREEN_D);
+  const concStr = quitado
+    ? 'Conclusao: Contas quitadas! Nenhum deve ao outro.'
+    : `Conclusao: ${t(devedor)} deve R$ ${fmtMoney(Math.abs(saldo))} a ${t(credor)}.`;
+  doc.text(t(concStr), ML + 4, y + 6.3);
+  y += 15;
+
+  function drawTableHeader() {
+    doc.setFillColor(...GREEN_D);
+    doc.rect(ML, y, CW, 7.5, 'F');
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(6.7);
+    doc.setTextColor(...WHITE);
+    doc.text('DATA', ML + 3, y + 5);
+    doc.text('CATEGORIA', ML + 28, y + 5);
+    doc.text('DESCRICAO', ML + 63, y + 5);
+    doc.text('VALOR', MR - 3, y + 5, { align:'right' });
+    y += 8.5;
+  }
+
+  function renderSecao(nome, lista) {
+    if (!lista.length) return;
+    if (y > 226) y = novaPagina();
 
     const totalPessoa = lista.reduce((s,l) => s + (Number(l.valor) || 0), 0);
-
-    doc.setFillColor(...corPessoa);
-    if (typeof doc.roundedRect === 'function') doc.roundedRect(ML, y, CW, 11, 2, 2, 'F');
-    else doc.rect(ML, y, CW, 11, 'F');
-    doc.setFillColor(...WHITE);
-    doc.circle(ML + 7, y + 5.5, 3.5, 'F');
-    doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(...WHITE);
-    doc.text('DIVIDAS REGISTRADAS EM NOME DE ', ML + 13, y + 5);
-    doc.setTextColor(255,255,180);
-    doc.text(t(nome).toUpperCase(), ML + 13 + doc.getTextWidth('DIVIDAS REGISTRADAS EM NOME DE '), y + 5);
-    doc.setTextColor(...WHITE);
-    doc.text('Subtotal   R$ ' + fmtMoney(totalPessoa), MR - 5, y + 5, {align:'right'});
-    y += 14;
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(9.2);
+    doc.setTextColor(...GREEN_D);
+    doc.text('DIVIDAS REGISTRADAS EM NOME DE ' + t(nome).toUpperCase(), ML, y + 1);
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(8);
+    doc.setTextColor(...TEXT);
+    doc.text('Subtotal R$ ' + fmtMoney(totalPessoa), MR, y + 1, { align:'right' });
+    doc.setDrawColor(...LINE);
+    doc.setLineWidth(0.35);
+    doc.line(ML, y + 3, MR, y + 3);
+    y += 8;
 
     const porCat = {};
     lista.forEach(l => {
@@ -2507,110 +2419,76 @@ function exportarAcertoPDF() {
     });
 
     Object.entries(porCat).forEach(([cat, items]) => {
-      if (y > 230) { desenharRodape(); novaPageLayout(); y = 14; }
+      if (y > 240) y = novaPagina();
+
       const subT = items.reduce((s,l) => s + (Number(l.valor) || 0), 0);
+      doc.setFillColor(...BG_SOFT);
+      doc.rect(ML, y, CW, 6.5, 'F');
+      doc.setFont('helvetica','bold');
+      doc.setFontSize(7);
+      doc.setTextColor(...TEXT);
+      doc.text(cat.toUpperCase(), ML + 3, y + 4.4);
+      doc.setFont('helvetica','normal');
+      doc.setTextColor(...MUTED);
+      doc.text('R$ ' + fmtMoney(subT), MR - 3, y + 4.4, { align:'right' });
+      y += 7.5;
 
-      doc.setFillColor(230, 235, 245);
-      if (typeof doc.roundedRect === 'function') doc.roundedRect(ML, y, CW, 7, 1, 1, 'F');
-      else doc.rect(ML, y, CW, 7, 'F');
-      doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(60,75,130);
-
-      const catUp = cat.toUpperCase();
-      const catW = doc.getTextWidth(catUp) + 6;
-      doc.setFillColor(180, 190, 220);
-      if (typeof doc.roundedRect === 'function') doc.roundedRect(ML + 2, y + 1.5, catW, 4, 1, 1, 'F');
-      else doc.rect(ML + 2, y + 1.5, catW, 4, 'F');
-      doc.setTextColor(...WHITE);
-      doc.text(catUp, ML + 5, y + 4.8);
-
-      doc.setTextColor(60,75,130);
-      doc.text('R$ ' + fmtMoney(subT), MR - 4, y + 4.8, {align:'right'});
-      y += 8;
-
-      doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(...GRAY);
-      doc.text('DATA', ML + 4, y + 4);
-      doc.text('DESCRICAO', ML + 30, y + 4);
-      doc.text('VALOR', MR - 4, y + 4, {align:'right'});
-      doc.setDrawColor(200, 205, 215);
-      doc.setLineWidth(0.3);
-      doc.line(ML, y + 5.5, MR, y + 5.5);
-      y += 7;
+      drawTableHeader();
 
       items.forEach((l, i) => {
-        if (y > 265) { desenharRodape(); novaPageLayout(); y = 14; }
+        if (y > 274) y = novaPagina();
         if (i % 2 === 0) {
-          doc.setFillColor(250, 251, 253);
-          doc.rect(ML, y - 1, CW, 7.5, 'F');
+          doc.setFillColor(251, 252, 253);
+          doc.rect(ML, y - 0.8, CW, 7.5, 'F');
         }
-        doc.setFillColor(210, 220, 240);
-        if (typeof doc.roundedRect === 'function') doc.roundedRect(ML + 2, y + 0.5, 4, 4, 0.5, 0.5, 'F');
-        else doc.rect(ML + 2, y + 0.5, 4, 4, 'F');
-        doc.setFont('helvetica','bold'); doc.setFontSize(5); doc.setTextColor(80,100,160);
-        doc.text('31', ML + 3, y + 3.8);
 
-        doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(...TEXT);
-        doc.text(l.data ? fmtData(l.data) : '', ML + 8, y + 4.5);
-        const desc = t(l.descricao || '-');
-        doc.text(desc.substring(0,38), ML + 30, y + 4.5);
-        doc.setFont('helvetica','bold'); doc.setTextColor(...GREEN);
-        doc.text('R$ ' + fmtMoney(Number(l.valor) || 0), MR - 4, y + 4.5, {align:'right'});
+        doc.setFont('helvetica','normal');
+        doc.setFontSize(7.8);
         doc.setTextColor(...TEXT);
+        doc.text(l.data ? fmtData(l.data) : '', ML + 3, y + 4.5);
+        doc.setFontSize(7);
+        doc.setTextColor(...MUTED);
+        doc.text(cat.substring(0, 14), ML + 28, y + 4.5);
+        const desc = t(l.descricao || '-').substring(0, 42);
+        doc.setTextColor(...TEXT);
+        doc.text(desc, ML + 63, y + 4.5);
+        doc.setFont('helvetica','bold');
+        doc.setTextColor(...GREEN_D);
+        doc.text('R$ ' + fmtMoney(Number(l.valor) || 0), MR - 3, y + 4.5, { align:'right' });
         y += 7.5;
       });
 
-      doc.setDrawColor(220, 225, 235);
-      doc.setLineWidth(0.2);
-      doc.line(ML, y, MR, y);
-      y += 5;
+      y += 3;
     });
-
-    y += 4;
   }
 
-  renderSecao(par.pessoaA, lancesA, NAVY);
-  renderSecao(par.pessoaB, lancesB, [80, 100, 170]);
+  renderSecao(par.pessoaA, lancesA);
+  renderSecao(par.pessoaB, lancesB);
 
-  if (y > 235) { desenharRodape(); novaPageLayout(); y = 14; }
+  if (y > 238) y = novaPagina();
   y += 4;
 
-  doc.setFillColor(235, 248, 240);
-  if (typeof doc.roundedRect === 'function') doc.roundedRect(ML, y, CW, 28, 3, 3, 'F');
-  else doc.rect(ML, y, CW, 28, 'F');
+  doc.setFillColor(...GREEN_L);
+  if (typeof doc.roundedRect === 'function') doc.roundedRect(ML, y, CW, 30, 3, 3, 'F');
+  else doc.rect(ML, y, CW, 30, 'F');
   doc.setDrawColor(...GREEN);
-  doc.setLineWidth(0.5);
-  if (typeof doc.roundedRect === 'function') doc.roundedRect(ML, y, CW, 28, 3, 3, 'S');
-  else doc.rect(ML, y, CW, 28, 'S');
+  doc.setLineWidth(0.35);
+  if (typeof doc.roundedRect === 'function') doc.roundedRect(ML, y, CW, 30, 3, 3, 'S');
+  else doc.rect(ML, y, CW, 30, 'S');
 
-  doc.setFillColor(...GREEN);
-  doc.circle(ML + 12, y + 14, 8, 'F');
-  doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(...WHITE);
-  doc.text('R$', ML + 9.5, y + 15.5);
-
-  doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(...TEXT);
-  doc.text('SALDO LIQUIDO', ML + 24, y + 8);
-  doc.setFont('helvetica','bold'); doc.setFontSize(15); doc.setTextColor(...NAVY);
-  const devedorStr = quitado ? 'Contas quitadas!' : `${t(devedor)} deve`;
-  doc.text(devedorStr, ML + 24, y + 17);
+  doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(...GREEN_D);
+  doc.text('SALDO FINAL', ML + 5, y + 7);
   if (!quitado) {
-    doc.setFontSize(18); doc.setTextColor(...GREEN);
-    doc.text('R$ ' + fmtMoney(Math.abs(saldo)), ML + 24, y + 25);
+    doc.setFontSize(16);
+    doc.text('R$ ' + fmtMoney(Math.abs(saldo)), ML + 5, y + 17);
+    doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(...TEXT);
+    doc.text(`${t(devedor)} deve a ${t(credor)}`, ML + 5, y + 24);
+  } else {
+    doc.setFontSize(13);
+    doc.text('R$ 0,00', ML + 5, y + 17);
+    doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(...TEXT);
+    doc.text('Contas quitadas entre as partes', ML + 5, y + 24);
   }
-
-  if (!quitado) {
-    doc.setFillColor(210, 240, 220);
-    if (typeof doc.roundedRect === 'function') doc.roundedRect(MR - 55, y + 4, 50, 18, 2, 2, 'F');
-    else doc.rect(MR - 55, y + 4, 50, 18, 'F');
-    doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor(50, 100, 60);
-    doc.text(`Base: soma do que ${t(par.pessoaA)}`, MR - 53, y + 9);
-    doc.text('deve ao outro menos soma do que', MR - 53, y + 13);
-    doc.text(`${t(par.pessoaB)} deve ao outro.`, MR - 53, y + 17);
-    doc.setFillColor(...GREEN);
-    doc.circle(MR - 6, y + 22, 3.5, 'F');
-    doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(...WHITE);
-    doc.text('v', MR - 7.5, y + 23.5);
-  }
-
-  desenharRodape();
 
   doc.save('AcertoContas_' + t(par.pessoaA) + '_' + t(par.pessoaB) + '.pdf');
   closeModal('modal-exportar-acerto');
