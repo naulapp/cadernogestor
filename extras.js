@@ -2240,16 +2240,19 @@ function exportarAcertoPDF() {
 
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-  const lm = 14, pw = 182, rm = lm + pw;
-  let y = 14;
+  const PAGE_W = 210;
+  const lm = 14;
+  const rm = 196;
+  const pw = rm - lm;
+  let y = 8;
 
-  const COR_HEADER = [46,158,79];
-  const COR_GREEN = [46,158,79];
-  const COR_LINE = [220,230,222];
-  const COR_TEXT = [30,30,45];
-  const COR_MUTED = [100,110,120];
+  const C_GREEN = [46, 158, 79];
+  const C_GREEN_D = [34, 118, 62];
+  const C_LINE = [230, 236, 232];
+  const C_BG = [249, 252, 250];
+  const C_MUTED = [95, 105, 120];
+  const C_TEXT = [28, 32, 42];
 
-  // Funcao segura para texto (remove caracteres nao-latin)
   function t(str) {
     return (str || '').replace(/[\u0100-\uffff]/g, c => {
       const map = {
@@ -2265,76 +2268,161 @@ function exportarAcertoPDF() {
     });
   }
 
-  // ── CABECALHO ──────────────────────────────────────
-  doc.setFillColor(...COR_HEADER);
-  doc.rect(lm, y, pw, subPeriodo ? 28 : 22, 'F');
-  doc.setTextColor(255,255,255);
-  doc.setFont('helvetica','bold'); doc.setFontSize(13);
-  doc.text('ACERTO DE CONTAS PESSOAIS', lm+6, y+9);
-  doc.setFont('helvetica','normal'); doc.setFontSize(9);
-  doc.text(t(par.pessoaA) + ' x ' + t(par.pessoaB), lm+6, y+16);
-  doc.text(t(labelPeriodo), rm-6, y+16, {align:'right'});
-  if (subPeriodo) {
-    doc.setFontSize(8);
-    doc.text(t(subPeriodo), lm+6, y+23);
-    doc.text('', rm-6, y+23, {align:'right'});
-  }
-  doc.setTextColor(...COR_TEXT);
-  y += subPeriodo ? 34 : 28;
-
-  // ── TOTAIS POR PESSOA ──────────────────────────────
   const lancesA = lances.filter(l => acertoNomeIgual(l.de, par.pessoaA));
   const lancesB = lances.filter(l => acertoNomeIgual(l.de, par.pessoaB));
-  const totalA = lancesA.reduce((s,l) => s+l.valor, 0);
-  const totalB = lancesB.reduce((s,l) => s+l.valor, 0);
+  const totalA = lancesA.reduce((s, l) => s + (Number(l.valor) || 0), 0);
+  const totalB = lancesB.reduce((s, l) => s + (Number(l.valor) || 0), 0);
   const saldo = totalA - totalB;
   const devedor = saldo > 0 ? par.pessoaA : par.pessoaB;
-  const credor  = saldo > 0 ? par.pessoaB : par.pessoaA;
+  const credor = saldo > 0 ? par.pessoaB : par.pessoaA;
   const quitado = Math.abs(saldo) < 0.01;
 
-  // Cards resumo (não somar A+B no rodapé — saldo líquido é a única "dívida" global)
-  const w3 = pw / 3;
-  const saldoSub = quitado
-    ? 'Quitado'
-    : (t(credor) + ' com credito / ' + t(devedor) + ' deve');
-  [[`Soma\n${t(par.pessoaA)} deve`, totalA, COR_GREEN],
-   [`Soma\n${t(par.pessoaB)} deve`, totalB, COR_GREEN],
-   ['Saldo liquido\n' + saldoSub, Math.abs(saldo), quitado ? COR_GREEN : [180,130,0]]].forEach(([label, val, cor], i) => {
-    doc.setDrawColor(...COR_LINE);
-    doc.setFillColor(255,255,255);
-    doc.rect(lm + i*w3 + (i>0?2:0), y, w3 - (i<2?2:0), 24, 'FD');
-    doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor(...COR_MUTED);
-    const lines = String(label).split('\n');
-    doc.text(lines[0], lm + i*w3 + w3/2, y+6, {align:'center'});
-    if (lines[1]) doc.text(lines[1], lm + i*w3 + w3/2, y+10.5, {align:'center'});
-    doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(...cor);
-    doc.text('R$ ' + fmtMoney(val), lm + i*w3 + w3/2, y+19, {align:'center'});
-  });
-  doc.setTextColor(...COR_TEXT);
-  y += 30;
+  const COL_DT = lm + 4;
+  const COL_DESC = lm + 28;
+  const COL_VAL = rm - 4;
+  const DESC_W = pw - 28 - 36;
+
+  // Faixa superior decorativa
+  doc.setFillColor(...C_GREEN_D);
+  doc.rect(0, 0, PAGE_W, 2.5, 'F');
+
+  const headH = subPeriodo ? 34 : 28;
+  doc.setFillColor(...C_GREEN);
+  doc.rect(lm, y, pw, headH, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(15);
+  doc.text('Acerto de contas pessoais', lm + 5, y + 11);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+  doc.text(t(par.pessoaA) + '   •   ' + t(par.pessoaB), lm + 5, y + 18);
+  doc.setFontSize(8.5);
+  doc.text(t(labelPeriodo), rm - 5, y + 12, { align: 'right' });
+  if (subPeriodo) {
+    doc.setFontSize(7.8);
+    doc.text(t(subPeriodo), lm + 5, y + 25);
+  }
+  doc.setTextColor(...C_TEXT);
+  y += headH + 8;
+
+  // Caixa Resumo (regra de negócio explícita)
+  const boxH = 56;
+  doc.setFillColor(...C_BG);
+  doc.setDrawColor(...C_GREEN);
+  doc.setLineWidth(0.45);
+  doc.rect(lm, y, pw, boxH, 'FD');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(11);
+  doc.setTextColor(...C_GREEN_D);
+  doc.text('Resumo', lm + 5, y + 8);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.8);
+  doc.setTextColor(...C_MUTED);
+  const leg = 'Cada total e a soma dos valores em que essa pessoa consta em "Quem deve" (deve ao outro). Saldo = (total ' + t(par.pessoaA) + ') - (total ' + t(par.pessoaB) + ').';
+  const legLines = doc.splitTextToSize(leg, pw - 10);
+  doc.text(legLines, lm + 5, y + 13);
+
+  const zgap = 5;
+  const zw = (pw - 10 - 2 * zgap) / 3;
+  const zy = y + 38;
+  const zx = [lm + 5, lm + 5 + zw + zgap, lm + 5 + 2 * (zw + zgap)];
+  doc.setFontSize(6.8);
+  doc.setTextColor(...C_MUTED);
+  doc.text('Total que\n' + t(par.pessoaA) + '\ndeve ao outro', zx[0] + zw / 2, zy - 5, { align: 'center' });
+  doc.text('Total que\n' + t(par.pessoaB) + '\ndeve ao outro', zx[1] + zw / 2, zy - 5, { align: 'center' });
+  doc.text('Saldo\nliquido', zx[2] + zw / 2, zy - 5, { align: 'center' });
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(11);
+  doc.setTextColor(...C_GREEN);
+  doc.text('R$ ' + fmtMoney(totalA), zx[0] + zw / 2, zy + 4, { align: 'center' });
+  doc.text('R$ ' + fmtMoney(totalB), zx[1] + zw / 2, zy + 4, { align: 'center' });
+  if (quitado) doc.setTextColor(...C_GREEN);
+  else doc.setTextColor(180, 120, 0);
+  doc.text('R$ ' + fmtMoney(Math.abs(saldo)), zx[2] + zw / 2, zy + 4, { align: 'center' });
+  doc.setTextColor(...C_TEXT);
+
+  doc.setDrawColor(...C_LINE);
+  doc.setLineWidth(0.2);
+  doc.line(zx[0] + zw + zgap / 2, y + 26, zx[0] + zw + zgap / 2, y + boxH - 3);
+  doc.line(zx[1] + zw + zgap / 2, y + 26, zx[1] + zw + zgap / 2, y + boxH - 3);
+
+  y += boxH + 10;
 
   if (!quitado) {
-    doc.setFontSize(8); doc.setFont('helvetica','bold'); doc.setTextColor(...COR_GREEN);
-    doc.text(t(devedor) + ' deve R$ ' + fmtMoney(Math.abs(saldo)) + ' a ' + t(credor), lm+pw/2, y, {align:'center'});
-    doc.setTextColor(...COR_TEXT);
+    doc.setFillColor(255, 248, 235);
+    doc.setDrawColor(210, 180, 120);
+    doc.rect(lm, y, pw, 11, 'FD');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.setTextColor(...C_GREEN_D);
+    doc.text(
+      'Conclusao: ' + t(devedor) + ' deve R$ ' + fmtMoney(Math.abs(saldo)) + ' a ' + t(credor) + ' (credito de quem recebe).',
+      lm + pw / 2,
+      y + 7,
+      { align: 'center' }
+    );
+    doc.setTextColor(...C_TEXT);
+    y += 15;
+  }
+
+  function drawTableHeader() {
+    doc.setFillColor(252, 252, 252);
+    doc.setDrawColor(...C_LINE);
+    doc.rect(lm, y, pw, 7, 'FD');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.5);
+    doc.setTextColor(...C_MUTED);
+    doc.text('DATA', COL_DT, y + 5);
+    doc.text('DESCRICAO', COL_DESC, y + 5);
+    doc.text('VALOR', COL_VAL, y + 5, { align: 'right' });
+    doc.setDrawColor(...C_GREEN);
+    doc.setLineWidth(0.35);
+    doc.line(lm, y + 7, rm, y + 7);
     y += 9;
   }
 
-  // ── FUNCAO: renderizar secao de uma pessoa ─────────
+  function renderLinha(l) {
+    const dt = l.data ? fmtData(l.data) : '-';
+    const rawDesc = (l.descricao || '-').trim();
+    const descTxt = t(rawDesc.length > 180 ? rawDesc.slice(0, 180) + '...' : rawDesc);
+    const lines = doc.splitTextToSize(descTxt || '-', DESC_W);
+    const linhaH = Math.max(8, lines.length * 3.8 + 3);
+    if (y + linhaH > 282) {
+      doc.addPage();
+      y = 14;
+    }
+    doc.setFillColor(255, 255, 255);
+    doc.setDrawColor(...C_LINE);
+    doc.rect(lm, y, pw, linhaH, 'FD');
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(...C_TEXT);
+    doc.text(dt, COL_DT, y + 5);
+    lines.forEach((ln, i) => doc.text(ln, COL_DESC, y + 5 + i * 3.8));
+    doc.setFont('helvetica', 'bold');
+    doc.text('R$ ' + fmtMoney(l.valor || 0), COL_VAL, y + 5, { align: 'right' });
+    y += linhaH;
+  }
+
   function renderSecao(nome, lista) {
-    if (lista.length === 0) return;
+    if (!lista.length) return;
+    if (y > 235) {
+      doc.addPage();
+      y = 14;
+    }
 
-    if (y > 250) { doc.addPage(); y = 14; }
-
-    // Cabecalho da secao (pessoa) — unica faixa verde por bloco
-    doc.setFillColor(...COR_HEADER);
-    doc.rect(lm, y, pw, 9, 'F');
-    doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(9.5);
-    doc.text('Lançamentos de ' + t(nome), lm+5, y+6);
-    const totalPessoa = lista.reduce((s,l)=>s+l.valor,0);
-    doc.text('Subtotal: R$ ' + fmtMoney(totalPessoa), rm-5, y+6, {align:'right'});
-    doc.setTextColor(...COR_TEXT);
-    y += 11;
+    doc.setFillColor(...C_GREEN);
+    doc.rect(lm, y, pw, 10, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.text('Dividas registradas em nome de ' + t(nome), lm + 5, y + 6.5);
+    const sub = lista.reduce((s, l) => s + (Number(l.valor) || 0), 0);
+    doc.text('Subtotal R$ ' + fmtMoney(sub), rm - 5, y + 6.5, { align: 'right' });
+    doc.setTextColor(...C_TEXT);
+    y += 13;
 
     const porCat = {};
     lista.forEach(l => {
@@ -2344,57 +2432,52 @@ function exportarAcertoPDF() {
     });
 
     Object.entries(porCat).forEach(([cat, items]) => {
-      if (y > 258) { doc.addPage(); y = 14; }
-
-      // Cabecalho categoria: fundo branco + linha superior verde (sem faixa cheia)
-      doc.setDrawColor(...COR_HEADER);
-      doc.setLineWidth(0.35);
-      doc.line(lm, y, rm, y);
-      doc.setFillColor(255,255,255);
-      doc.rect(lm, y, pw, 6.5, 'F');
-      doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(...COR_HEADER);
-      doc.text(cat.toUpperCase(), lm+4, y+4.5);
-      const subTotal = items.reduce((s,l)=>s+l.valor,0);
-      doc.text('R$ ' + fmtMoney(subTotal), rm-4, y+4.5, {align:'right'});
-      doc.setTextColor(...COR_TEXT);
-      y += 6.5;
-
-      items.forEach(l => {
-        if (y > 272) { doc.addPage(); y = 14; }
-        doc.setFillColor(255,255,255);
-        doc.setDrawColor(...COR_LINE);
-        doc.rect(lm, y, pw, 7.2, 'FD');
-        doc.setFont('helvetica','normal'); doc.setFontSize(8);
-        doc.text(l.data ? fmtData(l.data) : '', lm+4, y+5);
-        const desc = t(l.descricao || '');
-        doc.text(desc.substring(0,48), lm+28, y+5);
-        doc.setFont('helvetica','bold'); doc.setTextColor(...COR_TEXT);
-        doc.text('R$ ' + fmtMoney(l.valor), rm-4, y+5, {align:'right'});
-        y += 7.2;
-      });
-
-      y += 3;
+      if (y > 248) {
+        doc.addPage();
+        y = 14;
+      }
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8);
+      doc.setTextColor(...C_GREEN_D);
+      doc.text(cat.toUpperCase(), lm + 4, y + 5);
+      const subCat = items.reduce((s, x) => s + (Number(x.valor) || 0), 0);
+      doc.text('R$ ' + fmtMoney(subCat), rm - 4, y + 5, { align: 'right' });
+      doc.setDrawColor(...C_LINE);
+      doc.line(lm, y + 7, rm, y + 7);
+      y += 10;
+      drawTableHeader();
+      items.forEach(renderLinha);
+      y += 4;
     });
 
-    y += 2;
+    y += 4;
   }
 
-  // Renderizar cada pessoa
   renderSecao(par.pessoaA, lancesA);
   renderSecao(par.pessoaB, lancesB);
 
-  // ── Rodape: saldo liquido (sem somar lancamentos A + B) ─────────────────────
-  if (y > 262) { doc.addPage(); y = 14; }
-  doc.setFillColor(...COR_HEADER);
-  doc.rect(lm, y, pw, quitado ? 9 : 13, 'F');
-  doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(255,255,255);
-  const linha1 = quitado
-    ? 'Saldo liquido: quitado (sem diferenca entre as partes)'
-    : ('Saldo liquido: ' + t(devedor) + ' deve R$ ' + fmtMoney(Math.abs(saldo)) + ' a ' + t(credor));
-  doc.text(linha1, lm + pw/2, y+6, {align:'center'});
+  if (y > 250) {
+    doc.addPage();
+    y = 14;
+  }
+  doc.setFillColor(...C_GREEN_D);
+  doc.rect(lm, y, pw, quitado ? 12 : 18, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  const rod1 = quitado
+    ? 'Saldo liquido: quitado entre as partes neste periodo.'
+    : 'Saldo liquido: ' + t(devedor) + ' deve R$ ' + fmtMoney(Math.abs(saldo)) + ' a ' + t(credor);
+  doc.text(rod1, lm + pw / 2, y + 7, { align: 'center' });
   if (!quitado) {
-    doc.setFont('helvetica','normal'); doc.setFontSize(8);
-    doc.text(t(credor) + ' tem credito de R$ ' + fmtMoney(Math.abs(saldo)) + ' neste periodo', lm + pw/2, y+11, {align:'center'});
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.text(
+      '(Base: soma do que ' + t(par.pessoaA) + ' deve ao outro minus soma do que ' + t(par.pessoaB) + ' deve ao outro.)',
+      lm + pw / 2,
+      y + 13,
+      { align: 'center' }
+    );
   }
 
   doc.save('AcertoContas_' + t(par.pessoaA) + '_' + t(par.pessoaB) + '.pdf');

@@ -1634,7 +1634,9 @@ function gerarTodosPDFs() {
 // ACERTO DE CONTAS PESSOAIS
 // =====================================================
 
-/** Campo "Quem deve" vs nome no par: ignora espaços e diferenças só de maiúsculas. */
+/** Regra do acerto: cada lançamento tem "Quem deve" = quem deve esse valor ao OUTRO do par.
+ *  Soma dos lançamentos onde aparece A = total que A deve a B; idem para B.
+ *  Saldo líquido = (total A deve) − (total B deve). Positivo ⇒ A deve a B a diferença; negativo ⇒ B deve a A. */
 function acertoNomeIgual(deNome, nomePar) {
   const a = String(deNome || '').trim().normalize('NFC');
   const b = String(nomePar || '').trim().normalize('NFC');
