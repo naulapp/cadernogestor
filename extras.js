@@ -1774,8 +1774,8 @@ const DASH_WIDGETS = {
       const atalhosSel = JSON.parse(localStorage.getItem('cgAtalhosDash') || 'null') ||
         ['adiantamento','adiantamento_lote','acerto','par','emprestimo','folha'];
       const btns = atalhosSel.map(k => todosAtalhos[k]).filter(Boolean);
-      return `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
-        ${btns.map(b => `<button class="btn btn-outline btn-sm" onclick="${b.action}" style="flex:1;min-width:130px;text-align:center">${b.label}</button>`).join('')}
+      return `<div class="dash-quick-actions">
+        ${btns.map(b => `<button type="button" class="btn btn-outline btn-sm dash-quick-btn" onclick="${b.action}">${b.label}</button>`).join('')}
       </div>`;
     }
   },
@@ -1791,7 +1791,7 @@ const DASH_WIDGETS = {
       const totalVales = valesPend.reduce((s,v)=>s+(v.valor||0),0);
       const folhasHist = getCol('historicoFolhas').getAll();
       const ultimaFolha = folhasHist.sort((a,b)=>(b.mesRef||'').localeCompare(a.mesRef||''))[0];
-      return `<div class="cards-grid" style="margin-bottom:16px">
+      return `<div class="cards-grid dash-summary" style="margin-bottom:16px">
         <div class="stat-card" style="cursor:pointer" onclick="navigate('funcionarios')">
           <div class="stat-label">Funcionários ativos</div>
           <div class="stat-value accent">${funcAtivos}</div>
