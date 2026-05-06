@@ -2234,13 +2234,9 @@ function exportarAcertoPDF() {
   let subPeriodo = '';
   if (exportAcertoModo === 'aberto') {
     labelPeriodo = 'Periodo em aberto';
-    if (par?.consolidadoEm) {
-      const fimExib = ultimoData || hojeStr;
-      subPeriodo = `Apos consolidacao de ${fmtData(par.consolidadoEm)} ate ${fmtData(fimExib)}`;
-    } else {
-      labelPeriodo = 'Periodo em aberto (sem consolidacao anterior)';
-      if (primeiroData && ultimoData) subPeriodo = `De ${fmtData(primeiroData)} a ${fmtData(ultimoData)}`;
-    }
+    if (primeiroData && ultimoData) subPeriodo = `${fmtData(primeiroData)} ate ${fmtData(ultimoData)}`;
+    else if (primeiroData) subPeriodo = `${fmtData(primeiroData)} ate ${fmtData(primeiroData)}`;
+    else subPeriodo = 'Sem lancamentos em aberto';
   } else if (de && ate) {
     labelPeriodo = `${fmtData(de)} a ${fmtData(ate)}`;
   } else if (de && !ate) {
@@ -2265,6 +2261,7 @@ function exportarAcertoPDF() {
   const GREEN = [40, 160, 80];
   const GREEN_D = [28, 128, 62];
   const GREEN_L = [230, 246, 236];
+  const GREEN_M = [60, 170, 96];
   const TEXT = [25, 30, 42];
   const MUTED = [95, 108, 126];
   const LINE = [223, 230, 238];
@@ -2315,31 +2312,23 @@ function exportarAcertoPDF() {
   const agora = new Date();
   const hojeDataStr = agora.toLocaleDateString('pt-BR');
   const horaStr = agora.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
-  doc.setFont('helvetica','bold');
-  doc.setFontSize(7);
-  doc.setTextColor(...MUTED);
-  doc.text('Periodo:', MR - 62, y);
-  doc.setFont('helvetica','normal');
-  doc.text(t(labelPeriodo), MR - 62, y + 4.5);
-  doc.setFont('helvetica','bold');
-  doc.text('Emitido em:', MR - 62, y + 9);
-  doc.setFont('helvetica','normal');
-  doc.text(`${hojeDataStr} as ${horaStr}`, MR - 62, y + 13.5);
 
   y += 20;
 
   doc.setFillColor(...GREEN_D);
-  if (typeof doc.roundedRect === 'function') doc.roundedRect(ML, y, CW, 14, 2.5, 2.5, 'F');
-  else doc.rect(ML, y, CW, 14, 'F');
+  if (typeof doc.roundedRect === 'function') doc.roundedRect(ML, y, CW, 16, 2.5, 2.5, 'F');
+  else doc.rect(ML, y, CW, 16, 'F');
   doc.setFont('helvetica','bold');
   doc.setFontSize(12);
   doc.setTextColor(...WHITE);
-  doc.text(t(par.pessoaA).toUpperCase() + '  x  ' + t(par.pessoaB).toUpperCase(), ML + 6, y + 8);
+  doc.text(t(par.pessoaA).toUpperCase() + '  x  ' + t(par.pessoaB).toUpperCase(), ML + 6, y + 7.8);
   doc.setFont('helvetica','normal');
-  doc.setFontSize(8);
+  doc.setFontSize(7.2);
   doc.setTextColor(205, 242, 216);
-  doc.text(t(subPeriodo || 'Historico completo'), ML + 6, y + 12);
-  y += 20;
+  const periodoLinha = `${t(labelPeriodo)}: ${t(subPeriodo || 'Historico completo')} | Emitido em: ${hojeDataStr} as ${horaStr}`;
+  doc.text(periodoLinha, ML + 6, y + 12.7);
+  doc.setTextColor(...TEXT);
+  y += 22;
 
   doc.setFont('helvetica','bold');
   doc.setFontSize(9.5);
@@ -2360,29 +2349,29 @@ function exportarAcertoPDF() {
   const cardW = (CW - 8) / 3;
   const cards = [
     { title1:'TOTAL QUE', title2:t(par.pessoaA), title3:'DEVE:', valor: totalA, cor: GREEN_D, bg: [236,247,240] },
-    { title1:'TOTAL QUE', title2:t(par.pessoaB), title3:'DEVE:', valor: totalB, cor: [36,88,170], bg: [238,243,252] },
-    { title1:'DIFERENCA', title2:'', title3:'', valor: Math.abs(saldo), cor: [210,130,24], bg: [253,246,235] }
+    { title1:'TOTAL QUE', title2:t(par.pessoaB), title3:'DEVE:', valor: totalB, cor: GREEN_M, bg: [236,247,240] },
+    { title1:'DIFERENCA', title2:'', title3:'', valor: Math.abs(saldo), cor: GREEN_D, bg: [236,247,240] }
   ];
   cards.forEach((c, i) => {
     const cx = ML + i * (cardW + 4);
     doc.setFillColor(...c.bg);
-    if (typeof doc.roundedRect === 'function') doc.roundedRect(cx, y, cardW, 28, 2.5, 2.5, 'F');
-    else doc.rect(cx, y, cardW, 28, 'F');
+    if (typeof doc.roundedRect === 'function') doc.roundedRect(cx, y, cardW, 23, 2.2, 2.2, 'F');
+    else doc.rect(cx, y, cardW, 23, 'F');
     doc.setDrawColor(...LINE);
     doc.setLineWidth(0.25);
-    if (typeof doc.roundedRect === 'function') doc.roundedRect(cx, y, cardW, 28, 2.5, 2.5, 'S');
-    else doc.rect(cx, y, cardW, 28, 'S');
+    if (typeof doc.roundedRect === 'function') doc.roundedRect(cx, y, cardW, 23, 2.2, 2.2, 'S');
+    else doc.rect(cx, y, cardW, 23, 'S');
 
-    doc.setFont('helvetica','bold'); doc.setFontSize(6.3); doc.setTextColor(...MUTED);
+    doc.setFont('helvetica','bold'); doc.setFontSize(6.1); doc.setTextColor(...MUTED);
     const tituloCard = c.title2 ? `${c.title1} ${c.title2} ${c.title3}`.trim() : c.title1;
     const titLines = doc.splitTextToSize(tituloCard, cardW - 8);
-    const titY = y + (titLines.length > 1 ? 6.5 : 9);
+    const titY = y + (titLines.length > 1 ? 6.0 : 8.2);
     doc.text(titLines, cx + cardW / 2, titY, { align:'center' });
 
-    doc.setFont('helvetica','bold'); doc.setFontSize(11.5); doc.setTextColor(...c.cor);
-    doc.text('R$ ' + fmtMoney(c.valor), cx + cardW / 2, y + 23.5, { align:'center' });
+    doc.setFont('helvetica','bold'); doc.setFontSize(10.8); doc.setTextColor(...c.cor);
+    doc.text('R$ ' + fmtMoney(c.valor), cx + cardW / 2, y + 19.3, { align:'center' });
   });
-  y += 34;
+  y += 29;
 
   doc.setFillColor(...GREEN_L);
   if (typeof doc.roundedRect === 'function') doc.roundedRect(ML, y, CW, 10, 2, 2, 'F');
@@ -2417,18 +2406,14 @@ function exportarAcertoPDF() {
     if (y > 226) y = novaPagina();
 
     const totalPessoa = lista.reduce((s,l) => s + (Number(l.valor) || 0), 0);
+    doc.setFillColor(...GREEN_D);
+    if (typeof doc.roundedRect === 'function') doc.roundedRect(ML, y - 1.2, CW, 8, 1.8, 1.8, 'F');
+    else doc.rect(ML, y - 1.2, CW, 8, 'F');
     doc.setFont('helvetica','bold');
-    doc.setFontSize(9.2);
-    doc.setTextColor(...GREEN_D);
-    doc.text('DIVIDAS REGISTRADAS EM NOME DE ' + t(nome).toUpperCase(), ML, y + 1);
-    doc.setFont('helvetica','bold');
-    doc.setFontSize(8);
-    doc.setTextColor(...TEXT);
-    doc.text('Subtotal R$ ' + fmtMoney(totalPessoa), MR, y + 1, { align:'right' });
-    doc.setDrawColor(...LINE);
-    doc.setLineWidth(0.35);
-    doc.line(ML, y + 3, MR, y + 3);
-    y += 8;
+    doc.setFontSize(8.1);
+    doc.setTextColor(...WHITE);
+    doc.text('DIVIDAS REGISTRADAS EM NOME DE ' + t(nome).toUpperCase(), ML + 3, y + 4);
+    y += 9;
 
     const porCat = {};
     lista.forEach(l => {
