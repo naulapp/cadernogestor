@@ -2198,6 +2198,7 @@ function exportarAcertoExcel() {
   const data = lances.map(l => ({
     'Data': l.data || '',
     'De (quem deve)': l.de || '',
+    'Categoria': l.categoria || '',
     'Descrição': l.descricao || '',
     'Valor (R$)': (l.valor||0).toFixed(2).replace('.',',')
   }));
@@ -2244,12 +2245,16 @@ function exportarAcertoPDF() {
   const lm = 14;
   const rm = 196;
   const pw = rm - lm;
-  let y = 8;
+  let y = 6;
 
+  const C_NAVY = [27, 45, 107];
+  const C_NAVY_D = [19, 32, 74];
+  const C_NAVY_L = [40, 62, 130];
   const C_GREEN = [46, 158, 79];
   const C_GREEN_D = [34, 118, 62];
-  const C_LINE = [230, 236, 232];
-  const C_BG = [249, 252, 250];
+  const C_AMBER = [217, 119, 6];
+  const C_LINE = [226, 232, 240];
+  const C_BG = [248, 250, 252];
   const C_MUTED = [95, 105, 120];
   const C_TEXT = [28, 32, 42];
 
@@ -2268,6 +2273,17 @@ function exportarAcertoPDF() {
     });
   }
 
+  function corCategoriaPdf(cat) {
+    const PAL = [
+      [46, 158, 79], [27, 45, 107], [217, 119, 6], [139, 92, 246], [220, 38, 38],
+      [8, 145, 178], [234, 88, 12], [91, 33, 182]
+    ];
+    const c = cat || '';
+    let h = 0;
+    for (let i = 0; i < c.length; i++) h = ((h << 5) - h) + c.charCodeAt(i);
+    return PAL[Math.abs(h) % PAL.length];
+  }
+
   const lancesA = lances.filter(l => acertoNomeIgual(l.de, par.pessoaA));
   const lancesB = lances.filter(l => acertoNomeIgual(l.de, par.pessoaB));
   const totalA = lancesA.reduce((s, l) => s + (Number(l.valor) || 0), 0);
@@ -2277,129 +2293,187 @@ function exportarAcertoPDF() {
   const credor = saldo > 0 ? par.pessoaB : par.pessoaA;
   const quitado = Math.abs(saldo) < 0.01;
 
+  const agora = new Date();
+  const emitidoStr = agora.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+
   const COL_DT = lm + 4;
-  const COL_DESC = lm + 28;
+  const COL_CAT = lm + 26;
+  const COL_DESC = lm + 52;
   const COL_VAL = rm - 4;
-  const DESC_W = pw - 28 - 36;
+  const DESC_W = pw - 52 - 38;
 
-  // Faixa superior decorativa
-  doc.setFillColor(...C_GREEN_D);
-  doc.rect(0, 0, PAGE_W, 2.5, 'F');
+  let pdfRowZ = 0;
 
-  const headH = subPeriodo ? 34 : 28;
   doc.setFillColor(...C_GREEN);
-  doc.rect(lm, y, pw, headH, 'F');
-  doc.setTextColor(255, 255, 255);
+  doc.rect(0, 0, PAGE_W, 2.2, 'F');
+
+  doc.setFillColor(255, 255, 255);
+  doc.setDrawColor(...C_LINE);
+  doc.setLineWidth(0.35);
+  doc.rect(lm, y, pw, 32, 'FD');
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(15);
-  doc.text('Acerto de contas pessoais', lm + 5, y + 11);
+  doc.setTextColor(...C_NAVY);
+  doc.setFontSize(8);
+  doc.text('CADERNOGESTOR', lm + 5, y + 6);
+  doc.setFontSize(12);
+  doc.text('ACERTO DE CONTAS', lm + 5, y + 14);
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(10);
-  doc.text(t(par.pessoaA) + '   •   ' + t(par.pessoaB), lm + 5, y + 18);
-  doc.setFontSize(8.5);
-  doc.text(t(labelPeriodo), rm - 5, y + 12, { align: 'right' });
-  if (subPeriodo) {
-    doc.setFontSize(7.8);
-    doc.text(t(subPeriodo), lm + 5, y + 25);
-  }
-  doc.setTextColor(...C_TEXT);
-  y += headH + 8;
+  doc.setTextColor(...C_GREEN_D);
+  const titPar = t(par.pessoaA) + '  x  ' + t(par.pessoaB);
+  doc.text(titPar, lm + 5, y + 21);
+  doc.setFontSize(7.2);
+  doc.setTextColor(...C_MUTED);
+  doc.text(t(labelPeriodo), lm + 5, y + 28);
 
-  // Caixa Resumo (regra de negócio explícita)
-  const boxH = 56;
+  const mx = lm + pw - 74;
+  const mw = 70;
   doc.setFillColor(...C_BG);
-  doc.setDrawColor(...C_GREEN);
-  doc.setLineWidth(0.45);
+  doc.rect(mx, y + 4, mw, 23, 'F');
+  doc.setFontSize(6.3);
+  doc.setTextColor(...C_MUTED);
+  doc.text('Periodo', mx + 3, y + 9);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...C_TEXT);
+  doc.text(t(labelPeriodo), mx + 3, y + 14);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(...C_MUTED);
+  doc.text('Emitido em', mx + 3, y + 19);
+  doc.setTextColor(...C_TEXT);
+  doc.text(t(emitidoStr), mx + 3, y + 24);
+  doc.setFontSize(6);
+  doc.setTextColor(...C_MUTED);
+  doc.text('Sistema: CadernoGestor', mx + 3, y + 28);
+
+  y += 36;
+  doc.setTextColor(...C_TEXT);
+
+  doc.setFillColor(...C_NAVY);
+  doc.rect(lm, y, pw, 11, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.text(titPar, lm + 5, y + 7);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.2);
+  doc.setTextColor(200, 220, 235);
+  doc.text(subPeriodo ? t(subPeriodo) : t('Historico no periodo filtrado'), lm + 5, y + 10);
+  doc.setTextColor(...C_TEXT);
+  y += 15;
+
+  const boxH = 52;
+  doc.setFillColor(255, 255, 255);
+  doc.setDrawColor(...C_LINE);
+  doc.setLineWidth(0.3);
   doc.rect(lm, y, pw, boxH, 'FD');
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(11);
-  doc.setTextColor(...C_GREEN_D);
+  doc.setFontSize(10);
+  doc.setTextColor(...C_NAVY);
   doc.text('Resumo', lm + 5, y + 8);
-
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(6.8);
+  doc.setFontSize(6.5);
   doc.setTextColor(...C_MUTED);
-  const leg = 'Cada total e a soma dos valores em que essa pessoa consta em "Quem deve" (deve ao outro). Saldo = (total ' + t(par.pessoaA) + ') - (total ' + t(par.pessoaB) + ').';
-  const legLines = doc.splitTextToSize(leg, pw - 10);
-  doc.text(legLines, lm + 5, y + 13);
+  const leg = 'Cada total = soma dos lancamentos em que a pessoa aparece em Quem deve. DIFERENCA = (total ' + t(par.pessoaA) + ') - (total ' + t(par.pessoaB) + ').';
+  doc.text(doc.splitTextToSize(leg, pw - 10), lm + 5, y + 13);
 
-  const zgap = 5;
+  const zgap = 4;
   const zw = (pw - 10 - 2 * zgap) / 3;
-  const zy = y + 38;
+  const zyVal = y + 42;
   const zx = [lm + 5, lm + 5 + zw + zgap, lm + 5 + 2 * (zw + zgap)];
-  doc.setFontSize(6.8);
-  doc.setTextColor(...C_MUTED);
-  doc.text('Total que\n' + t(par.pessoaA) + '\ndeve ao outro', zx[0] + zw / 2, zy - 5, { align: 'center' });
-  doc.text('Total que\n' + t(par.pessoaB) + '\ndeve ao outro', zx[1] + zw / 2, zy - 5, { align: 'center' });
-  doc.text('Saldo\nliquido', zx[2] + zw / 2, zy - 5, { align: 'center' });
 
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(11);
-  doc.setTextColor(...C_GREEN);
-  doc.text('R$ ' + fmtMoney(totalA), zx[0] + zw / 2, zy + 4, { align: 'center' });
-  doc.text('R$ ' + fmtMoney(totalB), zx[1] + zw / 2, zy + 4, { align: 'center' });
-  if (quitado) doc.setTextColor(...C_GREEN);
-  else doc.setTextColor(180, 120, 0);
-  doc.text('R$ ' + fmtMoney(Math.abs(saldo)), zx[2] + zw / 2, zy + 4, { align: 'center' });
-  doc.setTextColor(...C_TEXT);
+  function miniCard(ix, stripeRgb, label1, label2, label3, valueStr, valueRgb) {
+    const x0 = zx[ix];
+    doc.setFillColor(252, 253, 255);
+    doc.setDrawColor(...C_LINE);
+    doc.rect(x0, y + 22, zw, 26, 'FD');
+    doc.setFillColor(...stripeRgb);
+    doc.rect(x0, y + 22, 2, 26, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(5.6);
+    doc.setTextColor(...C_MUTED);
+    if (label1) doc.text(t(label1), x0 + 4, y + 27);
+    if (label2) doc.text(t(label2), x0 + 4, y + 30.5);
+    if (label3) doc.text(t(label3), x0 + 4, y + 34);
+    doc.setFontSize(10);
+    doc.setTextColor(...valueRgb);
+    doc.text(valueStr, x0 + zw / 2 + 1, y + 44, { align: 'center' });
+    doc.setTextColor(...C_TEXT);
+  }
 
-  doc.setDrawColor(...C_LINE);
-  doc.setLineWidth(0.2);
-  doc.line(zx[0] + zw + zgap / 2, y + 26, zx[0] + zw + zgap / 2, y + boxH - 3);
-  doc.line(zx[1] + zw + zgap / 2, y + 26, zx[1] + zw + zgap / 2, y + boxH - 3);
+  miniCard(0, C_GREEN, 'TOTAL QUE', par.pessoaA, 'DEVE:', 'R$ ' + fmtMoney(totalA), C_GREEN_D);
+  miniCard(1, C_NAVY_L, 'TOTAL QUE', par.pessoaB, 'DEVE:', 'R$ ' + fmtMoney(totalB), C_NAVY);
+  miniCard(2, C_AMBER, 'DIFERENCA', '', '', 'R$ ' + fmtMoney(Math.abs(saldo)), quitado ? C_GREEN_D : C_AMBER);
 
-  y += boxH + 10;
+  y += boxH + 8;
 
   if (!quitado) {
-    doc.setFillColor(255, 248, 235);
-    doc.setDrawColor(210, 180, 120);
-    doc.rect(lm, y, pw, 11, 'FD');
+    doc.setFillColor(236, 253, 245);
+    doc.setDrawColor(...C_GREEN);
+    doc.setLineWidth(0.35);
+    doc.rect(lm, y, pw, 12, 'FD');
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(9);
+    doc.setFontSize(8.5);
     doc.setTextColor(...C_GREEN_D);
     doc.text(
-      'Conclusao: ' + t(devedor) + ' deve R$ ' + fmtMoney(Math.abs(saldo)) + ' a ' + t(credor) + ' (credito de quem recebe).',
+      'RESULTADO FINAL: ' + t(devedor) + ' deve R$ ' + fmtMoney(Math.abs(saldo)) + ' a ' + t(credor),
       lm + pw / 2,
-      y + 7,
+      y + 7.5,
       { align: 'center' }
     );
     doc.setTextColor(...C_TEXT);
-    y += 15;
+    y += 16;
+  } else {
+    doc.setFillColor(236, 253, 245);
+    doc.rect(lm, y, pw, 10, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8.5);
+    doc.setTextColor(...C_GREEN_D);
+    doc.text('RESULTADO FINAL: Quitado entre as partes neste periodo.', lm + pw / 2, y + 6.5, { align: 'center' });
+    doc.setTextColor(...C_TEXT);
+    y += 13;
   }
 
   function drawTableHeader() {
-    doc.setFillColor(252, 252, 252);
-    doc.setDrawColor(...C_LINE);
-    doc.rect(lm, y, pw, 7, 'FD');
+    doc.setFillColor(...C_NAVY);
+    doc.rect(lm, y, pw, 7, 'F');
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(7.5);
-    doc.setTextColor(...C_MUTED);
+    doc.setFontSize(6.8);
+    doc.setTextColor(255, 255, 255);
     doc.text('DATA', COL_DT, y + 5);
+    doc.text('CAT.', COL_CAT, y + 5);
     doc.text('DESCRICAO', COL_DESC, y + 5);
     doc.text('VALOR', COL_VAL, y + 5, { align: 'right' });
-    doc.setDrawColor(...C_GREEN);
-    doc.setLineWidth(0.35);
-    doc.line(lm, y + 7, rm, y + 7);
     y += 9;
   }
 
   function renderLinha(l) {
     const dt = l.data ? fmtData(l.data) : '-';
+    const catRaw = (l.categoria || '').trim() || 'Sem categoria';
+    const rgb = corCategoriaPdf(catRaw === 'Sem categoria' ? '' : catRaw);
     const rawDesc = (l.descricao || '-').trim();
-    const descTxt = t(rawDesc.length > 180 ? rawDesc.slice(0, 180) + '...' : rawDesc);
+    const descTxt = t(rawDesc.length > 160 ? rawDesc.slice(0, 160) + '...' : rawDesc);
     const lines = doc.splitTextToSize(descTxt || '-', DESC_W);
     const linhaH = Math.max(8, lines.length * 3.8 + 3);
-    if (y + linhaH > 282) {
+    if (y + linhaH > 278) {
       doc.addPage();
       y = 14;
     }
-    doc.setFillColor(255, 255, 255);
+    const rowFill = pdfRowZ++ % 2 === 0 ? [255, 255, 255] : [248, 250, 252];
+    doc.setFillColor(...rowFill);
     doc.setDrawColor(...C_LINE);
     doc.rect(lm, y, pw, linhaH, 'FD');
+    doc.setFillColor(...rgb);
+    doc.rect(lm, y, 1.3, linhaH, 'F');
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8);
+    doc.setFontSize(7.5);
     doc.setTextColor(...C_TEXT);
-    doc.text(dt, COL_DT, y + 5);
+    doc.text(dt, COL_DT + 1.5, y + 5);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(6.3);
+    const catShow = t(catRaw).toUpperCase();
+    doc.text(catShow.length > 12 ? catShow.slice(0, 12) + '.' : catShow, COL_CAT + 1.5, y + 5);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.5);
     lines.forEach((ln, i) => doc.text(ln, COL_DESC, y + 5 + i * 3.8));
     doc.setFont('helvetica', 'bold');
     doc.text('R$ ' + fmtMoney(l.valor || 0), COL_VAL, y + 5, { align: 'right' });
@@ -2408,77 +2482,91 @@ function exportarAcertoPDF() {
 
   function renderSecao(nome, lista) {
     if (!lista.length) return;
-    if (y > 235) {
+    if (y > 230) {
       doc.addPage();
       y = 14;
     }
-
-    doc.setFillColor(...C_GREEN);
-    doc.rect(lm, y, pw, 10, 'F');
+    doc.setFillColor(...C_NAVY_D);
+    doc.rect(lm, y, pw, 9, 'F');
     doc.setTextColor(255, 255, 255);
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10);
-    doc.text('Dividas registradas em nome de ' + t(nome), lm + 5, y + 6.5);
+    doc.setFontSize(9);
+    doc.text('Dividas em nome de ' + t(nome), lm + 4, y + 6);
     const sub = lista.reduce((s, l) => s + (Number(l.valor) || 0), 0);
-    doc.text('Subtotal R$ ' + fmtMoney(sub), rm - 5, y + 6.5, { align: 'right' });
+    doc.text('Subtotal R$ ' + fmtMoney(sub), rm - 4, y + 6, { align: 'right' });
     doc.setTextColor(...C_TEXT);
-    y += 13;
+    y += 11;
 
     const porCat = {};
     lista.forEach(l => {
-      const cat = t(l.categoria) || 'Sem categoria';
-      if (!porCat[cat]) porCat[cat] = [];
-      porCat[cat].push(l);
+      const ck = (l.categoria || '').trim() || 'Sem categoria';
+      if (!porCat[ck]) porCat[ck] = [];
+      porCat[ck].push(l);
     });
 
-    Object.entries(porCat).forEach(([cat, items]) => {
-      if (y > 248) {
+    Object.entries(porCat).forEach(([catRaw, items]) => {
+      if (y > 244) {
         doc.addPage();
         y = 14;
       }
+      const rgbBar = corCategoriaPdf(catRaw === 'Sem categoria' ? '' : catRaw);
+      doc.setFillColor(...rgbBar);
+      doc.rect(lm, y, pw, 6, 'F');
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(8);
-      doc.setTextColor(...C_GREEN_D);
-      doc.text(cat.toUpperCase(), lm + 4, y + 5);
+      doc.setFontSize(7.2);
+      doc.setTextColor(255, 255, 255);
+      doc.text(t(catRaw).toUpperCase(), lm + 4, y + 4.2);
       const subCat = items.reduce((s, x) => s + (Number(x.valor) || 0), 0);
-      doc.text('R$ ' + fmtMoney(subCat), rm - 4, y + 5, { align: 'right' });
-      doc.setDrawColor(...C_LINE);
-      doc.line(lm, y + 7, rm, y + 7);
-      y += 10;
+      doc.text('R$ ' + fmtMoney(subCat), rm - 4, y + 4.2, { align: 'right' });
+      doc.setTextColor(...C_TEXT);
+      y += 8;
       drawTableHeader();
       items.forEach(renderLinha);
-      y += 4;
+      y += 3;
     });
 
-    y += 4;
+    y += 3;
   }
 
   renderSecao(par.pessoaA, lancesA);
   renderSecao(par.pessoaB, lancesB);
 
-  if (y > 250) {
+  if (y > 245) {
     doc.addPage();
     y = 14;
   }
   doc.setFillColor(...C_GREEN_D);
-  doc.rect(lm, y, pw, quitado ? 12 : 18, 'F');
+  doc.rect(lm, y, pw, quitado ? 14 : 18, 'F');
   doc.setTextColor(255, 255, 255);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(10);
   const rod1 = quitado
-    ? 'Saldo liquido: quitado entre as partes neste periodo.'
-    : 'Saldo liquido: ' + t(devedor) + ' deve R$ ' + fmtMoney(Math.abs(saldo)) + ' a ' + t(credor);
-  doc.text(rod1, lm + pw / 2, y + 7, { align: 'center' });
+    ? 'DIFERENCA quitada entre as partes neste periodo.'
+    : t(devedor) + ' deve R$ ' + fmtMoney(Math.abs(saldo)) + ' a ' + t(credor);
+  doc.text(rod1, lm + pw / 2, y + 8, { align: 'center' });
   if (!quitado) {
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8);
+    doc.setFontSize(7.4);
     doc.text(
-      '(Base: soma do que ' + t(par.pessoaA) + ' deve ao outro minus soma do que ' + t(par.pessoaB) + ' deve ao outro.)',
+      'Base: (total ' + t(par.pessoaA) + ') - (total ' + t(par.pessoaB) + ').',
       lm + pw / 2,
-      y + 13,
+      y + 14,
       { align: 'center' }
     );
   }
+
+  const fy = 282;
+  doc.setDrawColor(...C_LINE);
+  doc.setLineWidth(0.2);
+  doc.line(lm, fy - 6, rm, fy - 6);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7);
+  doc.setTextColor(...C_NAVY);
+  doc.text('CadernoGestor', lm, fy - 2);
+  doc.setFont('helvetica', 'italic');
+  doc.setFontSize(6.5);
+  doc.setTextColor(...C_MUTED);
+  doc.text('Saia do papel. Sem sair do caderno.', lm, fy + 2);
 
   doc.save('AcertoContas_' + t(par.pessoaA) + '_' + t(par.pessoaB) + '.pdf');
   closeModal('modal-exportar-acerto');
@@ -2522,6 +2610,20 @@ function abrirPaginaPar(parId) {
   navigate('acerto-par');
 }
 
+function acertoCatHue(str) {
+  let h = 0;
+  const s = str || '';
+  for (let i = 0; i < s.length; i++) h = ((h << 5) - h) + s.charCodeAt(i);
+  return Math.abs(h) % 360;
+}
+
+function acertoCatBadgeHtml(cat) {
+  const c = (cat || '').trim();
+  if (!c) return '<span class="cat-badge-acerto" style="background:#e8eaed;color:#5f6368">Sem categoria</span>';
+  const hue = acertoCatHue(c);
+  return `<span class="cat-badge-acerto" style="background:hsla(${hue},42%,90%,1);color:hsla(${hue},55%,26%,1);border:1px solid hsla(${hue},35%,78%,1)">${escapeHtml(c)}</span>`;
+}
+
 async function renderParPage(parId) {
   // Recarregar lançamentos antes de renderizar
   try {
@@ -2551,27 +2653,25 @@ async function renderParPage(parId) {
   // Subtítulo
   document.getElementById('parPageSaldo').textContent = quitado
     ? '✅ Sem pendências no período atual'
-    : `${devedor} deve R$ ${fmtMoney(Math.abs(saldo))} para ${credor}`;
+    : `${devedor} deve R$ ${fmtMoney(Math.abs(saldo))} a ${credor}`;
 
   document.getElementById('parCards').innerHTML = `
-    <div class="stat-card">
-      <div class="stat-label">Soma em que ${escapeHtml(par.pessoaA)} deve</div>
-      <div class="stat-value red" style="font-size:1.2rem">R$ ${fmtMoney(devidoPorA)}</div>
-      <div style="font-size:0.72rem;color:var(--text3)">Lançamentos com "${escapeHtml(par.pessoaA)}" em Quem deve</div>
+    <div class="stat-card par-stat-card par-stat-card--a">
+      <div class="stat-label">TOTAL QUE ${escapeHtml(par.pessoaA)} DEVE:</div>
+      <div class="stat-value red" style="font-size:1.25rem;margin-top:6px">R$ ${fmtMoney(devidoPorA)}</div>
     </div>
-    <div class="stat-card">
-      <div class="stat-label">Soma em que ${escapeHtml(par.pessoaB)} deve</div>
-      <div class="stat-value red" style="font-size:1.2rem">R$ ${fmtMoney(devidoPorB)}</div>
-      <div style="font-size:0.72rem;color:var(--text3)">Lançamentos com "${escapeHtml(par.pessoaB)}" em Quem deve</div>
+    <div class="stat-card par-stat-card par-stat-card--b">
+      <div class="stat-label">TOTAL QUE ${escapeHtml(par.pessoaB)} DEVE:</div>
+      <div class="stat-value red" style="font-size:1.25rem;margin-top:6px">R$ ${fmtMoney(devidoPorB)}</div>
     </div>
-    <div class="stat-card">
-      <div class="stat-label">Saldo líquido</div>
-      <div class="stat-value ${quitado?'green':'yellow'}" style="font-size:1.3rem">R$ ${fmtMoney(Math.abs(saldo))}</div>
-      <div style="font-size:0.75rem;color:var(--text3)">${quitado ? 'Nenhuma diferença entre as partes' : `${escapeHtml(credor)} tem crédito • ${escapeHtml(devedor)} deve ao outro`}</div>
+    <div class="stat-card par-stat-card par-stat-card--diff">
+      <div class="stat-label">DIFERENÇA</div>
+      <div class="stat-value ${quitado?'green':'yellow'}" style="font-size:1.35rem;margin-top:6px">R$ ${fmtMoney(Math.abs(saldo))}</div>
+      <div class="stat-sub">${quitado ? 'Nenhuma diferença entre as partes' : `${escapeHtml(devedor)} deve a ${escapeHtml(credor)}`}</div>
     </div>
-    <div class="stat-card">
-      <div class="stat-label">Lançamentos</div>
-      <div class="stat-value accent">${lancesAtivos.length}</div>
+    <div class="stat-card par-stat-card par-stat-card--count">
+      <div class="stat-label">LANÇAMENTOS</div>
+      <div class="stat-value accent" style="margin-top:6px">${lancesAtivos.length}</div>
     </div>
   `;
 
@@ -2606,20 +2706,24 @@ function renderParLancamentos() {
     return;
   }
 
-  el.innerHTML = `<table>
+  el.innerHTML = `<div class="par-lanc-table-wrap"><table>
     <thead><tr>
-      <th>Data</th><th>Quem deve</th><th>Descrição</th>
-      <th style="text-align:right">Valor</th><th></th>
+      <th>Data</th><th>Quem deve</th><th>Categoria</th><th>Descrição</th>
+      <th style="text-align:right">Valor</th><th style="width:92px;text-align:right">Ações</th>
     </tr></thead>
     <tbody>${lances.map(l => `<tr>
       <td style="font-size:0.8rem">${l.data?fmtData(l.data):''}</td>
-      <td><span style="font-weight:600;color:var(--red)">${l.de||''}</span></td>
-      <td>${l.descricao||''}</td>
+      <td><span style="font-weight:600;color:var(--red)">${escapeHtml(l.de||'')}</span></td>
+      <td>${acertoCatBadgeHtml(l.categoria)}</td>
+      <td>${escapeHtml(l.descricao||'')}</td>
       <td style="text-align:right;font-family:var(--mono);font-weight:600;color:var(--green)">R$ ${fmtMoney(l.valor)}</td>
-      <td><button class="btn-icon" onclick="excluirLancamentoParPage('${l.id}')">🗑️</button></td>
+      <td style="text-align:right;white-space:nowrap">
+        <button type="button" class="btn-icon" title="Editar" onclick="editarLancamentoPar('${escapeAttr(l.id)}')">✏️</button>
+        <button type="button" class="btn-icon" title="Excluir" onclick="excluirLancamentoParPage('${escapeAttr(l.id)}')">🗑️</button>
+      </td>
     </tr>`).join('')}
     </tbody>
-  </table>`;
+  </table></div>`;
 }
 
 async function excluirLancamentoParPage(lancId) {

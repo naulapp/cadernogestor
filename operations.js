@@ -56,10 +56,12 @@ function salvarCategoriasPar(parId, cats) {
   localStorage.setItem('cgCatAcerto_' + parId, JSON.stringify(cats));
 }
 
-function popularSelectCategoria(parId) {
+function popularSelectCategoria(parId, includeValue) {
   const sel = document.getElementById('lancCategoria');
   if (!sel || !parId) return;
-  const cats = getCategoriasPar(parId);
+  let cats = getCategoriasPar(parId);
+  const extra = (includeValue || '').trim();
+  if (extra && !cats.includes(extra)) cats = [...cats, extra];
   sel.innerHTML = '<option value="">Sem categoria</option>' +
     cats.map(c => `<option value="${c}">${c}</option>`).join('');
 }
@@ -1778,6 +1780,7 @@ function lancParChanged() {
     return;
   }
   popularSelectLancDe(parId);
+  popularSelectCategoria(parId);
   // Mostrar atalhos rápidos
   const par = acertoPares.find(p => p.id === parId);
   const at = document.getElementById('lancAtalhos');
@@ -1798,10 +1801,13 @@ function lancParChanged() {
 document.getElementById('lancPar').addEventListener('change', lancParChanged);
 
 function openLancamentoPar(parId, pessoaDeve) {
+  document.getElementById('lancEditId').value = '';
   // Limpar campos primeiro
   document.getElementById('lancValor').value = '';
   document.getElementById('lancDescricao').value = '';
   document.getElementById('lancData').value = new Date().toISOString().slice(0,10);
+  const catEl = document.getElementById('lancCategoria');
+  if (catEl) catEl.value = '';
   populateLancPar();
   setTimeout(() => {
     document.getElementById('lancPar').value = parId;
@@ -1814,6 +1820,27 @@ function openLancamentoPar(parId, pessoaDeve) {
     }
   }, 50);
   openModal('modal-lancamento');
+}
+
+function editarLancamentoPar(lancId) {
+  const l = lancamentosCache.find(x => x.id === lancId);
+  if (!l || !l.parId) { toast('Lançamento não encontrado', 'error'); return; }
+  document.getElementById('lancEditId').value = lancId;
+  openModal('modal-lancamento');
+  setTimeout(() => {
+    populateLancPar();
+    document.getElementById('lancPar').value = l.parId;
+    lancParChanged();
+    popularSelectCategoria(l.parId, l.categoria);
+    document.getElementById('lancDe').value = l.de || '';
+    document.getElementById('lancData').value = l.data || new Date().toISOString().slice(0, 10);
+    document.getElementById('lancDescricao').value = l.descricao || '';
+    document.getElementById('lancCategoria').value = l.categoria || '';
+    const v = Number(l.valor) || 0;
+    document.getElementById('lancValor').value = v.toFixed(2).replace('.', ',');
+    const tit = document.querySelector('#modal-lancamento .modal-title');
+    if (tit) tit.textContent = 'Editar lançamento';
+  }, 80);
 }
 
 async function salvarPar() {
@@ -1866,6 +1893,7 @@ function popularSelectLancDe(parId) {
 }
 
 async function salvarLancamento() {
+  const editId = document.getElementById('lancEditId')?.value || '';
   const parId = document.getElementById('lancPar').value;
   const de = document.getElementById('lancDe').value;
   const valorRaw = document.getElementById('lancValor').value.replace(/\./g,'').replace(',','.');
@@ -1879,11 +1907,19 @@ async function salvarLancamento() {
     descricao: document.getElementById('lancDescricao').value,
     categoria: document.getElementById('lancCategoria')?.value || ''
   };
-  const novoLanc = await fsAdd('lancamentos', data);
-  // Registrar no histórico global
-  registrarHistorico('acerto', `Lançamento: ${de} deve R$ ${fmtMoney(valor)}${data.descricao ? ' — ' + data.descricao : ''}`, parId);
-  // Adicionar ao cache local imediatamente
-  lancamentosCache.push(novoLanc || {...data, id: Date.now().toString()});
+  if (editId) {
+    await fsUpdate('lancamentos', editId, data);
+    const idx = lancamentosCache.findIndex(x => x.id === editId);
+    if (idx >= 0) Object.assign(lancamentosCache[idx], data, { id: editId });
+    else lancamentosCache.push({ id: editId, ...data });
+    registrarHistorico('acerto', `Editou lançamento: ${de} deve R$ ${fmtMoney(valor)}${data.descricao ? ' — ' + data.descricao : ''}`, parId);
+    toast('Lançamento atualizado!', 'success');
+  } else {
+    const novoLanc = await fsAdd('lancamentos', data);
+    registrarHistorico('acerto', `Lançamento: ${de} deve R$ ${fmtMoney(valor)}${data.descricao ? ' — ' + data.descricao : ''}`, parId);
+    lancamentosCache.push(novoLanc || {...data, id: Date.now().toString()});
+    toast('Lançamento registrado!', 'success');
+  }
   // Garantir que as pessoas do par estão na lista
   const parAtual = acertoPares.find(p => p.id === parId);
   if (parAtual) {
@@ -1897,7 +1933,6 @@ async function salvarLancamento() {
   closeModal('modal-lancamento');
   document.getElementById('lancValor').value = '';
   document.getElementById('lancDescricao').value = '';
-  toast('Lançamento registrado!', 'success');
   // Aguardar Firebase propagar antes de recarregar
   await new Promise(r => setTimeout(r, 500));
   // Recarregar lançamentos do Firebase

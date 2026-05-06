@@ -611,11 +611,20 @@ function openModal(id) {
   document.getElementById(id).classList.add('active');
   // populate selects when opening
   if (id === 'modal-emprestimo' || id === 'modal-vale') populateSelects();
-  if (id === 'modal-lancamento') populateLancPar();
   if (id === 'modal-funcionario') { if (!document.getElementById('funcId').value) limparFormFuncionario(); populateGrupoSelect(); loadCargos(); toggleFuncInssType(); }
   if (id === 'modal-dash-config') openDashConfig();
   if (id === 'modal-acerto-par') popularSelectsPar();
-  if (id === 'modal-lancamento') { document.getElementById('lancValor').value=''; document.getElementById('lancDescricao').value=''; document.getElementById('lancData').value=new Date().toISOString().slice(0,10); populateLancPar(); }
+  if (id === 'modal-lancamento') {
+    populateLancPar();
+    const editLanc = document.getElementById('lancEditId')?.value;
+    if (!editLanc) {
+      document.getElementById('lancValor').value = '';
+      document.getElementById('lancDescricao').value = '';
+      document.getElementById('lancData').value = new Date().toISOString().slice(0, 10);
+      const titL = document.querySelector('#modal-lancamento .modal-title');
+      if (titL) titL.textContent = 'Novo lançamento';
+    }
+  }
   if (id === 'modal-vale-lote') openValesLoteModal();
   if (id === 'modal-vale') {
     const vid = document.getElementById('valeId');
@@ -636,7 +645,15 @@ function openModal(id) {
   if (id === 'modal-grupo') { setTimeout(() => { renderGrupoFuncionariosCheck(document.getElementById('grupoId').value); atualizarResumoGrupo(); }, 50); }
 }
 
-function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+function closeModal(id) {
+  document.getElementById(id).classList.remove('active');
+  if (id === 'modal-lancamento') {
+    const hid = document.getElementById('lancEditId');
+    if (hid) hid.value = '';
+    const tit = document.querySelector('#modal-lancamento .modal-title');
+    if (tit) tit.textContent = 'Novo lançamento';
+  }
+}
 
 // Close on overlay click
 document.querySelectorAll('.modal-overlay').forEach(o => {

@@ -1296,3 +1296,84 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
 
   .page { padding: 12px !important; }
 }
+
+/* ── Acerto de contas — cartões estilo caderno / tabela lançamentos ── */
+.par-stat-card {
+  position: relative;
+  border-radius: 12px;
+  padding: 14px 16px 14px 18px;
+  background: var(--bg2);
+  border: 1px solid rgba(27, 45, 107, 0.12);
+  box-shadow: 0 1px 3px rgba(27, 45, 107, 0.06);
+  overflow: hidden;
+}
+.par-stat-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  border-radius: 12px 0 0 12px;
+}
+.par-stat-card--a::before { background: linear-gradient(180deg, #2e9e4f, #1e7a3a); }
+.par-stat-card--b::before { background: linear-gradient(180deg, #2b4a9e, #1b2d6b); }
+.par-stat-card--diff::before { background: linear-gradient(180deg, #d97706, #b45309); }
+.par-stat-card--count::before { background: linear-gradient(180deg, #64748b, #475569); }
+.par-stat-card .stat-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: var(--text2);
+}
+.par-stat-card .stat-sub {
+  font-size: 0.8rem;
+  margin-top: 8px;
+  line-height: 1.4;
+  color: var(--text3);
+}
+
+.par-lanc-table-wrap {
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid rgba(27, 45, 107, 0.14);
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.06);
+}
+.par-lanc-table-wrap table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+.par-lanc-table-wrap thead th {
+  background: #1b2d6b;
+  color: #fff;
+  font-weight: 600;
+  text-align: left;
+  padding: 10px 12px;
+  font-size: 0.7rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.par-lanc-table-wrap tbody tr:nth-child(even) {
+  background: rgba(27, 45, 107, 0.04);
+}
+.par-lanc-table-wrap tbody td {
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(27, 45, 107, 0.08);
+  vertical-align: middle;
+}
+.par-lanc-table-wrap tbody tr:last-child td {
+  border-bottom: none;
+}
+.cat-badge-acerto {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: middle;
+}
