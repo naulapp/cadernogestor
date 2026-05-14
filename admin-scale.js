@@ -637,6 +637,40 @@ function maskCpf(el) {
   el.value = v;
 }
 
+function maskTelFunc(el) {
+  let v = el.value.replace(/\D/g,'');
+  if (v.length > 11) v = v.slice(0,11);
+  if (v.length > 10) v = v.replace(/^(\d{2})(\d{5})(\d{0,4}).*/, '($1) $2-$3');
+  else if (v.length > 6) v = v.replace(/^(\d{2})(\d{4})(\d{0,4}).*/, '($1) $2-$3');
+  else if (v.length > 2) v = v.replace(/^(\d{2})(\d{0,5}).*/, '($1) $2');
+  else if (v.length > 0) v = v.replace(/^(\d{0,2}).*/, '($1');
+  el.value = v;
+}
+
+function maskCepFunc(el) {
+  let v = el.value.replace(/\D/g,'');
+  if (v.length > 8) v = v.slice(0,8);
+  if (v.length > 5) v = v.replace(/^(\d{5})(\d{0,3}).*/, '$1-$2');
+  el.value = v;
+  if (v.replace('-','').length === 8) buscarCepFunc(v);
+}
+
+async function buscarCepFunc(cep) {
+  const clean = (cep||'').replace(/\D/g,'');
+  if (clean.length !== 8) return;
+  try {
+    const r = await fetch(`https://viacep.com.br/ws/${clean}/json/`);
+    const j = await r.json();
+    if (j.erro) return;
+    const set = (id, val) => { const el = document.getElementById(id); if (el && !el.value) el.value = val || ''; };
+    set('funcLogradouro', j.logradouro);
+    set('funcBairro', j.bairro);
+    set('funcCidade', j.localidade);
+    const uf = document.getElementById('funcUf');
+    if (uf && !uf.value) uf.value = j.uf || '';
+  } catch (e) { /* sem internet ou ViaCEP indisponível */ }
+}
+
 function toast(msg, type='info') {
   const c = document.getElementById('toastContainer');
   const t = document.createElement('div');

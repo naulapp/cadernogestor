@@ -912,6 +912,45 @@ tr:hover td { background: rgba(27, 45, 107, 0.045); }
   color: var(--text2);
 }
 
+/* Seções colapsáveis no cadastro de funcionário */
+.func-details {
+  margin-top: 8px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg2);
+  overflow: hidden;
+}
+.func-details > summary {
+  cursor: pointer;
+  padding: 10px 14px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--navy);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  list-style: none;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.func-details > summary::-webkit-details-marker { display: none; }
+.func-details > summary::after {
+  content: "▸";
+  margin-left: auto;
+  transition: transform 0.18s ease;
+  color: var(--text3);
+  font-size: 0.85rem;
+}
+.func-details[open] > summary::after { transform: rotate(90deg); }
+.func-details > summary:hover { background: var(--bg3); }
+.func-details > .form-grid {
+  padding: 0 14px 14px;
+}
+[data-theme="dark"] .func-details > summary {
+  color: var(--text2);
+}
+
 /* PROGRESS BAR */
 .progress-bar {
   height: 6px;
@@ -1492,3 +1531,70 @@ input.money-fmt { text-align:right; font-family:var(--mono); }
   white-space: nowrap;
   vertical-align: middle;
 }
+
+/* Jornada e política + textos legais (Sprint 1) */
+.jornada-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.jornada-tab {
+  border: 1px solid var(--border);
+  background: var(--bg2);
+  color: var(--text2);
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.jornada-tab.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+.legal-disclaimer-box {
+  background: rgba(46, 158, 79, 0.08);
+  border: 1px solid rgba(46, 158, 79, 0.25);
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 16px;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: var(--text2);
+}
+.legal-disclaimer-box a {
+  color: var(--accent);
+  font-weight: 600;
+}
+.legal-ref-date {
+  display: block;
+  margin-top: 8px;
+  font-size: 0.72rem;
+  color: var(--text3);
+}
+.legal-details-inline {
+  margin: 8px 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg2);
+}
+.legal-details-inline > summary {
+  cursor: pointer;
+  padding: 8px 12px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--navy);
+  list-style: none;
+}
+.legal-details-inline > summary::-webkit-details-marker { display: none; }
+.legal-details-inline[open] > summary { border-bottom: 1px solid var(--border); }
+.legal-details-body {
+  padding: 10px 12px 12px;
+  font-size: 0.78rem;
+  color: var(--text2);
+  line-height: 1.45;
+}
+.legal-details-body a { color: var(--accent); font-weight: 600; }
+[data-theme="dark"] .legal-details-inline > summary { color: var(--text2); }

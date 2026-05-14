@@ -162,6 +162,8 @@ async function salvarFuncionario() {
     toast('CPF já cadastrado em outro funcionário', 'error'); return;
   }
 
+  const v = id => (document.getElementById(id)?.value || '').trim();
+
   const data = {
     nome, cpf: document.getElementById('funcCpf').value,
     cargo: document.getElementById('funcCargo').value,
@@ -176,8 +178,66 @@ async function salvarFuncionario() {
     inss: parseFloat(document.getElementById('funcInss').value) || 0,
     inssPct: parseFloat(((document.getElementById('funcInssPct')?.value||'').replace(',','.')) || '0') || 0,
     observacoes: document.getElementById('funcObservacoes')?.value || '',
-    ativo: true
+
+    nascimento: v('funcNascimento'),
+    telefone: v('funcTelefone'),
+    email: v('funcEmail'),
+    dataAdmissao: v('funcDataAdmissao'),
+    dataDemissao: v('funcDataDemissao'),
+
+    endereco: {
+      cep: v('funcCep'),
+      logradouro: v('funcLogradouro'),
+      numero: v('funcNumero'),
+      complemento: v('funcComplemento'),
+      bairro: v('funcBairro'),
+      cidade: v('funcCidade'),
+      uf: v('funcUf')
+    },
+
+    rg: v('funcRg'),
+    rgOrgao: v('funcRgOrgao'),
+    pis: v('funcPis'),
+    ctps: {
+      numero: v('funcCtpsNumero'),
+      serie: v('funcCtpsSerie'),
+      uf: v('funcCtpsUf').toUpperCase()
+    },
+    genero: v('funcGenero'),
+    estadoCivil: v('funcEstadoCivil'),
+    escolaridade: v('funcEscolaridade'),
+
+    bancario: {
+      banco: v('funcBanco'),
+      tipoConta: v('funcTipoConta'),
+      agencia: v('funcAgencia'),
+      conta: v('funcConta'),
+      tipoPix: v('funcTipoPix'),
+      chavePix: v('funcChavePix')
+    },
+
+    emergencia: {
+      nome: v('funcEmergenciaNome'),
+      parentesco: v('funcEmergenciaParentesco'),
+      telefone: v('funcEmergenciaTelefone')
+    },
+
+    jornadaUsarPadraoOrg: !!document.getElementById('funcJornadaUsarPadrao')?.checked,
+    jornadaDias: document.getElementById('funcJornadaUsarPadrao')?.checked
+      ? null
+      : (typeof coletarJornadaOverrideFuncionario === 'function' ? coletarJornadaOverrideFuncionario() : null),
+
+    pontoAtivo: !!document.getElementById('funcPontoAtivo')?.checked,
+
+    ativo: !v('funcDataDemissao')
   };
+
+  const prev = id ? funcionarios.find(f => f.id === id) : null;
+  if (prev) {
+    ['pontoPinHash', 'pontoPinSalt', 'pontoPinGeradoEm', 'pontoLinkToken'].forEach((k) => {
+      if (prev[k] != null) data[k] = prev[k];
+    });
+  }
 
   // Se tem grupo, herdar TODOS os valores do grupo
   if (data.grupoId) {
@@ -236,6 +296,47 @@ function editarFuncionario(id) {
   document.getElementById('funcInssPct').value = f.inssPct || '';
   const obsEl = document.getElementById('funcObservacoes');
   if (obsEl) obsEl.value = f.observacoes || '';
+
+  const setVal = (eid, val) => { const el = document.getElementById(eid); if (el) el.value = val || ''; };
+  setVal('funcNascimento', f.nascimento);
+  setVal('funcTelefone', f.telefone);
+  setVal('funcEmail', f.email);
+  setVal('funcDataAdmissao', f.dataAdmissao);
+  setVal('funcDataDemissao', f.dataDemissao);
+
+  const end = f.endereco || {};
+  setVal('funcCep', end.cep);
+  setVal('funcLogradouro', end.logradouro);
+  setVal('funcNumero', end.numero);
+  setVal('funcComplemento', end.complemento);
+  setVal('funcBairro', end.bairro);
+  setVal('funcCidade', end.cidade);
+  setVal('funcUf', end.uf);
+
+  setVal('funcRg', f.rg);
+  setVal('funcRgOrgao', f.rgOrgao);
+  setVal('funcPis', f.pis);
+  const ctps = f.ctps || {};
+  setVal('funcCtpsNumero', ctps.numero);
+  setVal('funcCtpsSerie', ctps.serie);
+  setVal('funcCtpsUf', ctps.uf);
+  setVal('funcGenero', f.genero);
+  setVal('funcEstadoCivil', f.estadoCivil);
+  setVal('funcEscolaridade', f.escolaridade);
+
+  const ban = f.bancario || {};
+  setVal('funcBanco', ban.banco);
+  setVal('funcTipoConta', ban.tipoConta);
+  setVal('funcAgencia', ban.agencia);
+  setVal('funcConta', ban.conta);
+  setVal('funcTipoPix', ban.tipoPix);
+  setVal('funcChavePix', ban.chavePix);
+
+  const em = f.emergencia || {};
+  setVal('funcEmergenciaNome', em.nome);
+  setVal('funcEmergenciaParentesco', em.parentesco);
+  setVal('funcEmergenciaTelefone', em.telefone);
+
   adicionaisFunc = f.adicionais ? JSON.parse(JSON.stringify(f.adicionais)) : [];
   toggleFuncInssType();
   renderAdicionaisFunc();
@@ -258,11 +359,19 @@ async function excluirFuncionario(id) {
 function limparFormFuncionario() {
   // Limpar TODOS os campos do modal de funcionário
   const campos = ['funcId','funcNome','funcCpf','funcSalario','funcHoraExtra',
-    'funcInss','funcInssPct','funcObservacoes'];
+    'funcInss','funcInssPct','funcObservacoes',
+    'funcNascimento','funcTelefone','funcEmail','funcDataAdmissao','funcDataDemissao',
+    'funcCep','funcLogradouro','funcNumero','funcComplemento','funcBairro','funcCidade',
+    'funcRg','funcRgOrgao','funcPis','funcCtpsNumero','funcCtpsSerie','funcCtpsUf',
+    'funcBanco','funcAgencia','funcConta','funcChavePix',
+    'funcEmergenciaNome','funcEmergenciaParentesco','funcEmergenciaTelefone'];
   campos.forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
+  // Resetar selects extras
+  ['funcUf','funcGenero','funcEstadoCivil','funcEscolaridade','funcTipoConta','funcTipoPix']
+    .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
   // Selects  resetar para valor padro
   const selects = {
     funcCargo: '',
@@ -284,7 +393,8 @@ function limparFormFuncionario() {
   adicionaisFunc = [];
   renderAdicionaisFunc();
   toggleFuncInssType();
-  // Forçar atualizar resumo limpo
+  if (typeof renderFuncionarioJornadaOverride === 'function') renderFuncionarioJornadaOverride(null);
+  if (typeof syncPontoFuncionarioUI === 'function') syncPontoFuncionarioUI(null);
   atualizarResumoFunc();
 }
 

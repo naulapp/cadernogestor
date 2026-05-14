@@ -62,7 +62,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
-<link rel="stylesheet" href="styles.css?v=20260504">
+<link rel="stylesheet" href="styles.css?v=20260514c">
 <style>
 /* CSS CRÍTICO — hamburguer, sidebar mobile, calculadora */
 
@@ -328,6 +328,12 @@
       <div class="nav-item" onclick="navigate('escala')" id="nav-escala">
         <span class="icon">🗓️</span> Assistente de Escala
       </div>
+      <div class="nav-item" onclick="navigate('jornada-politica')" id="nav-jornada-politica">
+        <span class="icon">⏱️</span> Jornada e política
+      </div>
+      <div class="nav-item" onclick="navigate('folha-ponto')" id="nav-folha-ponto">
+        <span class="icon">🕐</span> Ponto (gestão)
+      </div>
 
       <div class="nav-section-title">Financeiro</div>
       <div class="nav-item" onclick="navigate('acerto')" id="nav-acerto">
@@ -344,6 +350,9 @@
       </div>
 
       <div class="nav-section-title">Gestão</div>
+      <div class="nav-item" onclick="navigate('almoxarifado')" id="nav-almoxarifado">
+        <span class="icon">📦</span> Almoxarifado
+      </div>
       <div class="nav-item" onclick="navigate('contratos')" id="nav-contratos">
         <span class="icon">📝</span> Contratos
       </div>
@@ -667,6 +676,18 @@
         </div>
         <div id="escalaAlertas"></div>
         <div id="escalaPreview"></div>
+      </div>
+
+      <div class="page" id="page-jornada-politica">
+        <div class="page-header">
+          <div>
+            <div class="page-title">Jornada e política</div>
+            <div class="page-sub">Horários previstos, regras de extras/faltas e feriados (base para o ponto)</div>
+          </div>
+        </div>
+        <div class="section-card">
+          <div id="jornadaPoliticaRoot"></div>
+        </div>
       </div>
 
       <div class="page" id="page-emprestimos">
@@ -1120,6 +1141,28 @@
         </div>
       </div>
 
+      <div class="page" id="page-folha-ponto">
+        <div class="page-header">
+          <div>
+            <div class="page-title">Ponto (gestão)</div>
+            <div class="page-sub">Marcações — filtro por mês e funcionário</div>
+          </div>
+        </div>
+        <div class="section-card">
+          <div id="folhaPontoRoot"></div>
+        </div>
+      </div>
+
+      <div class="page" id="page-almoxarifado">
+        <div class="page-header">
+          <div>
+            <div class="page-title">Almoxarifado</div>
+            <div class="page-sub">Peças e materiais de manutenção — estoque e movimentação</div>
+          </div>
+        </div>
+        <div id="almoxRoot"></div>
+      </div>
+
       <!-- ===== CONFIGURAÇÕES ===== -->
       <div class="page" id="page-configuracoes">
         <div class="page-header">
@@ -1153,6 +1196,59 @@
               <input type="text" class="form-input" id="cfgResponsavel">
             </div>
           </div>
+        </div>
+
+        <div class="section-card">
+          <div class="section-card-title">Ponto eletrônico</div>
+          <p style="color:var(--text3);font-size:0.8rem;margin-bottom:12px">
+            Código que o funcionário informa no app (junto com CPF e PIN). Salve aqui antes de distribuir PINs. URL do Worker (Cloudflare) você preenche quando for ativar o app — ver documentação de deploy.
+          </p>
+          <div class="form-grid form-grid-2">
+            <div class="form-group">
+              <label class="form-label">Código da empresa (ponto)</label>
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <input type="text" class="form-input" id="cfgPontoCodigo" style="max-width:200px;text-transform:uppercase" maxlength="12" placeholder="Ex.: ABC123">
+                <button type="button" class="btn btn-outline btn-sm" onclick="gerarNovoPontoCodigoEmpresa()">Gerar código</button>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">URL base do Worker (ponto)</label>
+              <input type="url" class="form-input" id="cfgPontoWorkerUrl" placeholder="https://ponto.seudominio.workers.dev">
+            </div>
+            <div class="form-group" style="grid-column:1/-1">
+              <label class="form-label" style="display:flex;align-items:center;gap:8px">
+                <input type="checkbox" id="cfgPontoExigirFoto" checked>
+                Exigir foto na batida
+              </label>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Latitude do local (referência)</label>
+              <input type="text" class="form-input" id="cfgPontoLat" placeholder="-22.123456">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Longitude</label>
+              <input type="text" class="form-input" id="cfgPontoLng" placeholder="-49.123456">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Raio (metros)</label>
+              <input type="number" class="form-input" id="cfgPontoRaio" min="20" max="5000" step="10" value="150">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Geofence</label>
+              <select class="form-input" id="cfgPontoGeofence">
+                <option value="registrar">Só registrar localização</option>
+                <option value="bloquear">Bloquear fora do raio (futuro)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Batidas por dia</label>
+              <select class="form-input" id="cfgPontoBatidas">
+                <option value="4">4 (entrada, saída almoço, volta, saída)</option>
+                <option value="2">2 (entrada e saída)</option>
+              </select>
+            </div>
+          </div>
+          <button type="button" class="btn btn-primary btn-sm" onclick="salvarPontoEmpresa()">Salvar configurações do ponto</button>
         </div>
       </div>
 
@@ -1217,10 +1313,197 @@
             <label class="form-label">CPF</label>
             <input type="text" class="form-input" id="funcCpf" placeholder="000.000.000-00" oninput="maskCpf(this)">
           </div>
+          <div class="form-group">
+            <label class="form-label">Data de nascimento</label>
+            <input type="date" class="form-input" id="funcNascimento">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Telefone / WhatsApp</label>
+            <input type="tel" class="form-input" id="funcTelefone" placeholder="(00) 00000-0000" oninput="maskTelFunc(this)">
+          </div>
+          <div class="form-group">
+            <label class="form-label">E-mail pessoal</label>
+            <input type="email" class="form-input" id="funcEmail" placeholder="email@exemplo.com">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Data de admissão</label>
+            <input type="date" class="form-input" id="funcDataAdmissao">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Data de demissão</label>
+            <input type="date" class="form-input" id="funcDataDemissao">
+          </div>
           <div class="form-group" style="display:none">
             <input type="text" id="funcCargo">
           </div>
         </div>
+
+        <details class="func-details">
+          <summary>📍 Endereço</summary>
+          <div class="form-grid form-grid-3" style="margin-top:8px">
+            <div class="form-group">
+              <label class="form-label">CEP</label>
+              <input type="text" class="form-input" id="funcCep" placeholder="00000-000" oninput="maskCepFunc(this)">
+            </div>
+            <div class="form-group" style="grid-column:span 2">
+              <label class="form-label">Logradouro</label>
+              <input type="text" class="form-input" id="funcLogradouro" placeholder="Rua, Av., etc.">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Número</label>
+              <input type="text" class="form-input" id="funcNumero" placeholder="123">
+            </div>
+            <div class="form-group" style="grid-column:span 2">
+              <label class="form-label">Complemento</label>
+              <input type="text" class="form-input" id="funcComplemento" placeholder="Apto, casa, fundos...">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Bairro</label>
+              <input type="text" class="form-input" id="funcBairro">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Cidade</label>
+              <input type="text" class="form-input" id="funcCidade">
+            </div>
+            <div class="form-group">
+              <label class="form-label">UF</label>
+              <select class="form-input" id="funcUf">
+                <option value=""></option>
+                <option>AC</option><option>AL</option><option>AP</option><option>AM</option>
+                <option>BA</option><option>CE</option><option>DF</option><option>ES</option>
+                <option>GO</option><option>MA</option><option>MT</option><option>MS</option>
+                <option>MG</option><option>PA</option><option>PB</option><option>PR</option>
+                <option>PE</option><option>PI</option><option>RJ</option><option>RN</option>
+                <option>RS</option><option>RO</option><option>RR</option><option>SC</option>
+                <option>SP</option><option>SE</option><option>TO</option>
+              </select>
+            </div>
+          </div>
+        </details>
+
+        <details class="func-details">
+          <summary>📑 Documentos e contrato</summary>
+          <div class="form-grid form-grid-3" style="margin-top:8px">
+            <div class="form-group">
+              <label class="form-label">RG</label>
+              <input type="text" class="form-input" id="funcRg" placeholder="00.000.000-0">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Órgão emissor</label>
+              <input type="text" class="form-input" id="funcRgOrgao" placeholder="SSP/UF">
+            </div>
+            <div class="form-group">
+              <label class="form-label">PIS / PASEP</label>
+              <input type="text" class="form-input" id="funcPis" placeholder="000.00000.00-0">
+            </div>
+            <div class="form-group">
+              <label class="form-label">CTPS - número</label>
+              <input type="text" class="form-input" id="funcCtpsNumero">
+            </div>
+            <div class="form-group">
+              <label class="form-label">CTPS - série</label>
+              <input type="text" class="form-input" id="funcCtpsSerie">
+            </div>
+            <div class="form-group">
+              <label class="form-label">CTPS - UF</label>
+              <input type="text" class="form-input" id="funcCtpsUf" maxlength="2" style="text-transform:uppercase">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Gênero</label>
+              <select class="form-input" id="funcGenero">
+                <option value=""></option>
+                <option value="masculino">Masculino</option>
+                <option value="feminino">Feminino</option>
+                <option value="outro">Outro</option>
+                <option value="nao_informar">Prefere não informar</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Estado civil</label>
+              <select class="form-input" id="funcEstadoCivil">
+                <option value=""></option>
+                <option value="solteiro">Solteiro(a)</option>
+                <option value="casado">Casado(a)</option>
+                <option value="uniao_estavel">União estável</option>
+                <option value="divorciado">Divorciado(a)</option>
+                <option value="viuvo">Viúvo(a)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Escolaridade</label>
+              <select class="form-input" id="funcEscolaridade">
+                <option value=""></option>
+                <option value="fund_inc">Fundamental incompleto</option>
+                <option value="fund_comp">Fundamental completo</option>
+                <option value="medio_inc">Médio incompleto</option>
+                <option value="medio_comp">Médio completo</option>
+                <option value="sup_inc">Superior incompleto</option>
+                <option value="sup_comp">Superior completo</option>
+                <option value="pos">Pós-graduação</option>
+              </select>
+            </div>
+          </div>
+        </details>
+
+        <details class="func-details">
+          <summary>🏦 Dados bancários / PIX</summary>
+          <div class="form-grid form-grid-3" style="margin-top:8px">
+            <div class="form-group" style="grid-column:span 2">
+              <label class="form-label">Banco</label>
+              <input type="text" class="form-input" id="funcBanco" placeholder="Ex.: Banco do Brasil">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Tipo de conta</label>
+              <select class="form-input" id="funcTipoConta">
+                <option value=""></option>
+                <option value="corrente">Conta corrente</option>
+                <option value="poupanca">Conta poupança</option>
+                <option value="pagamento">Conta pagamento</option>
+                <option value="salario">Conta salário</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Agência</label>
+              <input type="text" class="form-input" id="funcAgencia" placeholder="0000">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Conta</label>
+              <input type="text" class="form-input" id="funcConta" placeholder="00000-0">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Tipo da chave PIX</label>
+              <select class="form-input" id="funcTipoPix">
+                <option value=""></option>
+                <option value="cpf">CPF</option>
+                <option value="celular">Celular</option>
+                <option value="email">E-mail</option>
+                <option value="aleatoria">Aleatória</option>
+              </select>
+            </div>
+            <div class="form-group" style="grid-column:span 3">
+              <label class="form-label">Chave PIX</label>
+              <input type="text" class="form-input" id="funcChavePix" placeholder="Chave para pagamento via PIX">
+            </div>
+          </div>
+        </details>
+
+        <details class="func-details">
+          <summary>🆘 Contato de emergência</summary>
+          <div class="form-grid form-grid-3" style="margin-top:8px">
+            <div class="form-group" style="grid-column:span 2">
+              <label class="form-label">Nome</label>
+              <input type="text" class="form-input" id="funcEmergenciaNome">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Parentesco</label>
+              <input type="text" class="form-input" id="funcEmergenciaParentesco" placeholder="Mãe, esposa(o), filho(a)...">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Telefone</label>
+              <input type="tel" class="form-input" id="funcEmergenciaTelefone" placeholder="(00) 00000-0000" oninput="maskTelFunc(this)">
+            </div>
+          </div>
+        </details>
 
         <div class="section-card-title" style="margin-top:4px">CARGO</div>
         <div class="form-group">
@@ -1235,6 +1518,41 @@
             ✅ Valores do cargo carregados automaticamente
           </div>
         </div>
+
+        <details class="func-details">
+          <summary>⏱️ Jornada de trabalho (ponto / folha)</summary>
+          <p style="font-size:0.75rem;color:var(--text3);margin:8px 0 10px">
+            Por padrão vale a <strong>jornada da empresa</strong> (menu Jornada e política). Desmarque para definir horários só deste funcionário.
+          </p>
+          <label class="form-label" style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+            <input type="checkbox" id="funcJornadaUsarPadrao" checked>
+            Usar jornada padrão da empresa
+          </label>
+          <div id="funcJornadaOverrideWrap">
+            <div class="table-wrap">
+              <table class="data-table">
+                <thead><tr><th>Dia</th><th>Trabalha</th><th>Entrada</th><th>Saída almoço</th><th>Volta</th><th>Saída</th></tr></thead>
+                <tbody id="funcJornadaDiasBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </details>
+
+        <details class="func-details">
+          <summary>📲 Ponto eletrônico (app do funcionário)</summary>
+          <p style="font-size:0.75rem;color:var(--text3);margin:8px 0 10px">
+            Defina o <strong>código da empresa</strong> em <em>Configurações → Ponto eletrônico</em>. CPF com 11 dígitos é necessário para gerar PIN.
+          </p>
+          <label class="form-label" style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+            <input type="checkbox" id="funcPontoAtivo" checked>
+            Ponto ativo para este funcionário
+          </label>
+          <p id="funcPontoPinStatus" style="font-size:0.78rem;color:var(--text2);margin-bottom:10px">PIN ainda não gerado</p>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button type="button" class="btn btn-outline btn-sm" onclick="gerarPinPontoFuncionarioAtual()">Gerar novo PIN</button>
+            <button type="button" class="btn btn-outline btn-sm" onclick="copiarLinkPontoFuncionarioAtual()">Copiar link do app</button>
+          </div>
+        </details>
 
         <div class="section-card-title" style="margin-top:4px">SALÁRIO E CARGA HORÁRIA</div>
         <div class="form-grid form-grid-3">
@@ -1865,10 +2183,15 @@
   </div>
 </div>
 
-<script src="core.js?v=20260504b"></script>
-<script src="operations.js?v=20260504b"></script>
-<script src="admin-scale.js?v=20260504b"></script>
-<script src="extras.js?v=20260504b"></script>
+<script src="core.js?v=20260514c"></script>
+<script src="operations.js?v=20260514c"></script>
+<script src="admin-scale.js?v=20260514c"></script>
+<script src="jornada-legal.js?v=20260514c"></script>
+<script src="jornada-config.js?v=20260514c"></script>
+<script src="ponto-crypto.js?v=20260514c"></script>
+<script src="ponto-admin.js?v=20260514c"></script>
+<script src="almoxarifado.js?v=20260514c"></script>
+<script src="extras.js?v=20260514c"></script>
 <script>
 // Garantir toggleSidebar mesmo se core.js não tiver atualizado
 function toggleSidebar() {

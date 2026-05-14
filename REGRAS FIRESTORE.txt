@@ -1,0 +1,173 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isMemberOf(orgId) {
+      return signedIn()
+        && request.auth.uid in get(/databases/$(database)/documents/orgs/$(orgId)).data.membroIds;
+    }
+
+    function isAdminOf(orgId) {
+      return signedIn()
+        && request.auth.uid in get(/databases/$(database)/documents/orgs/$(orgId)).data.adminIds;
+    }
+
+    function isOwnerOf(orgId) {
+      return signedIn()
+        && request.auth.uid == get(/databases/$(database)/documents/orgs/$(orgId)).data.dono;
+    }
+
+    // ── ORGS ─────────────────────────────────────────────
+    match /orgs/{orgId} {
+
+      // Criar: usuário autenticado, ele mesmo como dono, membro e admin
+      allow create: if signedIn()
+        && request.resource.data.dono == request.auth.uid
+        && request.auth.uid in request.resource.data.membroIds
+        && request.auth.uid in request.resource.data.adminIds;
+
+      // Ler: qualquer membro ou dono (permite query where membroIds array-contains)
+      allow read: if signedIn()
+        && (request.auth.uid in resource.data.membroIds
+            || request.auth.uid == resource.data.dono);
+
+      // Atualizar org: admin ou dono
+      // Não exige preservesOwner no update para evitar quebrar migração de dados
+      allow update: if signedIn()
+        && (request.auth.uid in resource.data.adminIds
+            || request.auth.uid == resource.data.dono);
+
+      // Deletar: só o dono
+      allow delete: if signedIn()
+        && request.auth.uid == resource.data.dono;
+
+      // ── SUBCOLEÇÕES ─────────────────────────────────────
+
+      match /funcionarios/{docId} {
+        allow read: if isMemberOf(orgId);
+        allow create, update, delete: if isAdminOf(orgId);
+      }
+
+      match /grupos/{docId} {
+        allow read: if isMemberOf(orgId);
+        allow create, update, delete: if isAdminOf(orgId);
+      }
+
+      match /cargos/{docId} {
+        allow read: if isMemberOf(orgId);
+        allow create, update, delete: if isAdminOf(orgId);
+      }
+
+      match /historicoFolhas/{docId} {
+        allow read: if isMemberOf(orgId);
+        allow create, update, delete: if isAdminOf(orgId);
+      }
+
+      match /folhas/{docId} {
+        allow read: if isMemberOf(orgId);
+        allow create, update, delete: if isAdminOf(orgId);
+      }
+
+      match /escalaSettings/{docId} {
+        allow read: if isMemberOf(orgId);
+        allow create, update, delete: if isAdminOf(orgId);
+      }
+
+      match /escalaRules/{docId} {
+        allow read: if isMemberOf(orgId);
+        allow create, update, delete: if isAdminOf(orgId);
+      }
+
+      match /jornadaSettings/{docId} {
+        allow read: if isMemberOf(orgId);
+        allow create, update, delete: if isAdminOf(orgId);
+      }
+
+      match /politicaJornada/{docId} {
+        allow read: if isMemberOf(orgId);
+        allow create, update, delete: if isAdminOf(orgId);
+      }
+
+      match /feriados/{docId} {
+        allow read: if isMemberOf(orgId);
+        allow create, update, delete: if isAdminOf(orgId);
+      }
+
+      match /marcacoesPonto/{docId} {
+        allow read: if isMemberOf(orgId);
+        allow create, update, delete: if isAdminOf(orgId);
+      }
+
+      match /almoxItens/{docId} {
+        allow read: if isMemberOf(orgId);
+        allow create, update, delete: if isAdminOf(orgId);
+      }
+
+      match /almoxMovimentos/{docId} {
+        allow read: if isMemberOf(orgId);
+        allow create, update, delete: if isAdminOf(orgId);
+      }
+
+      // Convites: qualquer autenticado lê (para entrar por código)
+      match /convites/{docId} {
+        allow read: if signedIn();
+        allow create, update, delete: if isAdminOf(orgId);
+      }
+
+      match /vales/{docId} {
+        allow read: if isMemberOf(orgId);
+        allow create, update: if isMemberOf(orgId);
+        allow delete: if isAdminOf(orgId);
+      }
+
+      match /emprestimos/{docId} {
+        allow read: if isMemberOf(orgId);
+        allow create, update: if isMemberOf(orgId);
+        allow delete: if isAdminOf(orgId);
+      }
+
+      match /acertoPares/{docId} {
+        allow read: if isMemberOf(orgId);
+        allow create, update: if isMemberOf(orgId);
+        allow delete: if isAdminOf(orgId);
+      }
+
+      match /lancamentos/{docId} {
+        allow read: if isMemberOf(orgId);
+        allow create, update: if isMemberOf(orgId);
+        allow delete: if isAdminOf(orgId);
+      }
+
+      // Log de ações (auditoria): qualquer membro pode registrar; só admin remove/corrige
+      match /historicoAcoes/{docId} {
+        allow read: if isMemberOf(orgId);
+        allow create: if isMemberOf(orgId);
+        allow update, delete: if isAdminOf(orgId);
+      }
+
+      match /calculadoraFitas/{docId} {
+        allow read, create, update, delete: if isMemberOf(orgId);
+      }
+
+      match /contratos/{docId} {
+        allow read: if isMemberOf(orgId);
+        allow create, update, delete: if isAdminOf(orgId);
+      }
+
+      // Fallback para subcoleções não listadas
+      match /{collection}/{docId} {
+        allow read: if isMemberOf(orgId);
+        allow write: if isAdminOf(orgId);
+      }
+    }
+
+    // Bloquear tudo mais
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

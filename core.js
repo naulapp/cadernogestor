@@ -25,10 +25,16 @@ let acertoPares = [];
 let lancamentosCache = []; // cache de lançamentos do Firebase
 let escalaSettings = [];
 let escalaRules = [];
+let jornadaSettings = [];
+let politicaJornada = [];
+let feriados = [];
+let marcacoesPonto = [];
+let almoxItens = [];
+let almoxMovimentos = [];
 let escalaGerada = null;
 let folhaAtualId = null;
 let firebaseReady = false;
-const APP_VERSION = '20260502d';
+const APP_VERSION = '20260514c';
 
 async function refreshAppCacheIfNeeded() {
   try {
@@ -409,6 +415,7 @@ function updateOrgUI() {
   document.getElementById('cfgCnpj').value = currentOrg.cnpj || '';
   document.getElementById('cfgCidade').value = currentOrg.cidade || '';
   document.getElementById('cfgResponsavel').value = currentOrg.responsavel || '';
+  if (typeof syncPontoConfigUI === 'function') syncPontoConfigUI();
 }
 
 // =====================================================
@@ -535,9 +542,15 @@ async function loadAllData() {
       toast('⚠️ Permissões do Firebase precisam ser atualizadas. Usando dados locais.', 'error');
     }
   }
-  [escalaSettings, escalaRules] = await Promise.all([
+  [escalaSettings, escalaRules, jornadaSettings, politicaJornada, feriados, marcacoesPonto, almoxItens, almoxMovimentos] = await Promise.all([
     fsGetAll('escalaSettings'),
-    fsGetAll('escalaRules')
+    fsGetAll('escalaRules'),
+    fsGetAll('jornadaSettings'),
+    fsGetAll('politicaJornada'),
+    fsGetAll('feriados'),
+    fsGetAll('marcacoesPonto'),
+    fsGetAll('almoxItens'),
+    fsGetAll('almoxMovimentos')
   ]);
   // Carregar cargos
   cargosLista = getCol('cargos').getAll().map(c => c.nome).filter(Boolean);
@@ -590,6 +603,7 @@ function navigate(page) {
   if (page === 'historico-fin') renderHistoricoFin();
   if (page === 'historico-folha') renderHistoricoFolhas();
   if (page === 'folha') { const d=new Date(); document.getElementById('folhaMes').value=d.getMonth()+1; document.getElementById('folhaAno').value=d.getFullYear(); }
+  if (page === 'configuracoes') { if (typeof syncPontoConfigUI === 'function') syncPontoConfigUI(); }
   if (page === 'dashboard') setTimeout(() => {
     if (typeof applyDashCalcLayout === 'function') applyDashCalcLayout();
     if (document.getElementById('dashCalcFita')) dashCalcRenderFita();
@@ -602,6 +616,9 @@ function navigate(page) {
     if (n.getAttribute('onclick')?.includes(`'${page}'`)) n.classList.add('active');
   });
   if (page === 'escala') renderEscalaPage();
+  if (page === 'jornada-politica') renderJornadaPoliticaPage();
+  if (page === 'folha-ponto') renderFolhaPontoPage();
+  if (page === 'almoxarifado') renderAlmoxarifadoPage();
 }
 
 // =====================================================
@@ -611,7 +628,18 @@ function openModal(id) {
   document.getElementById(id).classList.add('active');
   // populate selects when opening
   if (id === 'modal-emprestimo' || id === 'modal-vale') populateSelects();
-  if (id === 'modal-funcionario') { if (!document.getElementById('funcId').value) limparFormFuncionario(); populateGrupoSelect(); loadCargos(); toggleFuncInssType(); }
+  if (id === 'modal-funcionario') {
+    const fid = document.getElementById('funcId')?.value;
+    if (!fid) limparFormFuncionario();
+    else {
+      const ff = funcionarios.find(x => x.id === fid);
+      if (typeof renderFuncionarioJornadaOverride === 'function') renderFuncionarioJornadaOverride(ff);
+      if (typeof syncPontoFuncionarioUI === 'function') syncPontoFuncionarioUI(ff);
+    }
+    populateGrupoSelect();
+    loadCargos();
+    toggleFuncInssType();
+  }
   if (id === 'modal-dash-config') openDashConfig();
   if (id === 'modal-acerto-par') popularSelectsPar();
   if (id === 'modal-lancamento') {

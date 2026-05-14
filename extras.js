@@ -2314,20 +2314,26 @@ function exportarAcertoPDF() {
 
   y += 16;
 
-  doc.setFillColor(...GREEN_D);
-  if (typeof doc.roundedRect === 'function') doc.roundedRect(ML, y, CW, 16, 2.5, 2.5, 'F');
-  else doc.rect(ML, y, CW, 16, 'F');
+  doc.setFillColor(...GREEN_L);
+  if (typeof doc.roundedRect === 'function') doc.roundedRect(ML, y, CW, 24, 3, 3, 'F');
+  else doc.rect(ML, y, CW, 24, 'F');
+  doc.setDrawColor(...GREEN);
+  doc.setLineWidth(0.35);
+  if (typeof doc.roundedRect === 'function') doc.roundedRect(ML, y, CW, 24, 3, 3, 'S');
+  else doc.rect(ML, y, CW, 24, 'S');
+
   doc.setFont('helvetica','bold');
-  doc.setFontSize(12);
-  doc.setTextColor(...WHITE);
-  doc.text(t(par.pessoaA).toUpperCase() + '  x  ' + t(par.pessoaB).toUpperCase(), ML + 6, y + 7.8);
+  doc.setFontSize(10);
+  doc.setTextColor(...GREEN_D);
+  doc.text(t(par.pessoaA).toUpperCase() + '  x  ' + t(par.pessoaB).toUpperCase(), ML + 5, y + 7.5);
+
   doc.setFont('helvetica','normal');
-  doc.setFontSize(7.2);
-  doc.setTextColor(205, 242, 216);
-  const periodoLinha = `${t(labelPeriodo)}: ${t(subPeriodo || 'Historico completo')} | Emitido em: ${hojeDataStr} as ${horaStr}`;
-  doc.text(periodoLinha, ML + 6, y + 12.7);
+  doc.setFontSize(8);
   doc.setTextColor(...TEXT);
-  y += 14;
+  doc.text(`${t(labelPeriodo)}: ${t(subPeriodo || 'Historico completo')}`, ML + 5, y + 14);
+  doc.text(`Emitido em: ${hojeDataStr} as ${horaStr}`, ML + 5, y + 19.3);
+
+  y += 18;
 
   function drawTableHeader() {
     doc.setFillColor(...BG_SOFT);
