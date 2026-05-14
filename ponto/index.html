@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>Ponto — CadernoGestor</title>
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#2e9e4f" />
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: system-ui, -apple-system, sans-serif; margin: 0; padding: 12px; background: #eef1f5; color: #1a1d24; min-height: 100dvh; }
+    .card { background: #fff; border-radius: 14px; padding: 18px; max-width: 440px; margin: 12px auto; box-shadow: 0 2px 14px rgba(0,0,0,.06); }
+    h1 { font-size: 1.15rem; margin: 0 0 4px; color: #2e9e4f; }
+    .sub { font-size: 0.82rem; color: #5c6570; margin-bottom: 14px; }
+    label { display: block; font-size: 0.78rem; font-weight: 600; color: #3d434d; margin-bottom: 4px; }
+    input, select { width: 100%; padding: 12px; border: 1px solid #d5dbe3; border-radius: 10px; font-size: 1rem; margin-bottom: 12px; }
+    .btn { width: 100%; padding: 14px; border: none; border-radius: 10px; font-weight: 700; font-size: 1rem; cursor: pointer; }
+    .btn-primary { background: #2e9e4f; color: #fff; }
+    .btn-outline { background: #fff; color: #2e9e4f; border: 2px solid #2e9e4f; margin-top: 8px; }
+    #status { font-size: 0.85rem; margin-top: 10px; min-height: 2.4em; }
+    .hint { font-size: 0.75rem; color: #6a737d; line-height: 1.4; margin-top: 8px; }
+    code { font-size: 0.72rem; background: #eef1f5; padding: 2px 6px; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <div id="screen-login" class="card">
+    <h1>Registrar ponto</h1>
+    <div class="sub">Código da empresa: <strong id="lblCod">—</strong></div>
+    <label>URL do Worker (uma vez)</label>
+    <input type="url" id="workerUrl" inputmode="url" placeholder="https://seu-worker.workers.dev" autocomplete="off" />
+    <div class="hint">Se você abriu pelo <strong>link do RH</strong>, este campo pode já vir preenchido. É a mesma URL de <em>Configurações → Ponto eletrônico</em>.</div>
+    <label>PIN (6 dígitos)</label>
+    <input type="password" id="pin" maxlength="6" pattern="[0-9]*" inputmode="numeric" autocomplete="one-time-code" placeholder="••••••" />
+    <div id="cpfWrap" style="display:none">
+      <label>CPF (somente se abrir sem link com token)</label>
+      <input type="text" id="cpf" maxlength="14" inputmode="numeric" placeholder="000.000.000-00" />
+    </div>
+    <button type="button" class="btn btn-primary" onclick="__pontoDoLogin()">Entrar</button>
+    <p class="hint">Ao entrar, o aparelho pedirá <strong>localização</strong>. A foto usa a câmera traseira quando disponível.</p>
+  </div>
+
+  <div id="screen-app" class="card" style="display:none">
+    <h1>Olá, <span id="appNome">—</span></h1>
+    <div class="sub" id="appCfg"></div>
+    <label>Número da batida hoje</label>
+    <select id="tipoBatida">
+      <option value="1">1ª batida</option>
+      <option value="2">2ª batida</option>
+      <option value="3">3ª batida</option>
+      <option value="4">4ª batida</option>
+      <option value="5">5ª batida</option>
+      <option value="6">6ª batida</option>
+    </select>
+    <label>Foto</label>
+    <input type="file" id="foto" accept="image/*" capture="environment" />
+    <button type="button" class="btn btn-primary" onclick="__pontoDoBatida()">Registrar batida agora</button>
+    <button type="button" class="btn btn-outline" onclick="__pontoLogout()">Sair</button>
+    <div id="status"></div>
+    <p class="hint">Em caso de falha de rede, a batida fica na <strong>fila offline</strong> neste aparelho e tentamos enviar quando a internet voltar (mantenha o PIN válido).</p>
+  </div>
+
+  <script>
+    (function () {
+      var p = new URLSearchParams(location.search);
+      var c = (p.get('c') || '').trim().toUpperCase();
+      document.getElementById('lblCod').textContent = c || '(defina ?c= na URL)';
+      if (!p.get('t')) document.getElementById('cpfWrap').style.display = 'block';
+    })();
+  </script>
+  <script src="app.js?v=20260514e"></script>
+</body>
+</html>
