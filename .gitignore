@@ -1,0 +1,14 @@
+worker/node_modules/
+node_modules/
+CHAVES-E-NPM-AQUI-NAO-SUBIR/
+*.log
+.DS_Store
+
+# Pasta local opcional: chaves aqui; só LEIA-ME pode subir (se usar esta pasta)
+_nao-commitar/*
+!_nao-commitar/LEIA-ME.txt
+
+# Chaves Firebase / Google — NUNCA subir (veja POR-QUE-NAO-COMMITAR.txt)
+**/serviceAccount*.json
+**/*firebase-adminsdk*.json
+**/*-sa.json
