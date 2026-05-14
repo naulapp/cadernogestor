@@ -1,0 +1,16 @@
+name = "cadernogestor-ponto"
+main = "src/index.js"
+compatibility_date = "2024-01-01"
+
+# Crie o bucket no painel R2 e coloque o nome exato abaixo.
+[[r2_buckets]]
+binding = "PONTO_BUCKET"
+bucket_name = "cadernogestor-ponto"
+
+# Secrets (rode no PC, na pasta worker/):
+#   wrangler secret put FIREBASE_SERVICE_ACCOUNT
+#   wrangler secret put SESSION_SECRET
+# Opcional: restrinja CORS ao seu GitHub Pages (substitua pela URL exata, sem barra no final).
+[vars]
+ALLOWED_ORIGIN = "*"
+
