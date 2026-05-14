@@ -204,7 +204,9 @@ async function copiarLinkPontoFuncionarioAtual() {
   if (!f?.pontoLinkToken) { toast('Gere um PIN primeiro (isso cria o token do link).', 'error'); return; }
   const cod = (currentOrg.pontoCodigo || '').trim();
   if (cod.length < 4) { toast('Defina e salve o código da empresa em Configurações → Ponto eletrônico.', 'error'); return; }
-  const url = `${getPwaPontoBaseDir()}ponto/?c=${encodeURIComponent(cod)}&t=${encodeURIComponent(f.pontoLinkToken)}`;
+  const w = (mergePontoConfig(currentOrg).workerUrl || '').trim().replace(/\/$/, '');
+  let url = `${getPwaPontoBaseDir()}ponto/?c=${encodeURIComponent(cod)}&t=${encodeURIComponent(f.pontoLinkToken)}`;
+  if (w) url += `&w=${encodeURIComponent(w)}`;
   try {
     await navigator.clipboard?.writeText(url);
   } catch (e) { /* ignore */ }

@@ -864,6 +864,9 @@ async function loadFolha() {
     return buildFolhaCard(f, folhaDetalhe[f.id]);
   }).join('');
 
+  const mesRefIso = folhaPontoMesKey(mes, ano);
+  const locked = !!(currentOrg && currentOrg.pontoMesesFechados && currentOrg.pontoMesesFechados[mesRefIso]);
+
   document.getElementById('folhaList').innerHTML = `
     <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap">
       <label style="display:flex;align-items:center;gap:6px;font-size:0.85rem;cursor:pointer">
@@ -875,8 +878,83 @@ async function loadFolha() {
       <button class="btn btn-success btn-sm" onclick="consolidarPeriodoTodos()">✅ Consolidar todos</button>
       <button class="btn btn-outline btn-sm" onclick="expandirTodosCards()">▼ Expandir todos</button>
       <button class="btn btn-outline btn-sm" onclick="recolherTodosCards()">▲ Recolher todos</button>
+      <button class="btn btn-outline btn-sm" type="button" onclick="importarHorasExtrasDoPonto()" title="Preenche horas extras, dias trabalhados e faltas a partir das marcações e da jornada">
+        ⏱️ Puxar do ponto
+      </button>
+      <label style="display:flex;align-items:center;gap:6px;font-size:0.82rem;cursor:pointer;user-select:none;border:1px solid var(--border);padding:6px 10px;border-radius:8px;background:var(--card)">
+        <input type="checkbox" id="folhaLockPontoMes" ${locked ? 'checked' : ''} onchange="onToggleFolhaLockPonto(this.checked)">
+        Travar importação do ponto (${mesRefIso})
+      </label>
     </div>
+    <p style="font-size:0.78rem;color:var(--text3);margin:-4px 0 12px 0;max-width:920px">
+      O botão <strong>Puxar do ponto</strong> usa o motor da jornada (MVP). Revise com seu contador antes de fechar a folha.
+      ${locked ? '<span style="color:var(--orange)"> Este mês está travado — importação bloqueada.</span>' : ''}
+    </p>
     ${cards}`;
+}
+
+async function onToggleFolhaLockPonto(checked) {
+  const mes = parseInt(document.getElementById('folhaMes').value, 10);
+  const ano = parseInt(document.getElementById('folhaAno').value, 10);
+  const key = folhaPontoMesKey(mes, ano);
+  if (!currentOrg) return;
+  const next = { ...(currentOrg.pontoMesesFechados || {}) };
+  if (checked) next[key] = true;
+  else delete next[key];
+  try {
+    if (db) {
+      await db.collection('orgs').doc(currentOrg.id).update({ pontoMesesFechados: next });
+    } else if (typeof localDB !== 'undefined' && localDB.setOrg) {
+      currentOrg.pontoMesesFechados = next;
+      localDB.setOrg(currentOrg.id, currentOrg);
+    } else {
+      currentOrg.pontoMesesFechados = next;
+    }
+    currentOrg.pontoMesesFechados = next;
+    toast(checked ? 'Mês travado para importação do ponto.' : 'Trava removida.', 'success');
+  } catch (e) {
+    toast('Erro ao salvar trava: ' + (e.message || e), 'error');
+    const el = document.getElementById('folhaLockPontoMes');
+    if (el) el.checked = !checked;
+  }
+}
+
+async function importarHorasExtrasDoPonto() {
+  const mes = parseInt(document.getElementById('folhaMes').value, 10);
+  const ano = parseInt(document.getElementById('folhaAno').value, 10);
+  const key = folhaPontoMesKey(mes, ano);
+  if (currentOrg?.pontoMesesFechados?.[key]) {
+    toast('Este mês está travado. Desmarque a trava para importar.', 'error');
+    return;
+  }
+  if (!jornadaSettings?.length) {
+    toast('Configure a jornada em «Jornada e política» antes.', 'error');
+    return;
+  }
+  const nMarcas = typeof contarMarcacoesPontoMes === 'function' ? contarMarcacoesPontoMes(mes, ano, marcacoesPonto) : 0;
+  if (nMarcas === 0) {
+    if (!(await confirmar('Importar sem marcações?', 'Não há marcações neste mês no sistema. Importar mesmo assim pode marcar muitas faltas para quem usa ponto. Continuar?'))) return;
+  }
+  const resumo = calcularResumoPontoMes({
+    mes,
+    ano,
+    funcionarios,
+    marcacoesPonto,
+    jornadaSettings,
+    politicaJornada,
+    feriados
+  });
+  let n = 0;
+  Object.keys(folhaDetalhe).forEach((fid) => {
+    const r = resumo[fid];
+    if (!r) return;
+    folhaDetalhe[fid].horasExtras = r.horasExtras;
+    folhaDetalhe[fid].diasTrabalhados = r.diasTrabalhados;
+    folhaDetalhe[fid].faltas = r.faltas;
+    if (typeof rebuildCard === 'function') rebuildCard(fid);
+    n++;
+  });
+  toast(`Importação do ponto: ${n} funcionário(s). Confira os valores antes de fechar a folha.`, 'success');
 }
 
 function calcFolhaTotais(d) {
