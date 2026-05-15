@@ -1,6 +1,5 @@
 (() => {
-  // URL padrão do Worker (mesma usada no admin). Para trocar globalmente,
-  // edite aqui e republique o site.
+  // Manter IGUAL a PONTO_WORKER_URL_PADRAO em ponto-admin.js (troca global).
   const WORKER_URL_PADRAO = 'https://cadernogestor.luan-eu55.workers.dev';
 
   const params = new URLSearchParams(location.search);
