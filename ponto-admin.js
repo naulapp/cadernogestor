@@ -30,14 +30,17 @@ function getDefaultPontoConfig() {
   };
 }
 
-function getPontoWorkerUrl(org) {
-  let u = (org?.pontoConfig?.workerUrl || PONTO_WORKER_URL_PADRAO || '').trim().replace(/\/$/, '');
-  if (u && !/^https?:\/\//i.test(u)) u = 'https://' + u;
-  return u;
+function mergePontoConfig(org) {
+  const m = { ...getDefaultPontoConfig(), ...(org?.pontoConfig || {}) };
+  // URL do Worker: sempre a do sistema (assinatura — clientes não veem nem alteram).
+  m.workerUrl = PONTO_WORKER_URL_PADRAO;
+  return m;
 }
 
-function mergePontoConfig(org) {
-  return { ...getDefaultPontoConfig(), ...(org?.pontoConfig || {}) };
+function getPontoWorkerUrl() {
+  let u = (PONTO_WORKER_URL_PADRAO || '').trim().replace(/\/$/, '');
+  if (u && !/^https?:\/\//i.test(u)) u = 'https://' + u;
+  return u;
 }
 
 function syncPontoConfigUI() {
@@ -54,7 +57,6 @@ function syncPontoConfigUI() {
   if (gf) gf.value = pc.geofenceModo || 'registrar';
   const bd = document.getElementById('cfgPontoBatidas');
   if (bd) bd.value = String(pc.batidasPorDia ?? 0);
-  set('cfgPontoWorkerUrl', pc.workerUrl || '');
   const codEl = document.getElementById('cfgPontoCodigo');
   if (codEl && !codEl.value && !currentOrg.pontoCodigo) {
     codEl.value = typeof pontoGerarCodigoEmpresa === 'function' ? pontoGerarCodigoEmpresa(6) : '';
@@ -72,7 +74,7 @@ async function salvarPontoEmpresa() {
     localRaioMetros: parseInt(document.getElementById('cfgPontoRaio')?.value, 10) || 150,
     geofenceModo: document.getElementById('cfgPontoGeofence')?.value || 'registrar',
     batidasPorDia: (function(){ const v = parseInt(document.getElementById('cfgPontoBatidas')?.value, 10); return Number.isFinite(v) && v >= 0 ? v : 0; })(),
-    workerUrl: (document.getElementById('cfgPontoWorkerUrl')?.value || '').trim()
+    workerUrl: PONTO_WORKER_URL_PADRAO
   };
   const cod = (document.getElementById('cfgPontoCodigo')?.value || '').trim().toUpperCase();
   if (!cod || cod.length < 4) {
@@ -222,7 +224,7 @@ async function copiarLinkPontoFuncionarioAtual() {
   if (!f?.pontoLinkToken) { toast('Gere um PIN primeiro (isso cria o token do link).', 'error'); return; }
   const cod = (currentOrg.pontoCodigo || '').trim();
   if (cod.length < 4) { toast('Defina e salve o código da empresa em Configurações → Ponto eletrônico.', 'error'); return; }
-  const w = getPontoWorkerUrl(currentOrg);
+  const w = getPontoWorkerUrl();
   const nomeAbrev = abreviarNomeParaLink(f.nome);
   let url = `${getPwaPontoBaseDir()}ponto/?c=${encodeURIComponent(cod)}&t=${encodeURIComponent(f.pontoLinkToken)}`;
   if (nomeAbrev) url += `&n=${encodeURIComponent(nomeAbrev)}`;

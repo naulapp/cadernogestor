@@ -34,7 +34,7 @@ let almoxMovimentos = [];
 let escalaGerada = null;
 let folhaAtualId = null;
 let firebaseReady = false;
-const APP_VERSION = '20260514g';
+const APP_VERSION = '20260514h';
 
 async function refreshAppCacheIfNeeded() {
   try {

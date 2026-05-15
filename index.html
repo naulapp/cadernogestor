@@ -1201,7 +1201,7 @@
         <div class="section-card">
           <div class="section-card-title">Ponto eletrônico</div>
           <p style="color:var(--text3);font-size:0.8rem;margin-bottom:12px">
-            Código que o funcionário informa no app (junto com CPF e PIN). Salve aqui antes de distribuir PINs. URL do Worker (Cloudflare) você preenche quando for ativar o app — ver documentação de deploy.
+            Código que o funcionário informa no app (junto com CPF e PIN). Salve aqui antes de distribuir PINs. O servidor do ponto é compartilhado e configurado pelo sistema — não é necessário informar URL.
           </p>
           <div class="form-grid form-grid-2">
             <div class="form-group">
@@ -1210,10 +1210,6 @@
                 <input type="text" class="form-input" id="cfgPontoCodigo" style="max-width:200px;text-transform:uppercase" maxlength="12" placeholder="Ex.: ABC123">
                 <button type="button" class="btn btn-outline btn-sm" onclick="gerarNovoPontoCodigoEmpresa()">Gerar código</button>
               </div>
-            </div>
-            <div class="form-group">
-              <label class="form-label">URL base do Worker (ponto)</label>
-              <input type="url" class="form-input" id="cfgPontoWorkerUrl" placeholder="https://ponto.seudominio.workers.dev">
             </div>
             <div class="form-group" style="grid-column:1/-1">
               <label class="form-label" style="display:flex;align-items:center;gap:8px">
@@ -2187,16 +2183,16 @@
   </div>
 </div>
 
-<script src="core.js?v=20260514g"></script>
-<script src="ponto-motor.js?v=20260514g"></script>
-<script src="operations.js?v=20260514g"></script>
-<script src="admin-scale.js?v=20260514g"></script>
-<script src="jornada-legal.js?v=20260514g"></script>
-<script src="jornada-config.js?v=20260514g"></script>
-<script src="ponto-crypto.js?v=20260514g"></script>
-<script src="ponto-admin.js?v=20260514g"></script>
-<script src="almoxarifado.js?v=20260514g"></script>
-<script src="extras.js?v=20260514g"></script>
+<script src="core.js?v=20260514h"></script>
+<script src="ponto-motor.js?v=20260514h"></script>
+<script src="operations.js?v=20260514h"></script>
+<script src="admin-scale.js?v=20260514h"></script>
+<script src="jornada-legal.js?v=20260514h"></script>
+<script src="jornada-config.js?v=20260514h"></script>
+<script src="ponto-crypto.js?v=20260514h"></script>
+<script src="ponto-admin.js?v=20260514h"></script>
+<script src="almoxarifado.js?v=20260514h"></script>
+<script src="extras.js?v=20260514h"></script>
 <script>
 // Garantir toggleSidebar mesmo se core.js não tiver atualizado
 function toggleSidebar() {
