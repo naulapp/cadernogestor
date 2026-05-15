@@ -1,12 +1,25 @@
 (() => {
+  // URL padrão do Worker (mesma usada no admin). Para trocar globalmente,
+  // edite aqui e republique o site.
+  const WORKER_URL_PADRAO = 'https://cadernogestor.luan-eu55.workers.dev';
+
   const params = new URLSearchParams(location.search);
   const c = (params.get('c') || '').trim().toUpperCase();
   const t = (params.get('t') || '').trim();
-  let workerBase = (params.get('w') || '').trim().replace(/\/$/, '');
+  const nomeFunc = (params.get('n') || '').trim();
+  let workerBase = normalizarWorkerUrl(params.get('w') || '');
+  if (!workerBase) workerBase = WORKER_URL_PADRAO;
   const LS_WORKER = c ? 'cg_ponto_worker_' + c : 'cg_ponto_worker';
   const LS_TOKEN = 'cg_ponto_token_v1';
   const LS_CFG = 'cg_ponto_cfg_v1';
   const OUTBOX = 'cg_ponto_outbox_v1';
+
+  function normalizarWorkerUrl(u) {
+    let s = String(u || '').trim().replace(/\/$/, '');
+    if (!s) return '';
+    if (!/^https?:\/\//i.test(s)) s = 'https://' + s;
+    return s;
+  }
 
   const $ = (id) => document.getElementById(id);
 
@@ -23,22 +36,24 @@
   }
 
   function saveWorkerUrl() {
-    const v = ($('workerUrl') && $('workerUrl').value) ? $('workerUrl').value.trim().replace(/\/$/, '') : '';
+    const el = $('workerUrl');
+    if (!el || !el.value) return;
+    const v = normalizarWorkerUrl(el.value);
     if (v) {
       workerBase = v;
-      try {
-        localStorage.setItem(LS_WORKER, v);
-      } catch (e) { /* ignore */ }
+      try { localStorage.setItem(LS_WORKER, v); } catch (e) { /* ignore */ }
     }
   }
 
   function loadWorkerUrl() {
-    if (!workerBase && c) {
+    if (c) {
       try {
-        workerBase = (localStorage.getItem(LS_WORKER) || '').trim().replace(/\/$/, '');
+        const ls = normalizarWorkerUrl(localStorage.getItem(LS_WORKER) || '');
+        if (ls) workerBase = ls;
       } catch (e) { /* ignore */ }
     }
-    if ($('workerUrl') && workerBase) $('workerUrl').value = workerBase;
+    if (!workerBase) workerBase = WORKER_URL_PADRAO;
+    if ($('workerUrl')) $('workerUrl').value = workerBase;
   }
 
   function compressDataUrl(file, maxW, q) {

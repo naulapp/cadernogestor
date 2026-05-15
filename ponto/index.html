@@ -24,18 +24,28 @@
 </head>
 <body>
   <div id="screen-login" class="card">
-    <h1>Registrar ponto</h1>
-    <div class="sub">Código da empresa: <strong id="lblCod">—</strong></div>
-    <label>URL do Worker (uma vez)</label>
-    <input type="url" id="workerUrl" inputmode="url" placeholder="https://seu-worker.workers.dev" autocomplete="off" />
-    <div class="hint">Se você abriu pelo <strong>link do RH</strong>, este campo pode já vir preenchido. É a mesma URL de <em>Configurações → Ponto eletrônico</em>.</div>
+    <h1 id="loginSaudacao">Registrar ponto</h1>
+    <div class="sub" id="loginSub">Empresa: <strong id="lblCod">—</strong></div>
+
     <label>PIN (6 dígitos)</label>
     <input type="password" id="pin" maxlength="6" pattern="[0-9]*" inputmode="numeric" autocomplete="one-time-code" placeholder="••••••" />
+
     <div id="cpfWrap" style="display:none">
-      <label>CPF (somente se abrir sem link com token)</label>
+      <label>CPF</label>
       <input type="text" id="cpf" maxlength="14" inputmode="numeric" placeholder="000.000.000-00" />
     </div>
+
     <button type="button" class="btn btn-primary" onclick="__pontoDoLogin()">Entrar</button>
+
+    <details style="margin-top:14px">
+      <summary style="font-size:0.78rem;color:#6a737d;cursor:pointer">Configuração avançada (admin)</summary>
+      <div style="margin-top:10px">
+        <label>URL do Worker</label>
+        <input type="url" id="workerUrl" inputmode="url" placeholder="https://seu-worker.workers.dev" autocomplete="off" />
+        <div class="hint">Só preencher se sua empresa usar Worker próprio. Caso contrário, deixe o padrão.</div>
+      </div>
+    </details>
+
     <p class="hint">Ao entrar, o aparelho pedirá <strong>localização</strong>. A foto usa a câmera traseira quando disponível.</p>
   </div>
 
@@ -66,10 +76,15 @@
     (function () {
       var p = new URLSearchParams(location.search);
       var c = (p.get('c') || '').trim().toUpperCase();
-      document.getElementById('lblCod').textContent = c || '(defina ?c= na URL)';
+      var n = (p.get('n') || '').trim();
+      document.getElementById('lblCod').textContent = c || '(use o link enviado pelo RH)';
+      if (n) {
+        document.getElementById('loginSaudacao').textContent = 'Olá, ' + n + '!';
+        document.getElementById('loginSub').innerHTML = 'Digite seu PIN para registrar o ponto.';
+      }
       if (!p.get('t')) document.getElementById('cpfWrap').style.display = 'block';
     })();
   </script>
-  <script src="app.js?v=20260514f"></script>
+  <script src="app.js?v=20260514g"></script>
 </body>
 </html>
