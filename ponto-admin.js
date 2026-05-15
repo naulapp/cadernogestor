@@ -37,12 +37,6 @@ function mergePontoConfig(org) {
   return m;
 }
 
-function getPontoWorkerUrl() {
-  let u = (PONTO_WORKER_URL_PADRAO || '').trim().replace(/\/$/, '');
-  if (u && !/^https?:\/\//i.test(u)) u = 'https://' + u;
-  return u;
-}
-
 function syncPontoConfigUI() {
   if (!currentOrg) return;
   const pc = mergePontoConfig(currentOrg);
@@ -224,12 +218,9 @@ async function copiarLinkPontoFuncionarioAtual() {
   if (!f?.pontoLinkToken) { toast('Gere um PIN primeiro (isso cria o token do link).', 'error'); return; }
   const cod = (currentOrg.pontoCodigo || '').trim();
   if (cod.length < 4) { toast('Defina e salve o código da empresa em Configurações → Ponto eletrônico.', 'error'); return; }
-  const w = getPontoWorkerUrl();
   const nomeAbrev = abreviarNomeParaLink(f.nome);
   let url = `${getPwaPontoBaseDir()}ponto/?c=${encodeURIComponent(cod)}&t=${encodeURIComponent(f.pontoLinkToken)}`;
   if (nomeAbrev) url += `&n=${encodeURIComponent(nomeAbrev)}`;
-  // Só anexa &w= se a org usar Worker DIFERENTE do padrão (cliente próprio).
-  if (w && w !== PONTO_WORKER_URL_PADRAO) url += `&w=${encodeURIComponent(w)}`;
   try {
     await navigator.clipboard?.writeText(url);
   } catch (e) { /* ignore */ }
