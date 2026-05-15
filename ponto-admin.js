@@ -203,26 +203,20 @@ async function gerarPinPontoFuncionarioAtual() {
   toast(`PIN gerado: ${pin} (também copiado se o navegador permitir)`, 'success');
 }
 
-function abreviarNomeParaLink(nome) {
-  if (!nome) return '';
-  const partes = String(nome).trim().split(/\s+/).filter(Boolean);
-  if (partes.length === 0) return '';
-  if (partes.length === 1) return partes[0];
-  return partes[0] + ' ' + partes[partes.length - 1];
-}
-
 async function copiarLinkPontoFuncionarioAtual() {
   const id = document.getElementById('funcId')?.value;
   if (!id) { toast('Salve o funcionário antes.', 'error'); return; }
   const f = funcionarios.find((x) => x.id === id);
-  if (!f?.pontoLinkToken) { toast('Gere um PIN primeiro (isso cria o token do link).', 'error'); return; }
+  if (!f) return;
+  if (!f.pontoPinHash) { toast('Gere o PIN deste funcionário antes de enviar o link.', 'error'); return; }
   const cod = (currentOrg.pontoCodigo || '').trim();
   if (cod.length < 4) { toast('Defina e salve o código da empresa em Configurações → Ponto eletrônico.', 'error'); return; }
-  const nomeAbrev = abreviarNomeParaLink(f.nome);
-  let url = `${getPwaPontoBaseDir()}ponto/?c=${encodeURIComponent(cod)}&t=${encodeURIComponent(f.pontoLinkToken)}`;
-  if (nomeAbrev) url += `&n=${encodeURIComponent(nomeAbrev)}`;
+  const url = `${getPwaPontoBaseDir()}ponto/?c=${encodeURIComponent(cod)}`;
   try {
     await navigator.clipboard?.writeText(url);
   } catch (e) { /* ignore */ }
-  toast(`Link do ponto de ${f.nome || 'funcionário'} copiado.`, 'success');
+  toast(
+    `Link único do app copiado. É o mesmo para todos: cada um entra com código da empresa, últimos 4 do CPF e o PIN (envie também o PIN de ${f.nome || 'o colaborador'} por canal seguro).`,
+    'success'
+  );
 }
