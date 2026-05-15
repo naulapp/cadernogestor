@@ -203,8 +203,8 @@ async function handleLogin(request, env) {
   } catch {
     return json({ ok: false, error: 'JSON inválido' }, env, request, 400);
   }
-  const c = String(body.c || '').trim();
-  const pin = String(body.pin || '').trim();
+  const c = String(body.c || '').trim().toUpperCase();
+  const pin = String(body.pin || '').replace(/\D/g, '').trim();
   const t = String(body.t || '').trim();
   const cpf = body.cpf;
 
@@ -220,14 +220,40 @@ async function handleLogin(request, env) {
 
   const f = await findFuncionarioLogin(env, org.orgId, { t, cpf });
   if (!f?.id) return json({ ok: false, error: 'Funcionário não encontrado.' }, env, request, 401);
-  if (f.pontoAtivo === false) return json({ ok: false, error: 'Ponto desativado para este colaborador.' }, env, request, 403);
+  if (f.pontoAtivo === false) {
+    return json(
+      { ok: false, code: 'PONTO_DESATIVADO', error: 'Ponto desativado para este colaborador.' },
+      env,
+      request,
+      403
+    );
+  }
   if (!f.pontoPinHash || !f.pontoPinSalt) {
-    return json({ ok: false, error: 'PIN ainda não foi gerado no sistema (admin).' }, env, request, 403);
+    return json(
+      {
+        ok: false,
+        code: 'PIN_NAO_CONFIGURADO',
+        error: 'PIN ainda não foi gerado no sistema (admin). Abra o cadastro do funcionário e use «Gerar PIN».'
+      },
+      env,
+      request,
+      403
+    );
   }
 
-  const cpfDigits = normalizarCpf(f.cpf || cpf);
+  const cpfDigits = normalizarCpf(f.cpf != null && f.cpf !== '' ? f.cpf : cpf);
   if (cpfDigits.length !== 11) {
-    return json({ ok: false, error: 'CPF do cadastro incompleto. Corrija no admin.' }, env, request, 403);
+    return json(
+      {
+        ok: false,
+        code: 'CPF_INCOMPLETO',
+        error:
+          'CPF no cadastro precisa ter 11 dígitos (corrija no admin e gere o PIN de novo). Se o CPF começa com 0, salve como texto, não só número.'
+      },
+      env,
+      request,
+      403
+    );
   }
 
   const hash = await pontoHashPin(org.orgId, cpfDigits, pin, f.pontoPinSalt);
