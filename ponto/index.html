@@ -4,6 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <title>Ponto — CadernoGestor</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <link rel="icon" type="image/png" href="favicon.ico" />
   <link rel="manifest" href="manifest.json" />
   <meta name="theme-color" content="#2e9e4f" />
   <style>
@@ -19,7 +21,6 @@
     .btn-outline { background: #fff; color: #2e9e4f; border: 2px solid #2e9e4f; margin-top: 8px; }
     #status { font-size: 0.85rem; margin-top: 10px; min-height: 2.4em; }
     .hint { font-size: 0.75rem; color: #6a737d; line-height: 1.4; margin-top: 8px; }
-    code { font-size: 0.72rem; background: #eef1f5; padding: 2px 6px; border-radius: 4px; }
   </style>
 </head>
 <body>
@@ -37,16 +38,7 @@
 
     <button type="button" class="btn btn-primary" onclick="__pontoDoLogin()">Entrar</button>
 
-    <details style="margin-top:14px">
-      <summary style="font-size:0.78rem;color:#6a737d;cursor:pointer">Configuração avançada (admin)</summary>
-      <div style="margin-top:10px">
-        <label>URL do Worker</label>
-        <input type="url" id="workerUrl" inputmode="url" placeholder="https://seu-worker.workers.dev" autocomplete="off" />
-        <div class="hint">Só preencher se sua empresa usar Worker próprio. Caso contrário, deixe o padrão.</div>
-      </div>
-    </details>
-
-    <p class="hint">Ao entrar, o aparelho pedirá <strong>localização</strong>. A foto usa a câmera traseira quando disponível.</p>
+    <p class="hint">Ao entrar, o aparelho pedirá <strong>localização</strong>. A foto usa a <strong>câmera frontal</strong> (selfie) quando o aparelho permitir.</p>
   </div>
 
   <div id="screen-app" class="card" style="display:none">
@@ -65,7 +57,7 @@
       <option value="8">8ª batida</option>
     </select>
     <label>Foto</label>
-    <input type="file" id="foto" accept="image/*" capture="environment" />
+    <input type="file" id="foto" accept="image/*" capture="user" />
     <button type="button" class="btn btn-primary" onclick="__pontoDoBatida()">Registrar batida agora</button>
     <button type="button" class="btn btn-outline" onclick="__pontoLogout()">Sair</button>
     <div id="status"></div>
@@ -74,17 +66,27 @@
 
   <script>
     (function () {
+      function decodeNomeParam(raw) {
+        if (!raw) return '';
+        var s = String(raw).trim();
+        try {
+          return decodeURIComponent(s.replace(/\+/g, ' ')).trim();
+        } catch (e) {
+          return s;
+        }
+      }
       var p = new URLSearchParams(location.search);
       var c = (p.get('c') || '').trim().toUpperCase();
-      var n = (p.get('n') || '').trim();
+      var n = decodeNomeParam(p.get('n'));
       document.getElementById('lblCod').textContent = c || '(use o link enviado pelo RH)';
       if (n) {
         document.getElementById('loginSaudacao').textContent = 'Olá, ' + n + '!';
         document.getElementById('loginSub').innerHTML = 'Digite seu PIN para registrar o ponto.';
+        try { sessionStorage.setItem('cg_ponto_nome_exibicao', n); } catch (e) {}
       }
       if (!p.get('t')) document.getElementById('cpfWrap').style.display = 'block';
     })();
   </script>
-  <script src="app.js?v=20260514h"></script>
+  <script src="app.js?v=20260514i"></script>
 </body>
 </html>

@@ -5,12 +5,10 @@
   const params = new URLSearchParams(location.search);
   const c = (params.get('c') || '').trim().toUpperCase();
   const t = (params.get('t') || '').trim();
-  const nomeFunc = (params.get('n') || '').trim();
-  let workerBase = normalizarWorkerUrl(params.get('w') || '');
-  if (!workerBase) workerBase = WORKER_URL_PADRAO;
-  const LS_WORKER = c ? 'cg_ponto_worker_' + c : 'cg_ponto_worker';
+  const workerBase = normalizarWorkerUrl(WORKER_URL_PADRAO);
   const LS_TOKEN = 'cg_ponto_token_v1';
   const LS_CFG = 'cg_ponto_cfg_v1';
+  const LS_NOME_SESSAO = 'cg_ponto_nome_sessao';
   const OUTBOX = 'cg_ponto_outbox_v1';
 
   function normalizarWorkerUrl(u) {
@@ -30,29 +28,7 @@
   }
 
   function api(path) {
-    if (!workerBase) throw new Error('URL do Worker não configurada');
     return workerBase + path;
-  }
-
-  function saveWorkerUrl() {
-    const el = $('workerUrl');
-    if (!el || !el.value) return;
-    const v = normalizarWorkerUrl(el.value);
-    if (v) {
-      workerBase = v;
-      try { localStorage.setItem(LS_WORKER, v); } catch (e) { /* ignore */ }
-    }
-  }
-
-  function loadWorkerUrl() {
-    if (c) {
-      try {
-        const ls = normalizarWorkerUrl(localStorage.getItem(LS_WORKER) || '');
-        if (ls) workerBase = ls;
-      } catch (e) { /* ignore */ }
-    }
-    if (!workerBase) workerBase = WORKER_URL_PADRAO;
-    if ($('workerUrl')) $('workerUrl').value = workerBase;
   }
 
   function compressDataUrl(file, maxW, q) {
@@ -134,7 +110,7 @@
     const next = [];
     for (const item of q) {
       try {
-        const wb = (item.workerBase || workerBase).replace(/\/$/, '');
+        const wb = workerBase.replace(/\/$/, '');
         let fotoKey = item.fotoKey || '';
         if (item.base64 && !fotoKey) {
           const up = await fetch(wb + '/api/upload-foto', {
@@ -178,13 +154,8 @@
   }
 
   async function doLogin() {
-    saveWorkerUrl();
     const pin = ($('pin') && $('pin').value) ? $('pin').value.replace(/\D/g, '') : '';
     const cpfRaw = $('cpf') ? $('cpf').value : '';
-    if (!workerBase) {
-      setStatus('Informe a URL do Worker (Configurações → Ponto no sistema admin).', true);
-      return;
-    }
     if (!c) {
       setStatus('Abra pelo link com código (c) da empresa ou digite o código na URL ?c=', true);
       return;
@@ -211,6 +182,9 @@
       try {
         sessionStorage.setItem(LS_CFG, JSON.stringify(data.pontoConfig || {}));
       } catch (e2) { /* ignore */ }
+      try {
+        sessionStorage.setItem(LS_NOME_SESSAO, data.nome || '');
+      } catch (e3) { /* ignore */ }
       $('appNome').textContent = data.nome || 'Colaborador';
       const cfg = data.pontoConfig || {};
       $('appCfg').textContent =
@@ -227,7 +201,6 @@
   }
 
   async function doBatida() {
-    saveWorkerUrl();
     const token = sessionStorage.getItem(LS_TOKEN);
     if (!token) {
       showLogin();
@@ -324,6 +297,7 @@
 
   function logout() {
     sessionStorage.removeItem(LS_TOKEN);
+    sessionStorage.removeItem(LS_NOME_SESSAO);
     try {
       sessionStorage.removeItem(LS_CFG);
     } catch (e) { /* ignore */ }
@@ -336,7 +310,6 @@
   window.__pontoFlush = flushOutbox;
 
   document.addEventListener('DOMContentLoaded', () => {
-    loadWorkerUrl();
     if (!c) {
       setStatus('Código da empresa ausente. Use o link enviado pelo RH ou ?c=CÓDIGO na URL.', true);
     }
@@ -346,7 +319,7 @@
       } catch (e) {
         window.__pontoCfg = {};
       }
-      $('appNome').textContent = 'Colaborador';
+      $('appNome').textContent = sessionStorage.getItem(LS_NOME_SESSAO) || 'Colaborador';
       $('appCfg').textContent = '';
       showApp();
       flushOutbox();
