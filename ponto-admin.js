@@ -31,7 +31,8 @@ function getDefaultPontoConfig() {
 }
 
 function getPontoWorkerUrl(org) {
-  const u = (org?.pontoConfig?.workerUrl || PONTO_WORKER_URL_PADRAO || '').trim().replace(/\/$/, '');
+  let u = (org?.pontoConfig?.workerUrl || PONTO_WORKER_URL_PADRAO || '').trim().replace(/\/$/, '');
+  if (u && !/^https?:\/\//i.test(u)) u = 'https://' + u;
   return u;
 }
 
@@ -206,6 +207,14 @@ async function gerarPinPontoFuncionarioAtual() {
   toast(`PIN gerado: ${pin} (também copiado se o navegador permitir)`, 'success');
 }
 
+function abreviarNomeParaLink(nome) {
+  if (!nome) return '';
+  const partes = String(nome).trim().split(/\s+/).filter(Boolean);
+  if (partes.length === 0) return '';
+  if (partes.length === 1) return partes[0];
+  return partes[0] + ' ' + partes[partes.length - 1];
+}
+
 async function copiarLinkPontoFuncionarioAtual() {
   const id = document.getElementById('funcId')?.value;
   if (!id) { toast('Salve o funcionário antes.', 'error'); return; }
@@ -214,10 +223,13 @@ async function copiarLinkPontoFuncionarioAtual() {
   const cod = (currentOrg.pontoCodigo || '').trim();
   if (cod.length < 4) { toast('Defina e salve o código da empresa em Configurações → Ponto eletrônico.', 'error'); return; }
   const w = getPontoWorkerUrl(currentOrg);
+  const nomeAbrev = abreviarNomeParaLink(f.nome);
   let url = `${getPwaPontoBaseDir()}ponto/?c=${encodeURIComponent(cod)}&t=${encodeURIComponent(f.pontoLinkToken)}`;
-  if (w) url += `&w=${encodeURIComponent(w)}`;
+  if (nomeAbrev) url += `&n=${encodeURIComponent(nomeAbrev)}`;
+  // Só anexa &w= se a org usar Worker DIFERENTE do padrão (cliente próprio).
+  if (w && w !== PONTO_WORKER_URL_PADRAO) url += `&w=${encodeURIComponent(w)}`;
   try {
     await navigator.clipboard?.writeText(url);
   } catch (e) { /* ignore */ }
-  toast('Link do PWA copiado (se o navegador permitir).', 'success');
+  toast(`Link do ponto de ${f.nome || 'funcionário'} copiado.`, 'success');
 }
