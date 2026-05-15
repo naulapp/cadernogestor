@@ -2,6 +2,10 @@
 // PONTO — admin (Sprint 2) + UI folha de gestão
 // =====================================================
 
+// URL do Worker Cloudflare compartilhado (uma só, serve todas as orgs).
+// Para trocar, basta editar aqui e fazer redeploy do site.
+const PONTO_WORKER_URL_PADRAO = 'https://cadernogestor.luan-eu55.workers.dev';
+
 function getPwaPontoBaseDir() {
   let p = window.location.pathname || '/';
   if (p.endsWith('index.html')) p = p.slice(0, -10);
@@ -22,8 +26,13 @@ function getDefaultPontoConfig() {
     localRaioMetros: 150,
     geofenceModo: 'registrar',
     batidasPorDia: 4,
-    workerUrl: ''
+    workerUrl: PONTO_WORKER_URL_PADRAO
   };
+}
+
+function getPontoWorkerUrl(org) {
+  const u = (org?.pontoConfig?.workerUrl || PONTO_WORKER_URL_PADRAO || '').trim().replace(/\/$/, '');
+  return u;
 }
 
 function mergePontoConfig(org) {
@@ -204,7 +213,7 @@ async function copiarLinkPontoFuncionarioAtual() {
   if (!f?.pontoLinkToken) { toast('Gere um PIN primeiro (isso cria o token do link).', 'error'); return; }
   const cod = (currentOrg.pontoCodigo || '').trim();
   if (cod.length < 4) { toast('Defina e salve o código da empresa em Configurações → Ponto eletrônico.', 'error'); return; }
-  const w = (mergePontoConfig(currentOrg).workerUrl || '').trim().replace(/\/$/, '');
+  const w = getPontoWorkerUrl(currentOrg);
   let url = `${getPwaPontoBaseDir()}ponto/?c=${encodeURIComponent(cod)}&t=${encodeURIComponent(f.pontoLinkToken)}`;
   if (w) url += `&w=${encodeURIComponent(w)}`;
   try {
