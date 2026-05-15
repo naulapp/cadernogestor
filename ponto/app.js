@@ -193,7 +193,7 @@
       }
     }
     outboxSave(next);
-    if (next.length) setStatus('Algumas batidas offline ainda na fila. Mantenha o app aberto online.', false);
+    if (next.length) setStatus('Alguns registros offline ainda na fila. Mantenha o app aberto online.', false);
   }
 
   function mesAtualRef() {
@@ -251,17 +251,17 @@
     const mesLbl = (data.mesRef || '').split('-').reverse().join('/') || '';
 
     let html = '';
-    html += '<div class="resumo-bloco"><strong>Última batida</strong><br/>';
+    html += '<div class="resumo-bloco"><strong>Último registro</strong><br/>';
     if (u && (u.em || u.dataDia)) {
       html += `<span class="resumo-valor">${formatarDataPt(u.em)}</span>`;
-      if (u.dataDia) html += `<br/><span class="resumo-detalhe">Dia ${u.dataDia} · Batida nº ${u.tipoBatida != null ? u.tipoBatida : '—'}</span>`;
+      if (u.dataDia) html += `<br/><span class="resumo-detalhe">Dia ${u.dataDia} · Nº registro ${u.tipoBatida != null ? u.tipoBatida : '—'}</span>`;
     } else {
-      html += '<span class="resumo-detalhe">Nenhuma batida registrada ainda.</span>';
+      html += '<span class="resumo-detalhe">Nenhum registro de ponto ainda.</span>';
     }
     html += '</div>';
 
     html += '<div class="resumo-bloco"><strong>Este mês (' + mesLbl + ')</strong><br/>';
-    html += `<span class="resumo-valor">${r.totalBatidas || 0} batida(s)</span> · `;
+    html += `<span class="resumo-valor">${r.totalBatidas || 0} registro(s)</span> · `;
     html += `<span class="resumo-detalhe">${r.diasComRegistro || 0} dia(s) com registro</span></div>`;
 
     const dias = r.porDia || [];
@@ -269,7 +269,7 @@
       html += '<div class="resumo-lista-titulo">Registros recentes no mês</div><ul class="resumo-lista">';
       for (const dia of dias.slice(0, 8)) {
         const hor = (dia.horarios || []).join(', ');
-        html += `<li><span class="resumo-dia">${dia.dataDia}</span> — ${dia.qtd} batida(s): ${hor || '—'}</li>`;
+        html += `<li><span class="resumo-dia">${dia.dataDia}</span> — ${dia.qtd} registro(s): ${hor || '—'}</li>`;
       }
       html += '</ul>';
     }
@@ -349,7 +349,7 @@
       $('appNome').textContent = data.nome || 'Colaborador';
       const cfg = data.pontoConfig || {};
       $('appCfg').textContent =
-        (cfg.exigirFoto !== false ? 'Foto obrigatória em cada batida' : 'Foto opcional') +
+        (cfg.exigirFoto !== false ? 'Foto obrigatória em cada registro' : 'Foto opcional') +
         ' · Limite/dia: ' +
         (data.batidasPorDia && data.batidasPorDia > 0 ? data.batidasPorDia : 'sem limite');
       window.__pontoCfg = cfg;
@@ -420,7 +420,7 @@
           }
         ])
       );
-      setStatus('Sem internet: batida guardada. Enviaremos quando voltar a rede.', false);
+      setStatus('Sem internet: registro guardado. Enviaremos quando voltar a rede.', false);
       return;
     }
 

@@ -8,6 +8,7 @@ import {
 } from './firestore.js';
 import { normalizarCpf, pontoHashPin } from './ponto-pin.js';
 import { signJwtHs256, verifyJwtHs256 } from './jwt-hs256.js';
+import { verifyFirebaseIdToken } from './firebase-id-token.js';
 
 let tokenCache = { token: null, exp: 0 };
 
@@ -230,6 +231,9 @@ export default {
       }
       if (path === '/api/minhas-marcacoes' && request.method === 'GET') {
         return handleMinhasMarcacoes(request, env, url);
+      }
+      if (path === '/api/ponto-foto' && request.method === 'GET') {
+        return handlePontoFoto(request, env, url);
       }
     } catch (e) {
       return json({ ok: false, error: String(e.message || e) }, env, req, 500);
@@ -463,6 +467,72 @@ async function handleMinhasMarcacoes(request, env, url) {
   );
 }
 
+function orgIdFromPontoFotoKey(key) {
+  const m = /^orgs\/([^/]+)\/ponto\//.exec(String(key || ''));
+  return m ? m[1] : '';
+}
+
+function isAllowedPontoFotoKey(key) {
+  return /^orgs\/[^/]+\/ponto\/[^/]+\/[^/]+$/.test(String(key || ''));
+}
+
+async function membroUidSetForOrg(env, orgId) {
+  const pid = projectId(env);
+  const at = await getAccessToken(env);
+  const doc = await firestoreGetDoc(pid, at, `orgs/${orgId}`);
+  if (!doc) return null;
+  const o = documentToObject(doc);
+  const ids = new Set();
+  if (Array.isArray(o.membroIds)) for (const id of o.membroIds) if (id) ids.add(String(id));
+  if (Array.isArray(o.membros)) for (const m of o.membros) if (m?.uid) ids.add(String(m.uid));
+  if (o.dono) ids.add(String(o.dono));
+  return ids;
+}
+
+async function handlePontoFoto(request, env, url) {
+  const key = url.searchParams.get('key');
+  if (!key || !isAllowedPontoFotoKey(key)) {
+    return new Response('key inválido', { status: 400, headers: corsHeaders(env, request) });
+  }
+  const orgId = orgIdFromPontoFotoKey(key);
+  if (!orgId) {
+    return new Response('key inválido', { status: 400, headers: corsHeaders(env, request) });
+  }
+
+  const idTok = (request.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '').trim();
+  const webKey = env.FIREBASE_WEB_API_KEY || '';
+  if (!webKey) {
+    return json({ ok: false, error: 'FIREBASE_WEB_API_KEY não configurado no Worker.' }, env, request, 503);
+  }
+  const user = await verifyFirebaseIdToken(webKey, idTok);
+  if (!user?.uid) {
+    return new Response('Não autorizado', { status: 401, headers: corsHeaders(env, request) });
+  }
+
+  const uidSet = await membroUidSetForOrg(env, orgId);
+  if (!uidSet || !uidSet.has(user.uid)) {
+    return new Response('Sem permissão', { status: 403, headers: corsHeaders(env, request) });
+  }
+
+  if (!env.PONTO_BUCKET) {
+    return new Response('R2 não configurado', { status: 500, headers: corsHeaders(env, request) });
+  }
+
+  const obj = await env.PONTO_BUCKET.get(key);
+  if (!obj) {
+    return new Response('Foto não encontrada', { status: 404, headers: corsHeaders(env, request) });
+  }
+  const ct = obj.httpMetadata?.contentType || 'image/jpeg';
+  return new Response(obj.body, {
+    status: 200,
+    headers: {
+      'Content-Type': ct,
+      'Cache-Control': 'private, max-age=300',
+      ...corsHeaders(env, request)
+    }
+  });
+}
+
 async function readSession(request, env) {
   const h = request.headers.get('Authorization') || '';
   const m = /^Bearer\s+(.+)$/i.exec(h);
@@ -559,7 +629,7 @@ async function handleRegistrar(request, env) {
   if (limite > 0) {
     ja = await countMarcacoesHoje(env, sess.orgId, sess.funcionarioId, dataDia);
     if (ja >= limite) {
-      return json({ ok: false, error: `Limite de ${limite} batida(s) hoje atingido.` }, env, request, 429);
+      return json({ ok: false, error: `Limite de ${limite} registro(s) de ponto hoje atingido.` }, env, request, 429);
     }
   }
 

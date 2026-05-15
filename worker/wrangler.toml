@@ -14,3 +14,5 @@ bucket_name = "cadernogestor-ponto"
 # Opcional: restrinja CORS ao seu GitHub Pages (URL exata, sem barra no final).
 [vars]
 ALLOWED_ORIGIN = "*"
+# Mesma API key pública do Firebase do app (core.js) — usada só para validar idToken ao servir fotos R2.
+FIREBASE_WEB_API_KEY = "AIzaSyAjLvQcgbdisKnuXap6ISE9-doao3HszKM"
