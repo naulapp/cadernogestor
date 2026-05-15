@@ -114,18 +114,58 @@ async function listFuncionarios(env, orgId) {
   return docs.map((d) => ({ id: idFromResourceName(d.name), ...documentToObject(d) }));
 }
 
-async function findFuncionarioLogin(env, orgId, { t, cpf }) {
+/** Candidatos a login: token no link, CPF completo ou últimos 4 dígitos do CPF. */
+async function listCandidatosLogin(env, orgId, { t, cpf, cpfUltimos4 }) {
   const funcs = await listFuncionarios(env, orgId);
   const token = String(t || '').trim();
-  const cpfD = normalizarCpf(cpf);
   if (token) {
     const f = funcs.find((x) => x.pontoLinkToken === token);
-    if (f) return f;
+    return f ? [f] : [];
   }
+  const cpfD = normalizarCpf(cpf);
   if (cpfD.length === 11) {
-    return funcs.find((x) => normalizarCpf(x.cpf) === cpfD);
+    const f = funcs.find((x) => normalizarCpf(x.cpf) === cpfD);
+    return f ? [f] : [];
   }
-  return null;
+  const u4 = String(cpfUltimos4 || '').replace(/\D/g, '');
+  if (u4.length === 4) {
+    return funcs.filter((x) => normalizarCpf(x.cpf).endsWith(u4));
+  }
+  return [];
+}
+
+async function listMarcacoesFuncionario(env, orgId, funcionarioId, limit = 200) {
+  const pid = projectId(env);
+  const token = await getAccessToken(env);
+  const rows = await firestoreRunQuery(
+    pid,
+    token,
+    {
+      from: [{ collectionId: 'marcacoesPonto' }],
+      where: {
+        fieldFilter: {
+          field: { fieldPath: 'funcionarioId' },
+          op: 'EQUAL',
+          value: { stringValue: funcionarioId }
+        }
+      },
+      limit
+    },
+    `orgs/${orgId}`
+  );
+  const out = [];
+  for (const row of rows) {
+    if (!row.document) continue;
+    const docId = idFromResourceName(row.document.name);
+    const m = documentToObject(row.document);
+    out.push({ id: docId, ...m });
+  }
+  const ts = (m) => {
+    const d = new Date(m.em || m.criadoEm || 0);
+    return Number.isFinite(d.getTime()) ? d.getTime() : 0;
+  };
+  out.sort((a, b) => ts(b) - ts(a));
+  return out;
 }
 
 async function countMarcacoesHoje(env, orgId, funcionarioId, dataDia) {
@@ -188,6 +228,9 @@ export default {
       if (path === '/api/registrar' && request.method === 'POST') {
         return handleRegistrar(request, env);
       }
+      if (path === '/api/minhas-marcacoes' && request.method === 'GET') {
+        return handleMinhasMarcacoes(request, env, url);
+      }
     } catch (e) {
       return json({ ok: false, error: String(e.message || e) }, env, req, 500);
     }
@@ -207,65 +250,120 @@ async function handleLogin(request, env) {
   const pin = String(body.pin || '').replace(/\D/g, '').trim();
   const t = String(body.t || '').trim();
   const cpf = body.cpf;
+  const cpfUltimos4 = body.cpfUltimos4;
 
   if (!c || pin.length !== 6) {
     return json({ ok: false, error: 'Informe código da empresa e PIN de 6 dígitos.' }, env, request, 400);
   }
-  if (!t && (!cpf || normalizarCpf(cpf).length !== 11)) {
-    return json({ ok: false, error: 'Informe o link com token ou o CPF com 11 dígitos.' }, env, request, 400);
+  const u4 = String(cpfUltimos4 || '').replace(/\D/g, '');
+  if (!t && normalizarCpf(cpf).length !== 11 && u4.length !== 4) {
+    return json(
+      {
+        ok: false,
+        error: 'Informe os 4 últimos dígitos do CPF (ou use link antigo com token / CPF completo).'
+      },
+      env,
+      request,
+      400
+    );
   }
 
   const org = await findOrgByPontoCodigo(env, c);
   if (!org) return json({ ok: false, error: 'Código da empresa inválido.' }, env, request, 401);
 
-  const f = await findFuncionarioLogin(env, org.orgId, { t, cpf });
-  if (!f?.id) return json({ ok: false, error: 'Funcionário não encontrado.' }, env, request, 401);
-  if (f.pontoAtivo === false) {
+  const candidatos = await listCandidatosLogin(env, org.orgId, { t, cpf, cpfUltimos4 });
+  if (!candidatos.length) {
     return json(
-      { ok: false, code: 'PONTO_DESATIVADO', error: 'Ponto desativado para este colaborador.' },
+      { ok: false, error: 'Colaborador não encontrado. Confira o código da empresa e os 4 últimos dígitos do CPF.' },
       env,
       request,
-      403
-    );
-  }
-  if (!f.pontoPinHash || !f.pontoPinSalt) {
-    return json(
-      {
-        ok: false,
-        code: 'PIN_NAO_CONFIGURADO',
-        error: 'PIN ainda não foi gerado no sistema (admin). Abra o cadastro do funcionário e use «Gerar PIN».'
-      },
-      env,
-      request,
-      403
+      401
     );
   }
 
-  const cpfDigits = normalizarCpf(f.cpf != null && f.cpf !== '' ? f.cpf : cpf);
-  if (cpfDigits.length !== 11) {
-    return json(
-      {
-        ok: false,
-        code: 'CPF_INCOMPLETO',
-        error:
-          'CPF no cadastro precisa ter 11 dígitos (corrija no admin e gere o PIN de novo). Se o CPF começa com 0, salve como texto, não só número.'
-      },
-      env,
-      request,
-      403
-    );
+  let f = null;
+
+  if (candidatos.length === 1) {
+    const only = candidatos[0];
+    if (only.pontoAtivo === false) {
+      return json(
+        { ok: false, code: 'PONTO_DESATIVADO', error: 'Ponto desativado para este colaborador.' },
+        env,
+        request,
+        403
+      );
+    }
+    if (!only.pontoPinHash || !only.pontoPinSalt) {
+      return json(
+        {
+          ok: false,
+          code: 'PIN_NAO_CONFIGURADO',
+          error: 'PIN ainda não foi gerado no sistema (admin). Abra o cadastro do funcionário e use «Gerar PIN».'
+        },
+        env,
+        request,
+        403
+      );
+    }
+    const cpfDigits = normalizarCpf(only.cpf != null && only.cpf !== '' ? only.cpf : cpf);
+    if (cpfDigits.length !== 11) {
+      return json(
+        {
+          ok: false,
+          code: 'CPF_INCOMPLETO',
+          error:
+            'CPF no cadastro precisa ter 11 dígitos (corrija no admin e gere o PIN de novo). Se o CPF começa com 0, salve como texto, não só número.'
+        },
+        env,
+        request,
+        403
+      );
+    }
+    const hash = await pontoHashPin(org.orgId, cpfDigits, pin, only.pontoPinSalt);
+    if (hash !== only.pontoPinHash) {
+      return json({ ok: false, error: 'PIN incorreto.' }, env, request, 401);
+    }
+    f = only;
+  } else {
+    const pinOk = [];
+    for (const cand of candidatos) {
+      if (cand.pontoAtivo === false) continue;
+      if (!cand.pontoPinHash || !cand.pontoPinSalt) continue;
+      const cpfDigits = normalizarCpf(cand.cpf);
+      if (cpfDigits.length !== 11) continue;
+      const hash = await pontoHashPin(org.orgId, cpfDigits, pin, cand.pontoPinSalt);
+      if (hash === cand.pontoPinHash) pinOk.push(cand);
+    }
+    if (pinOk.length === 1) {
+      f = pinOk[0];
+    } else if (pinOk.length > 1) {
+      return json(
+        {
+          ok: false,
+          code: 'LOGIN_AMBIGUO',
+          error: 'Mais de um cadastro bate com estes dados. Peça ao RH para conferir os CPFs ou use o link com token.'
+        },
+        env,
+        request,
+        409
+      );
+    } else {
+      return json(
+        { ok: false, error: 'PIN incorreto ou CPF não confere com o cadastro.' },
+        env,
+        request,
+        401
+      );
+    }
   }
 
-  const hash = await pontoHashPin(org.orgId, cpfDigits, pin, f.pontoPinSalt);
-  if (hash !== f.pontoPinHash) {
-    return json({ ok: false, error: 'PIN incorreto.' }, env, request, 401);
-  }
-
+  const cpfDigitsJwt = normalizarCpf(f.cpf);
   const pontoConfig = mergePontoConfig(org.data);
+  const jwtTtlSec = 60 * 60 * 24 * 30;
   const token = await signJwtHs256(
-    { orgId: org.orgId, funcionarioId: f.id, nome: f.nome || '', cpfDigits },
+    { orgId: org.orgId, funcionarioId: f.id, nome: f.nome || '', cpfDigits: cpfDigitsJwt },
     env.SESSION_SECRET,
-    43200
+    jwtTtlSec
   );
 
   return json(
@@ -275,6 +373,90 @@ async function handleLogin(request, env) {
       nome: f.nome || '',
       pontoConfig,
       batidasPorDia: pontoConfig.batidasPorDia
+    },
+    env,
+    request
+  );
+}
+
+function mesRefDeDataDia(dataDia) {
+  const s = String(dataDia || '');
+  if (s.length >= 7) return s.slice(0, 7);
+  return '';
+}
+
+function marcaNoMesRef(m, mesRef) {
+  const dd = String(m.dataDia || '');
+  if (dd.length >= 7 && dd.slice(0, 7) === mesRef) return true;
+  const iso = m.em || m.criadoEm;
+  const d = new Date(iso || 0);
+  if (!Number.isFinite(d.getTime())) return false;
+  const y = d.getFullYear();
+  const mo = String(d.getMonth() + 1).padStart(2, '0');
+  return `${y}-${mo}` === mesRef;
+}
+
+async function handleMinhasMarcacoes(request, env, url) {
+  const sess = await readSession(request, env);
+  if (!sess?.orgId) return json({ ok: false, error: 'Não autorizado' }, env, request, 401);
+
+  let mesRef = String(url.searchParams.get('mes') || '').trim();
+  if (!/^\d{4}-\d{2}$/.test(mesRef)) {
+    mesRef = hojeDataDiaSP().slice(0, 7);
+  }
+
+  const lista = await listMarcacoesFuncionario(env, sess.orgId, sess.funcionarioId);
+  const noMes = lista.filter((m) => marcaNoMesRef(m, mesRef));
+
+  const ultima = lista[0] || null;
+  const ultimaMarcacao = ultima
+    ? {
+        em: ultima.em || ultima.criadoEm || '',
+        dataDia: ultima.dataDia || '',
+        tipoBatida: ultima.tipoBatida ?? ultima.tipo ?? null
+      }
+    : null;
+
+  const porDiaMap = new Map();
+  for (const m of noMes) {
+    const dd = m.dataDia || mesRefDeDataDia(m.criadoEm) || mesRef + '-01';
+    if (!porDiaMap.has(dd)) porDiaMap.set(dd, []);
+    porDiaMap.get(dd).push(m);
+  }
+  const porDia = [...porDiaMap.entries()]
+    .map(([dataDia, arr]) => {
+      arr.sort((a, b) => {
+        const ta = new Date(a.em || a.criadoEm || 0).getTime();
+        const tb = new Date(b.em || b.criadoEm || 0).getTime();
+        return ta - tb;
+      });
+      const horarios = arr.map((x) => {
+        const d = new Date(x.em || x.criadoEm || 0);
+        return Number.isFinite(d.getTime())
+          ? d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' })
+          : '—';
+      });
+      return {
+        dataDia,
+        qtd: arr.length,
+        horarios,
+        tipos: arr.map((x) => x.tipoBatida ?? x.tipo ?? null)
+      };
+    })
+    .sort((a, b) => b.dataDia.localeCompare(a.dataDia));
+
+  const diasComRegistro = porDia.length;
+
+  return json(
+    {
+      ok: true,
+      mesRef,
+      ultimaMarcacao,
+      resumoMes: {
+        totalBatidas: noMes.length,
+        diasComRegistro,
+        porDia
+      }
     },
     env,
     request

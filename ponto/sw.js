@@ -1,4 +1,4 @@
-const CACHE = 'cg-ponto-v4';
+const CACHE = 'cg-ponto-v5';
 self.addEventListener('install', (e) => {
   e.waitUntil(
     caches.open(CACHE).then((c) =>
