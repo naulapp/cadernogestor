@@ -79,8 +79,8 @@ npx wrangler login
 
 ### D.2 Ajustar `wrangler.toml`
 
-- Confirme `name = "cadernogestor-ponto"` (ou outro nome; será parte da URL `*.workers.dev` na primeira vez).  
-- Confirme `bucket_name` igual ao bucket R2 que você criou.
+- Confirme `name = "cadernogestor"` no `worker/wrangler.toml` (igual ao **nome do Worker** no painel Cloudflare; integração Git + Wrangler 3.109+ exige consistência).  
+- Confirme `bucket_name` igual ao bucket R2 (pode continuar `cadernogestor-ponto` — nome do bucket é independente do nome do Worker).
 
 ### D.3 Secret `FIREBASE_SERVICE_ACCOUNT`
 
@@ -113,6 +113,10 @@ npx wrangler secret put SESSION_SECRET
 
 Cole o valor quando pedido.
 
+### D.4b Fotos na folha de ponto (gestão)
+
+O Worker expõe `GET /api/ponto-foto?key=...` para o painel baixar a imagem no R2. A autenticação usa o **mesmo `apiKey` público do Firebase** do app (`FIREBASE_WEB_API_KEY` em `[vars]` no `worker/wrangler.toml`, alinhado ao `core.js`). Quem estiver logado no sistema e for membro da organização da foto pode abrir. Se trocar o projeto Firebase, atualize esse valor e faça `wrangler deploy`.
+
 ### D.5 Deploy
 
 ```powershell
@@ -121,7 +125,7 @@ npx wrangler deploy
 
 No final aparece a URL pública, por exemplo:
 
-`https://cadernogestor-ponto.<subdomínio>.workers.dev`
+`https://cadernogestor.<subdomínio>.workers.dev` (o subdomínio segue o `name` do Worker)
 
 ### D.6 CORS (opcional)
 

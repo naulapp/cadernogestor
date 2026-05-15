@@ -94,6 +94,13 @@ function nomeFuncionarioPonto(fid) {
   return f?.nome || fid || '—';
 }
 
+function formatMarcaEmStr(m) {
+  const em = m.em || m.criadoEm;
+  if (typeof em === 'string') return em;
+  if (em && typeof em.toDate === 'function') return em.toDate().toLocaleString('pt-BR');
+  return '';
+}
+
 function renderFolhaPontoPage() {
   const wrap = document.getElementById('folhaPontoRoot');
   if (!wrap) return;
@@ -119,18 +126,20 @@ function renderFolhaPontoPage() {
     return tb.localeCompare(ta);
   });
 
-  const rows = lista.map((m) => {
-    const em = m.em || m.criadoEm;
-    let emStr = '';
-    if (typeof em === 'string') emStr = em;
-    else if (em && typeof em.toDate === 'function') emStr = em.toDate().toLocaleString('pt-BR');
+  window.__folhaPontoListaAtual = lista;
+
+  const rows = lista.map((m, i) => {
+    const emStr = formatMarcaEmStr(m);
+    const emShort = emStr ? emStr.slice(0, 22) : '—';
     const geo = m.geo && (m.geo.lat != null) ? `${Number(m.geo.lat).toFixed(5)}, ${Number(m.geo.lng).toFixed(5)}` : '—';
+    const fotoBtn = m.fotoKey
+      ? `<button type="button" class="btn-ponto-foto-icon" title="Ver foto deste registro" aria-label="Ver foto" onclick="abrirModalFotosPonto(${i})">📷</button>`
+      : '';
     return `<tr>
-      <td>${escapeHtml(emStr ? emStr.slice(0, 20) : '—')}</td>
+      <td style="white-space:nowrap">${escapeHtml(emShort)}${fotoBtn}</td>
       <td>${escapeHtml(nomeFuncionarioPonto(m.funcionarioId))}</td>
       <td>${escapeHtml(String(m.tipoBatida ?? m.tipo ?? '—'))}</td>
       <td>${escapeHtml(geo)}</td>
-      <td>${m.fotoKey ? 'Sim' : '—'}</td>
     </tr>`;
   }).join('');
 
@@ -154,18 +163,134 @@ function renderFolhaPontoPage() {
       </div>
     </div>
     <p style="color:var(--text3);font-size:0.82rem;margin-bottom:10px">
-      Registros aparecem aqui quando o app de ponto estiver gravando marcações. Uso para conferência e auditoria.
+      Registros de ponto aparecem aqui quando o app estiver gravando marcações. O ícone de câmera ao lado do horário abre a foto (é preciso estar logado no sistema).
     </p>
     <div class="table-wrap">
       <table class="data-table">
-        <thead><tr><th>Data/hora</th><th>Funcionário</th><th>Batida</th><th>Geo</th><th>Foto</th></tr></thead>
-        <tbody>${rows || '<tr><td colspan="5" style="color:var(--text3)">Nenhuma marcação neste filtro.</td></tr>'}</tbody>
+        <thead><tr><th>Data/hora</th><th>Funcionário</th><th>Nº registro</th><th>Geo</th></tr></thead>
+        <tbody>${rows || '<tr><td colspan="4" style="color:var(--text3)">Nenhum registro neste filtro.</td></tr>'}</tbody>
       </table>
     </div>
   `;
 }
 
-function syncPontoFuncionarioUI(f) {
+const __pontoFotoBlobUrls = [];
+
+function fecharModalPontoFotos() {
+  const ov = document.getElementById('modal-ponto-fotos');
+  if (ov) ov.classList.remove('active');
+  while (__pontoFotoBlobUrls.length) {
+    const u = __pontoFotoBlobUrls.pop();
+    try {
+      URL.revokeObjectURL(u);
+    } catch (e) { /* ignore */ }
+  }
+}
+
+async function buscarUrlBlobFotoPonto(fotoKey) {
+  const base = String(typeof PONTO_WORKER_URL_PADRAO !== 'undefined' ? PONTO_WORKER_URL_PADRAO : '').replace(/\/$/, '');
+  if (!base) throw new Error('URL do Worker não configurada.');
+  const auth = typeof firebase !== 'undefined' && firebase.auth ? firebase.auth() : null;
+  const u = auth?.currentUser;
+  if (!u) throw new Error('Faça login na sua conta para ver as fotos.');
+  const idTok = await u.getIdToken();
+  const r = await fetch(`${base}/api/ponto-foto?key=${encodeURIComponent(fotoKey)}`, {
+    headers: { Authorization: 'Bearer ' + idTok }
+  });
+  if (!r.ok) {
+    const tx = await r.text();
+    throw new Error(tx || 'Erro ' + r.status);
+  }
+  const blob = await r.blob();
+  const url = URL.createObjectURL(blob);
+  __pontoFotoBlobUrls.push(url);
+  return url;
+}
+
+function metaHtmlMarcaPonto(m) {
+  const nome = nomeFuncionarioPonto(m.funcionarioId);
+  const emFull = formatMarcaEmStr(m) || '—';
+  const geo = m.geo && (m.geo.lat != null) ? `${Number(m.geo.lat).toFixed(6)}, ${Number(m.geo.lng).toFixed(6)}` : '—';
+  const dia = m.dataDia || '—';
+  const nreg = m.tipoBatida ?? m.tipo ?? '—';
+  return (
+    `<strong>${escapeHtml(nome)}</strong><br/>` +
+    `<span>Data/hora:</span> ${escapeHtml(emFull)}<br/>` +
+    `<span>Dia (ponto):</span> ${escapeHtml(String(dia))}<br/>` +
+    `<span>Nº registro:</span> ${escapeHtml(String(nreg))}<br/>` +
+    `<span>Geo:</span> ${escapeHtml(geo)}`
+  );
+}
+
+async function abrirModalFotosPonto(indexLista) {
+  const lista = window.__folhaPontoListaAtual || [];
+  const m = lista[indexLista];
+  if (!m?.fotoKey) return;
+  const ov = document.getElementById('modal-ponto-fotos');
+  const main = document.getElementById('pontoFotoMain');
+  const info = document.getElementById('pontoFotoInfo');
+  const strip = document.getElementById('pontoFotosStrip');
+  if (!ov || !main || !info || !strip) return;
+
+  fecharModalPontoFotos();
+  ov.classList.add('active');
+  main.innerHTML = '<span style="color:var(--text3)">Carregando foto…</span>';
+  info.innerHTML = metaHtmlMarcaPonto(m);
+  strip.innerHTML = '';
+
+  const comFoto = lista
+    .map((x, idx) => ({ x, idx }))
+    .filter((o) => o.x.fotoKey)
+    .sort((a, b) => formatMarcaEmStr(b.x).localeCompare(formatMarcaEmStr(a.x)))
+    .slice(0, 48);
+
+  async function mostrarPrincipal(idx) {
+    const mar = lista[idx];
+    if (!mar?.fotoKey) return;
+    main.innerHTML = '<span style="color:var(--text3)">Carregando…</span>';
+    info.innerHTML = metaHtmlMarcaPonto(mar);
+    try {
+      const url = await buscarUrlBlobFotoPonto(mar.fotoKey);
+      main.innerHTML = '<img class="ponto-foto-main-img" src="' + url + '" alt="Foto do registro de ponto" />';
+    } catch (e) {
+      main.innerHTML = '<span style="color:#b42318">' + escapeHtml(String(e.message || e)) + '</span>';
+    }
+    strip.querySelectorAll('.ponto-foto-strip-item').forEach((el) => el.classList.remove('ativo'));
+    const cur = strip.querySelector('[data-strip-idx="' + idx + '"]');
+    if (cur) cur.classList.add('ativo');
+  }
+
+  for (const { x, idx } of comFoto) {
+    const div = document.createElement('div');
+    div.className = 'ponto-foto-strip-item';
+    div.dataset.stripIdx = String(idx);
+    div.title = formatMarcaEmStr(x) || 'Registro';
+    div.innerHTML = '<div style="height:72px;background:var(--card-alt);display:flex;align-items:center;justify-content:center;font-size:0.7rem;color:var(--text3)">…</div>';
+    div.onclick = () => {
+      void mostrarPrincipal(idx);
+    };
+    strip.appendChild(div);
+    try {
+      const u = await buscarUrlBlobFotoPonto(x.fotoKey);
+      div.innerHTML = '<img src="' + u + '" alt="" loading="lazy" />';
+    } catch (e) {
+      div.innerHTML = '<div style="padding:6px;font-size:0.7rem;color:#b42318">Erro</div>';
+    }
+  }
+
+  await mostrarPrincipal(indexLista);
+}
+
+window.abrirModalFotosPonto = abrirModalFotosPonto;
+window.fecharModalPontoFotos = fecharModalPontoFotos;
+
+(function attachModalPontoFotoOverlay() {
+  const ov = document.getElementById('modal-ponto-fotos');
+  if (!ov) return;
+  ov.addEventListener('click', (e) => {
+    if (e.target === ov) fecharModalPontoFotos();
+  });
+})();
   const at = document.getElementById('funcPontoAtivo');
   if (at) at.checked = f?.pontoAtivo !== false;
   const st = document.getElementById('funcPontoPinStatus');

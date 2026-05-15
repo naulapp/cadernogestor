@@ -156,6 +156,23 @@
   .calc-layout > div:last-child,
   #dashCalcLayout > div:last-child  { order: 2 !important; }
 }
+
+  /* Fotos — registro de ponto (gestão) */
+  .ponto-fotos-layout { display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-start; }
+  .ponto-fotos-main { flex: 1; min-width: 220px; max-width: 100%; }
+  .ponto-fotos-strip-wrap { width: 200px; max-height: 70vh; overflow: auto; flex-shrink: 0; }
+  @media (max-width: 720px) {
+    .ponto-fotos-strip-wrap { width: 100%; max-height: 220px; }
+  }
+  .ponto-fotos-strip-title { font-size: 0.75rem; color: var(--text3); margin-bottom: 8px; }
+  .ponto-fotos-strip { display: flex; flex-direction: column; gap: 8px; }
+  .ponto-foto-strip-item { border: 2px solid transparent; border-radius: 8px; overflow: hidden; cursor: pointer; background: var(--card-alt, #f0f2f5); }
+  .ponto-foto-strip-item.ativo { border-color: #2e9e4f; }
+  .ponto-foto-strip-item img { width: 100%; height: 72px; object-fit: cover; display: block; }
+  .ponto-foto-main-img { max-width: 100%; max-height: 55vh; object-fit: contain; border-radius: 10px; background: #111; display: block; }
+  .ponto-foto-meta { font-size: 0.8rem; color: var(--text2); margin-top: 10px; line-height: 1.45; }
+  .btn-ponto-foto-icon { margin-left: 6px; border: none; background: transparent; cursor: pointer; font-size: 1.15rem; vertical-align: middle; padding: 2px 6px; line-height: 1; border-radius: 6px; }
+  .btn-ponto-foto-icon:hover { background: rgba(0,0,0,.07); }
 </style>
 </head>
 <body>
@@ -1146,11 +1163,31 @@
         <div class="page-header">
           <div>
             <div class="page-title">Ponto (gestão)</div>
-            <div class="page-sub">Marcações — filtro por mês e funcionário</div>
+            <div class="page-sub">Registros de ponto — filtro por mês e funcionário</div>
           </div>
         </div>
         <div class="section-card">
           <div id="folhaPontoRoot"></div>
+        </div>
+        <div class="modal-overlay" id="modal-ponto-fotos">
+          <div class="modal" style="max-width:min(1000px,96vw);width:96vw">
+            <div class="modal-header">
+              <div class="modal-title">Foto do registro de ponto</div>
+              <div class="modal-close" onclick="fecharModalPontoFotos()">✕</div>
+            </div>
+            <div class="modal-body" style="padding-top:8px">
+              <div class="ponto-fotos-layout">
+                <div class="ponto-fotos-main">
+                  <div id="pontoFotoMain"></div>
+                  <div id="pontoFotoInfo" class="ponto-foto-meta"></div>
+                </div>
+                <div class="ponto-fotos-strip-wrap">
+                  <div class="ponto-fotos-strip-title">Outros registros com foto (mesmo filtro)</div>
+                  <div id="pontoFotosStrip" class="ponto-fotos-strip"></div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -1215,7 +1252,7 @@
             <div class="form-group" style="grid-column:1/-1">
               <label class="form-label" style="display:flex;align-items:center;gap:8px">
                 <input type="checkbox" id="cfgPontoExigirFoto" checked>
-                Exigir foto na batida
+                Exigir foto em cada registro de ponto
               </label>
             </div>
             <div class="form-group">
@@ -1238,7 +1275,7 @@
               </select>
             </div>
             <div class="form-group">
-              <label class="form-label">Batidas por dia (limite)</label>
+              <label class="form-label">Registros por dia (limite)</label>
               <select class="form-input" id="cfgPontoBatidas">
                 <option value="0">Sem limite (recomendado)</option>
                 <option value="4">4 (entrada, saída almoço, volta, saída)</option>
@@ -2191,7 +2228,7 @@
 <script src="jornada-legal.js?v=20260514h"></script>
 <script src="jornada-config.js?v=20260514h"></script>
 <script src="ponto-crypto.js?v=20260514h"></script>
-<script src="ponto-admin.js?v=20260515a"></script>
+<script src="ponto-admin.js?v=20260515b"></script>
 <script src="almoxarifado.js?v=20260514h"></script>
 <script src="extras.js?v=20260514h"></script>
 <script>
