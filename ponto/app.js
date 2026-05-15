@@ -2,7 +2,33 @@
   // Manter IGUAL a PONTO_WORKER_URL_PADRAO em ponto-admin.js (troca global).
   const WORKER_URL_PADRAO = 'https://cadernogestor.luan-eu55.workers.dev';
 
-  const params = new URLSearchParams(location.search);
+  const LS_PONTO_QS = 'cg_ponto_url_search_v1';
+
+  function mergePontoUrlParams() {
+    const params = new URLSearchParams(location.search || '');
+    try {
+      const saved = localStorage.getItem(LS_PONTO_QS) || '';
+      if (saved) {
+        const qs = saved.charAt(0) === '?' ? saved : '?' + saved;
+        const ps = new URLSearchParams(qs);
+        if (!params.get('c') && ps.get('c')) params.set('c', ps.get('c'));
+        if (!params.get('t') && ps.get('t')) params.set('t', ps.get('t'));
+        if (!params.get('n') && ps.get('n')) params.set('n', ps.get('n'));
+      }
+    } catch (e) {
+      /* ignore */
+    }
+    if (params.get('c') || params.get('t')) {
+      try {
+        localStorage.setItem(LS_PONTO_QS, '?' + params.toString());
+      } catch (e2) {
+        /* ignore */
+      }
+    }
+    return params;
+  }
+
+  const params = mergePontoUrlParams();
   const c = (params.get('c') || '').trim().toUpperCase();
   const t = (params.get('t') || '').trim();
   const workerBase = normalizarWorkerUrl(WORKER_URL_PADRAO);
@@ -173,9 +199,27 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)
       });
-      const data = await res.json();
+      const text = await res.text();
+      let data = {};
+      try {
+        data = text ? JSON.parse(text) : {};
+      } catch (e) {
+        setStatus(
+          'Resposta inválida do servidor (HTTP ' +
+            res.status +
+            '). Pode ser bloqueio da rede, proxy ou manutenção no Worker.',
+          true
+        );
+        return;
+      }
       if (!data.ok) {
-        setStatus(data.error || 'Falha no login', true);
+        let msg = data.error || 'Falha no login';
+        if (data.code) msg += ' [' + data.code + ']';
+        if (res.status === 403) {
+          msg +=
+            ' No admin: CPF com 11 dígitos no cadastro, «Ponto ativo» marcado e botão «Gerar PIN» executado após salvar o funcionário.';
+        }
+        setStatus(msg, true);
         return;
       }
       sessionStorage.setItem(LS_TOKEN, data.token);
@@ -301,6 +345,9 @@
     try {
       sessionStorage.removeItem(LS_CFG);
     } catch (e) { /* ignore */ }
+    try {
+      localStorage.removeItem(LS_PONTO_QS);
+    } catch (e2) { /* ignore */ }
     showLogin();
   }
 

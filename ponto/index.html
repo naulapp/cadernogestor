@@ -66,6 +66,24 @@
 
   <script>
     (function () {
+      var LS_PONTO_QS = 'cg_ponto_url_search_v1';
+      function mergePontoUrlParams() {
+        var params = new URLSearchParams(location.search || '');
+        try {
+          var saved = localStorage.getItem(LS_PONTO_QS) || '';
+          if (saved) {
+            var qs = saved.charAt(0) === '?' ? saved : '?' + saved;
+            var ps = new URLSearchParams(qs);
+            if (!params.get('c') && ps.get('c')) params.set('c', ps.get('c'));
+            if (!params.get('t') && ps.get('t')) params.set('t', ps.get('t'));
+            if (!params.get('n') && ps.get('n')) params.set('n', ps.get('n'));
+          }
+        } catch (e) { /* ignore */ }
+        if (params.get('c') || params.get('t')) {
+          try { localStorage.setItem(LS_PONTO_QS, '?' + params.toString()); } catch (e2) { /* ignore */ }
+        }
+        return params;
+      }
       function decodeNomeParam(raw) {
         if (!raw) return '';
         var s = String(raw).trim();
@@ -75,7 +93,7 @@
           return s;
         }
       }
-      var p = new URLSearchParams(location.search);
+      var p = mergePontoUrlParams();
       var c = (p.get('c') || '').trim().toUpperCase();
       var n = decodeNomeParam(p.get('n'));
       document.getElementById('lblCod').textContent = c || '(use o link enviado pelo RH)';
@@ -87,6 +105,6 @@
       if (!p.get('t')) document.getElementById('cpfWrap').style.display = 'block';
     })();
   </script>
-  <script src="app.js?v=20260514i"></script>
+  <script src="app.js?v=20260514j"></script>
 </body>
 </html>
