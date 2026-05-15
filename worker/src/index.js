@@ -66,7 +66,7 @@ function mergePontoConfig(orgData) {
     localLng: pc.localLng === '' || pc.localLng == null ? null : parseFloat(pc.localLng),
     localRaioMetros: parseInt(pc.localRaioMetros, 10) || 150,
     geofenceModo: pc.geofenceModo || 'registrar',
-    batidasPorDia: parseInt(pc.batidasPorDia, 10) || 4,
+    batidasPorDia: (function(){ const v = parseInt(pc.batidasPorDia, 10); return Number.isFinite(v) && v >= 0 ? v : 0; })(),
     workerUrl: pc.workerUrl || ''
   };
 }
@@ -346,10 +346,13 @@ async function handleRegistrar(request, env) {
   }
 
   const dataDia = hojeDataDiaSP();
-  const ja = await countMarcacoesHoje(env, sess.orgId, sess.funcionarioId, dataDia);
-  const maxB = Math.min(12, Math.max(1, pontoConfig.batidasPorDia || 4));
-  if (ja >= maxB) {
-    return json({ ok: false, error: `Limite de ${maxB} batida(s) hoje atingido.` }, env, request, 429);
+  const limite = pontoConfig.batidasPorDia;
+  let ja = 0;
+  if (limite > 0) {
+    ja = await countMarcacoesHoje(env, sess.orgId, sess.funcionarioId, dataDia);
+    if (ja >= limite) {
+      return json({ ok: false, error: `Limite de ${limite} batida(s) hoje atingido.` }, env, request, 429);
+    }
   }
 
   const tipoBatida = parseInt(body.tipoBatida, 10) || ja + 1;

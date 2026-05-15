@@ -25,7 +25,7 @@ function getDefaultPontoConfig() {
     localLng: '',
     localRaioMetros: 150,
     geofenceModo: 'registrar',
-    batidasPorDia: 4,
+    batidasPorDia: 0,
     workerUrl: PONTO_WORKER_URL_PADRAO
   };
 }
@@ -52,7 +52,7 @@ function syncPontoConfigUI() {
   const gf = document.getElementById('cfgPontoGeofence');
   if (gf) gf.value = pc.geofenceModo || 'registrar';
   const bd = document.getElementById('cfgPontoBatidas');
-  if (bd) bd.value = String(pc.batidasPorDia || 4);
+  if (bd) bd.value = String(pc.batidasPorDia ?? 0);
   set('cfgPontoWorkerUrl', pc.workerUrl || '');
   const codEl = document.getElementById('cfgPontoCodigo');
   if (codEl && !codEl.value && !currentOrg.pontoCodigo) {
@@ -70,7 +70,7 @@ async function salvarPontoEmpresa() {
     localLng: lngStr === '' ? '' : (parseFloat(lngStr.replace(',', '.')) || ''),
     localRaioMetros: parseInt(document.getElementById('cfgPontoRaio')?.value, 10) || 150,
     geofenceModo: document.getElementById('cfgPontoGeofence')?.value || 'registrar',
-    batidasPorDia: parseInt(document.getElementById('cfgPontoBatidas')?.value, 10) || 4,
+    batidasPorDia: (function(){ const v = parseInt(document.getElementById('cfgPontoBatidas')?.value, 10); return Number.isFinite(v) && v >= 0 ? v : 0; })(),
     workerUrl: (document.getElementById('cfgPontoWorkerUrl')?.value || '').trim()
   };
   const cod = (document.getElementById('cfgPontoCodigo')?.value || '').trim().toUpperCase();

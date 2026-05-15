@@ -1,0 +1,93 @@
+================================================================================
+RESUMO — O QUE CADA COISA SERVE + CHECKLIST PARA CONFERIR
+================================================================================
+
+--- Para que serve o SESSION_SECRET? ------------------------------------------
+
+É uma senha SÓ do Worker. Depois que o funcionário faz login com PIN, o Worker
+devolve um "token de sessão" (JWT). O SESSION_SECRET é usado para ASSINAR e
+VERIFICAR esse token. Sem ele, login/upload/registro não funcionam de forma
+segura. Não é Firebase, não é JSON — é uma string longa aleatória que você
+colou no painel da Cloudflare como Secret.
+
+================================================================================
+CHECKLIST COMPLETO (marque mentalmente o que já fez)
+================================================================================
+
+[ ] A) FIREBASE — Regras
+    Console Firebase → Firestore → Regras → publicar o conteúdo de
+    REGRAS FIRESTORE.txt (inclui marcacoesPonto, almox, jornada, etc.)
+
+[ ] B) FIREBASE — Conta de serviço (JSON)
+    Você já baixou o JSON (chave privada). Ele NÃO vai no GitHub.
+    O CONTEÚDO inteiro vai no Secret da Cloudflare: FIREBASE_SERVICE_ACCOUNT
+    (Workers → cadernogestor → Configurações → Variáveis e segredos).
+
+[ ] C) CLOUDFLARE — Bucket R2
+    Nome do bucket: cadernogestor-ponto  ← ESTÁ CERTO se for esse o nome que
+    você criou no painel R2. Tem que ser IGUAL ao bucket_name no arquivo:
+    worker/wrangler.toml  (linha bucket_name = "cadernogestor-ponto")
+    Se no R2 o bucket tiver OUTRO nome, altere o wrangler.toml e faça deploy
+    de novo.
+
+[ ] D) CLOUDFLARE — Worker (GitHub naulapp/cadernogestor)
+    - Repositório conectado; diretório raiz da build: /worker
+    - Comando de implantação: npx wrangler deploy (ou o que a Cloudflare
+      mostrar como padrão)
+    - worker/wrangler.toml com name = "cadernogestor" (igual ao nome do Worker
+      no painel)
+    - Última build: SUCESSO (não "Falha na última build")
+    - Domínio workers.dev: HABILITADO (para aparecer URL pública)
+    - URL anotada (ex.: https://cadernogestor.<sua-conta>.workers.dev)
+
+[ ] E) CLOUDFLARE — Secrets do Worker (Configurações → Variáveis e segredos)
+    - FIREBASE_SERVICE_ACCOUNT = JSON inteiro da conta de serviço (uma linha
+      costuma ser mais fácil no painel)
+    - SESSION_SECRET = string longa aleatória (ver explicação no topo)
+
+[ ] F) CLOUDFLARE — Binding R2 no Worker
+    Opção 1: já vem do wrangler.toml ([[r2_buckets]] binding PONTO_BUCKET).
+    Opção 2: painel → Associações → R2 → nome do binding EXATAMENTE
+    PONTO_BUCKET → bucket cadernogestor-ponto
+    (Se o deploy ler o toml certo, o painel pode mostrar o binding após build
+    com sucesso.)
+
+[ ] G) GITHUB / SITE — App admin + PWA
+    - Repositório com index.html, ponto/, JS atualizados
+    - GitHub Pages abrindo o site (incluindo /ponto/)
+
+[ ] H) APP ADMIN (logado no CadernoGestor)
+    - Configurações → Ponto eletrônico → colar URL do Worker (sem barra no
+      final) → Salvar
+    - Código da empresa, geo, foto, etc. salvos
+    - Funcionário: CPF 11 dígitos → Gerar PIN → Copiar link
+    - Teste no celular: link → PIN → batida com GPS e foto
+    - Ponto (gestão): aparece a marcação?
+    - No R2 (Cloudflare): aparecem objetos em orgs/.../ponto/... ?
+
+================================================================================
+CONFERÊNCIA RÁPIDA (testes)
+================================================================================
+
+1) No navegador, abra:  https://SEU-WORKER.workers.dev/health
+   Deve retornar JSON com "ok": true e "service": "cadernogestor" (ou similar).
+
+2) Se /health falhar: build falhou, secrets faltando, ou URL errada.
+
+3) Se login no PWA falhar: FIREBASE_SERVICE_ACCOUNT, SESSION_SECRET, ou
+   código da empresa / PIN errados.
+
+4) Bucket com nome diferente de cadernogestor-ponto: altere worker/wrangler.toml
+   bucket_name, commit, espere novo deploy.
+
+================================================================================
+Nomes — resumo (não precisam ser todos iguais)
+================================================================================
+
+- Worker na Cloudflare:  cadernogestor          (name no wrangler.toml)
+- Bucket R2:             cadernogestor-ponto    (bucket_name no wrangler.toml)
+- Binding no código:   PONTO_BUCKET           (fixo; não mude)
+
+Sprint 6 (SaaS) fora deste escopo.
+
+================================================================================

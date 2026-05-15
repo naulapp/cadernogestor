@@ -42,14 +42,17 @@
   <div id="screen-app" class="card" style="display:none">
     <h1>Olá, <span id="appNome">—</span></h1>
     <div class="sub" id="appCfg"></div>
-    <label>Número da batida hoje</label>
+    <label>Número da batida hoje (opcional — deixe automático)</label>
     <select id="tipoBatida">
+      <option value="0">Automática (próxima do dia)</option>
       <option value="1">1ª batida</option>
       <option value="2">2ª batida</option>
       <option value="3">3ª batida</option>
       <option value="4">4ª batida</option>
       <option value="5">5ª batida</option>
       <option value="6">6ª batida</option>
+      <option value="7">7ª batida</option>
+      <option value="8">8ª batida</option>
     </select>
     <label>Foto</label>
     <input type="file" id="foto" accept="image/*" capture="environment" />
@@ -67,6 +70,6 @@
       if (!p.get('t')) document.getElementById('cpfWrap').style.display = 'block';
     })();
   </script>
-  <script src="app.js?v=20260514e"></script>
+  <script src="app.js?v=20260514f"></script>
 </body>
 </html>

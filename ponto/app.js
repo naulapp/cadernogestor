@@ -202,7 +202,7 @@
       $('appCfg').textContent =
         'Foto: ' + (cfg.exigirFoto !== false ? 'obrigatória' : 'opcional') +
         ' · Batidas/dia: ' +
-        (data.batidasPorDia || 4);
+        (data.batidasPorDia && data.batidasPorDia > 0 ? data.batidasPorDia : 'sem limite');
       window.__pontoCfg = cfg;
       showApp();
       setStatus('');
