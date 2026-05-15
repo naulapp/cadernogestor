@@ -168,7 +168,7 @@ export default {
     const path = url.pathname.replace(/\/$/, '') || '/';
 
     if (path === '/health') {
-      return json({ ok: true, service: 'cadernogestor-ponto' }, env, req);
+      return json({ ok: true, service: 'cadernogestor' }, env, req);
     }
 
     if (!env.FIREBASE_SERVICE_ACCOUNT) {
